@@ -14,9 +14,15 @@ class AnyCallable(object):
         tmp_list.append(key)
 
     def __call__(self, *arg, **kwarg):
+        global tmp_list
+        #global tmp_dict
+        print tmp_list
         print "end:" + self._key
         tmp_list.remove(self._key)
-        global_dict[key] = tmp_list
+        #tmp_dict[self._key] = tmp_list.pop(tmp_list.index(self._key) + 1)
+        print tmp_list
+        global_dict[self._key] = tmp_list
+        print global_dict
         tmp_list = []
         return self
 
