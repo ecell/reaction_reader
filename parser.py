@@ -1,13 +1,23 @@
 import sys
+#import model
+
+global_dict = {}
+
+tmp_dict = {}
+tmp_list = []
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
         print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
+        tmp_list.append(key)
 
     def __call__(self, *arg, **kwarg):
         print "end:" + self._key
+        tmp_list.remove(self._key)
+        global_dict[key] = tmp_list
+        tmp_list = []
         return self
 
     def __setattr__(self, key, value):
