@@ -2,6 +2,8 @@ from __future__ import with_statement
 import sys
 #import model
 
+global_dict = {}
+
 tmp_dict = {}
 tmp_list = []
 
@@ -51,6 +53,9 @@ class AnyCallable(object):
         print "lt"
 
     def __ne__(self, rhs):
+        global global_dict
+        global_dict["type"]     = "neq"
+        global_dict["children"] = tmp_list
         print "neq"
 
     def __add__(self,rhs):
@@ -88,3 +93,5 @@ globals['reaction_rules'] = ReactionRules()
 globals['molecule_types'] = MoleculeTypes()
 
 exec file(sys.argv[1]) in globals
+
+print global_dict
