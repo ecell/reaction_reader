@@ -7,9 +7,6 @@ global_list = []
 tmp_dict = {}
 tmp_list = []
 
-end_flag = 0
-popped_index = None
-
 class AnyCallable(object):
     def __init__(self, key, outer=None):
         global global_list
@@ -18,14 +15,7 @@ class AnyCallable(object):
         global end_flag
         global popped_index
 
-        if end_flag == 1:
-            global_list.append(tmp_dict)
-            tmp_dict = {}
-            tmp_list = []
-            end_flag = 0
-            popped_index = None
-
-            print global_list
+        print tmp_list
 
         tmp_list.append({"name": key})
 
@@ -36,29 +26,16 @@ class AnyCallable(object):
     def __call__(self, *arg, **kwarg):
         global tmp_dict
         global tmp_list
-        global end_flag
-        global popped_index
-
-        end_flag = 1
+        global global_list
         print "end:" + self._key
 
-        tmp_list.reverse()
         for i, a_dict in enumerate(tmp_list):
             if a_dict["name"] == self._key:
-                parent = tmp_list.pop(i)
-
-                if tmp_dict.has_key("children"):
-                    children = tmp_list[popped_index:i]
-                    del tmp_list[popped_index:i]
-                    tmp_list.reverse()
-                    children.append(tmp_dict)
-                    tmp_dict = {"name": parent["name"], "children": children}
-                else:
-                    tmp_list.reverse()
-                    parent["children"] = tmp_list
-                    tmp_dict           = parent
-
-                popped_index = i
+                parent   = tmp_list.pop(i)
+                children = tmp_list[i:]
+                del tmp_list[i:]
+                tmp_list.append({"name": parent["name"], "children": children})
+                print tmp_list
 
         return self
 
