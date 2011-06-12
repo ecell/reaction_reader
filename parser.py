@@ -2,18 +2,13 @@ from __future__ import with_statement
 import sys
 #import model
 
-global_list = []
-
 tmp_dict = {}
 tmp_list = []
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
-        global global_list
         global tmp_dict
         global tmp_list
-        global end_flag
-        global popped_index
 
         print tmp_list
 
@@ -26,7 +21,6 @@ class AnyCallable(object):
     def __call__(self, *arg, **kwarg):
         global tmp_dict
         global tmp_list
-        global global_list
         print "end:" + self._key
 
         for i, a_dict in enumerate(tmp_list):
