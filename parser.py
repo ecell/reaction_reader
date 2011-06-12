@@ -7,16 +7,14 @@ tmp_list = []
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
-        global tmp_dict
         global tmp_list
-
-        print tmp_list
 
         tmp_list.append({"name": key})
 
         print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
+        print tmp_list
 
     def __call__(self, *arg, **kwarg):
         global tmp_dict
