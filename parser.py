@@ -19,17 +19,21 @@ class AnyCallable(object):
         print tmp_list
 
     def __call__(self, *arg, **kwarg):
-        global tmp_dict
         global tmp_list
         print "end:" + self._key
 
+        tmp_list.reverse()
+
         for i, a_dict in enumerate(tmp_list):
             if a_dict["name"] == self._key:
-                parent   = tmp_list.pop(i)
-                children = tmp_list[i:]
-                del tmp_list[i:]
+                tmp_list.reverse()
+                latest_end_index = len(tmp_list) - i - 1
+                parent   = tmp_list.pop(latest_end_index)
+                children = tmp_list[latest_end_index:]
+                del tmp_list[latest_end_index:]
                 tmp_list.append({"name": parent["name"], "children": children})
                 print tmp_list
+                continue
 
         return self
 
@@ -59,6 +63,10 @@ class AnyCallable(object):
         print "neq"
 
     def __add__(self,rhs):
+        global tmp_dict
+        tmp_dict["type"] = "add"
+        tmp_dict["children"] = tmp_list
+        print tmp_dict
         return self
 
 class MyDict(dict):
