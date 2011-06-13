@@ -1,4 +1,5 @@
 from __future__ import with_statement
+#from operator import itemgetter
 import sys
 #import model
 
@@ -16,7 +17,7 @@ class AnyCallable(object):
         print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
-        print tmp_list
+        #print tmp_list
 
     def __call__(self, *arg, **kwarg):
         global tmp_list
@@ -32,7 +33,7 @@ class AnyCallable(object):
         children = tmp_list[matched_indices[-1]:]
         del tmp_list[matched_indices[-1]:]
         tmp_list.append({"name": parent["name"], "children": children})
-        print tmp_list
+        #print tmp_list
 
         return self
 
@@ -50,9 +51,9 @@ class AnyCallable(object):
     def __getitem__(self, key):
         global tmp_list
         print "parameter: " + str(key)
-        print tmp_list[-1]
+        #print tmp_list[-1]
         tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-        print tmp_list
+        #print tmp_list
         return self
 
     def __gt__(self, rhs):
@@ -64,6 +65,26 @@ class AnyCallable(object):
     def __ne__(self, rhs):
         global global_dict
         global tmp_list
+
+        bind_indices = []
+
+        for i, a_dict in enumerate(tmp_list):
+            if a_dict.get("type") == "add":
+                # write me!!
+                pass
+            if a_dict.get("name") == ".":
+                bind_indices.append(i)
+
+        #print bind_indices
+        #getter = itemgetter(bind_indices)
+
+        complex_list = tmp_list[min(bind_indices) - 1:max(bind_indices) + 2]
+        complex_dict = {"type": "dot", "children": complex_list}
+        #print complex_list
+        tmp_list[min(bind_indices) - 1] = complex_dict
+        del tmp_list[min(bind_indices) : max(bind_indices) + 2]
+        #print tmp_list
+
         global_dict["type"]     = "neq"
         global_dict["children"] = tmp_list
         print "neq"
