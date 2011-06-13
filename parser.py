@@ -22,18 +22,17 @@ class AnyCallable(object):
         global tmp_list
         print "end:" + self._key
 
-        tmp_list.reverse()
+        matched_indices = []
 
         for i, a_dict in enumerate(tmp_list):
-            if a_dict["name"] == self._key:
-                tmp_list.reverse()
-                latest_end_index = len(tmp_list) - i - 1
-                parent   = tmp_list.pop(latest_end_index)
-                children = tmp_list[latest_end_index:]
-                del tmp_list[latest_end_index:]
-                tmp_list.append({"name": parent["name"], "children": children})
-                print tmp_list
-                continue
+            if a_dict.get("name") == self._key:
+                matched_indices.append(i)
+
+        parent   = tmp_list.pop(matched_indices[-1])
+        children = tmp_list[matched_indices[-1]:]
+        del tmp_list[matched_indices[-1]:]
+        tmp_list.append({"name": parent["name"], "children": children})
+        print tmp_list
 
         return self
 
@@ -44,6 +43,8 @@ class AnyCallable(object):
         try:
             return super(AnyCallable, self).__getattr__(key)
         except:
+            global tmp_list
+            tmp_list.append({"name": "."})
             return AnyCallable(key, self)
 
     def __getitem__(self, key):
@@ -51,6 +52,7 @@ class AnyCallable(object):
         print "parameter: " + str(key)
         print tmp_list[-1]
         tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+        print tmp_list
         return self
 
     def __gt__(self, rhs):
@@ -61,15 +63,17 @@ class AnyCallable(object):
 
     def __ne__(self, rhs):
         global global_dict
+        global tmp_list
         global_dict["type"]     = "neq"
         global_dict["children"] = tmp_list
         print "neq"
 
     def __add__(self,rhs):
+        global tmp_list
         global tmp_dict
-        tmp_dict["type"] = "add"
+        tmp_dict["type"]     = "add"
         tmp_dict["children"] = tmp_list
-        print tmp_dict
+        tmp_list = [tmp_dict]
         return self
 
 class MyDict(dict):
