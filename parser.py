@@ -47,7 +47,10 @@ class AnyCallable(object):
             return AnyCallable(key, self)
 
     def __getitem__(self, key):
+        global tmp_list
         print "parameter: " + str(key)
+        print tmp_list[-1]
+        tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
         return self
 
     def __gt__(self, rhs):
