@@ -1,7 +1,12 @@
 from __future__ import with_statement
 #from operator import itemgetter
 import sys
-#import model
+from model import Model
+#from parser import Parser
+#from model import Species
+
+m = Model()
+#parser = Parser()
 
 global_dict = {}
 
@@ -122,7 +127,28 @@ class MoleculeTypes(object):
         pass
 
     def __exit__(self, *arg):
-        pass
+        mole_entity_list = [] # string. check for double registration such as A and A.B.
+        mole_state_list = []  # string. check for state_type registration.
+        mole_state_dict = {}  # dict.   key:State_type
+        for i in tmp_list:
+
+            if i['name'] not in mole_entity_list and i['name'] != '.':
+                tmpmole = m.add_entity_type(i['name'])
+                mole_entity_list.append(i['name'])
+
+                for j in i['children']:
+                    if j.has_key('children'):
+                        if j['children'][0]['name'] not in mole_state_list:
+                            new_state = j['children'][0]['name']
+                            new_state_P = 'p' + new_state
+                            p_state = m.add_state_type('state_'+new_state, [new_state, new_state_P])
+                            mole_state_dict[new_state] = p_state
+                            mole_state_list.append(new_state)
+                        tmpmole.add_component(j['name'], {new_state: mole_state_dict[new_state]})
+                    else:
+                        tmpmole.add_component(j['name'])
+
+#            parser.add_entity_type(tmpmole)
 
 globals = MyDict()
 globals['reaction_rules'] = ReactionRules()
@@ -130,4 +156,10 @@ globals['molecule_types'] = MoleculeTypes()
 
 exec file(sys.argv[1]) in globals
 
-print global_dict
+#print global_dict
+
+for i in m.state_types:
+    print i, m.state_types[i]
+
+for i in m.entity_types.items():
+    print i[1]
