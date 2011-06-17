@@ -77,7 +77,17 @@ class AnyCallable(object):
         return self
 
     def __gt__(self, rhs):
+        global global_dict
+        global tmp_list
+
+        global_dict["type"]     = "gt"
+        global_dict["children"] = tmp_list
         print "gt"
+
+        print "*** global_dict in gt ***"
+        print global_dict
+
+        tmp_list = []
 
     def __lt__(self, rhs):
         print "lt"
