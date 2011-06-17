@@ -40,6 +40,17 @@ class AnyCallable(object):
         tmp_list.append({"name": parent["name"], "children": children})
         #print tmp_list
 
+        if 'name' in tmp_list[len(tmp_list)-2]:
+            if tmp_list[len(tmp_list)-2]['name'] is '.':
+                if 'name' in tmp_list[len(tmp_list)-3] and tmp_list[len(tmp_list)-3]['name'] is '.':
+                    tmp_list[len(tmp_list)-3]['children'].append(tmp_list.pop(len(tmp_list)-1))
+                    tmp_list.pop(len(tmp_list)-1)
+                elif len(tmp_list)-2 <> 0:
+                    dot_list = []
+                    dot_list.append(tmp_list.pop(len(tmp_list)-1))
+                    dot_list.append(tmp_list.pop(len(tmp_list)-2))
+                    tmp_list[len(tmp_list)-1]['children'] = dot_list
+
         return self
 
     def __setattr__(self, key, value):
@@ -57,7 +68,11 @@ class AnyCallable(object):
         global tmp_list
         print "parameter: " + str(key)
         #print tmp_list[-1]
-        tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+        if "children" in tmp_list[-1]:
+            tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
+        else:
+            tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+#        tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
         #print tmp_list
         return self
 
@@ -73,33 +88,53 @@ class AnyCallable(object):
 
         bind_indices = []
 
-        for i, a_dict in enumerate(tmp_list):
-            if a_dict.get("type") == "add":
-                # write me!!
-                pass
-            if a_dict.get("name") == ".":
-                bind_indices.append(i)
+#        for i, a_dict in enumerate(tmp_list):
+#            if a_dict.get("type") == "add":
+#                # write me!!
+#                pass
+#            if a_dict.get("name") == ".":
+#                bind_indices.append(i)
 
         #print bind_indices
         #getter = itemgetter(bind_indices)
 
-        complex_list = tmp_list[min(bind_indices) - 1:max(bind_indices) + 2]
-        complex_dict = {"type": "dot", "children": complex_list}
-        #print complex_list
-        tmp_list[min(bind_indices) - 1] = complex_dict
-        del tmp_list[min(bind_indices) : max(bind_indices) + 2]
+#        complex_list = tmp_list[min(bind_indices) - 1:max(bind_indices) + 2]
+#        complex_dict = {"type": "dot", "children": complex_list}
+#        #print complex_list
+#        tmp_list[min(bind_indices) - 1] = complex_dict
+#        del tmp_list[min(bind_indices) : max(bind_indices) + 2]
         #print tmp_list
 
         global_dict["type"]     = "neq"
         global_dict["children"] = tmp_list
         print "neq"
 
+        print "*** global_dict in ne ***"
+        print global_dict
+
+        tmp_list = []
+
     def __add__(self,rhs):
         global tmp_list
         global tmp_dict
-        tmp_dict["type"]     = "add"
-        tmp_dict["children"] = tmp_list
-        tmp_list = [tmp_dict]
+#        tmp_dict["type"]     = "add"
+#        tmp_dict["children"] = tmp_list
+#        tmp_list = [tmp_dict]
+#        return self
+
+        if tmp_list[len(tmp_list)-2].has_key('type'):
+            tmp_list[len(tmp_list)-2]['children'].append(tmp_list.pop(len(tmp_list)-1))
+        else:
+            add_dict = {}
+            add_list = []
+            add_dict["type"] = "add"
+            add_list.append(tmp_list.pop(len(tmp_list)-1))
+            add_list.append(tmp_list.pop(len(tmp_list)-1))
+
+            add_dict["children"] = add_list
+
+            tmp_list.append(add_dict)
+
         return self
 
 class MyDict(dict):
@@ -127,9 +162,10 @@ class MoleculeTypes(object):
         pass
 
     def __exit__(self, *arg):
+        global tmp_list
         mole_entity_list = [] # string. check for double registration such as A and A.B.
         mole_state_list = []  # string. check for state_type registration.
-        mole_state_dict = {}  # dict.   key:State_type
+        mole_state_dict = {}  # tuple.   key:State_type
         for i in tmp_list:
 
             if i['name'] not in mole_entity_list and i['name'] != '.':
@@ -148,6 +184,9 @@ class MoleculeTypes(object):
                     else:
                         tmpmole.add_component(j['name'])
 
+        print '*** tmp_list / MoleculeTypes.__exit__ ***'
+        print tmp_list
+        tmp_list = []
 #            parser.add_entity_type(tmpmole)
 
 globals = MyDict()
@@ -158,8 +197,8 @@ exec file(sys.argv[1]) in globals
 
 #print global_dict
 
-for i in m.state_types:
-    print i, m.state_types[i]
+#for i in m.state_types:
+#    print i, m.state_types[i]
 
-for i in m.entity_types.items():
-    print i[1]
+#for i in m.entity_types.items():
+#    print i[1]
