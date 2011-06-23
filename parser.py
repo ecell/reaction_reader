@@ -1,214 +1,235 @@
-from __future__ import with_statement
-#from operator import itemgetter
-import sys
-from model import Model
-#from parser import Parser
-#from model import Species
+import model
 
-m = Model()
-#parser = Parser()
+class Parser(object):
 
-global_dict = {}
-
-tmp_dict = {}
-tmp_list = []
-
-class AnyCallable(object):
-    def __init__(self, key, outer=None):
-        global tmp_list
-
-        tmp_list.append({"name": key})
-
-        print "start: " + key
-        super(AnyCallable, self).__setattr__('_key', key)
-        super(AnyCallable, self).__setattr__('_outer', outer)
-        #print tmp_list
-
-    def __call__(self, *arg, **kwarg):
-        global tmp_list
-        print "end:" + self._key
-
-        matched_indices = []
-
-        for i, a_dict in enumerate(tmp_list):
-            if a_dict.get("name") == self._key:
-                matched_indices.append(i)
-
-        parent   = tmp_list.pop(matched_indices[-1])
-        children = tmp_list[matched_indices[-1]:]
-        del tmp_list[matched_indices[-1]:]
-        tmp_list.append({"name": parent["name"], "children": children})
-        #print tmp_list
-
-        if 'name' in tmp_list[len(tmp_list)-2]:
-            if tmp_list[len(tmp_list)-2]['name'] is '.':
-                if 'name' in tmp_list[len(tmp_list)-3] and tmp_list[len(tmp_list)-3]['name'] is '.':
-                    tmp_list[len(tmp_list)-3]['children'].append(tmp_list.pop(len(tmp_list)-1))
-                    tmp_list.pop(len(tmp_list)-1)
-                elif len(tmp_list)-2 <> 0:
-                    dot_list = []
-                    dot_list.append(tmp_list.pop(len(tmp_list)-1))
-                    dot_list.append(tmp_list.pop(len(tmp_list)-2))
-                    tmp_list[len(tmp_list)-1]['children'] = dot_list
-
-        return self
-
-    def __setattr__(self, key, value):
-        pass
-
-    def __getattr__(self, key):
-        try:
-            return super(AnyCallable, self).__getattr__(key)
-        except:
-            global tmp_list
-            tmp_list.append({"name": "."})
-            return AnyCallable(key, self)
-
-    def __getitem__(self, key):
-        global tmp_list
-        print "parameter: " + str(key)
-        #print tmp_list[-1]
-        if "children" in tmp_list[-1]:
-            tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
-        else:
-            tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-#        tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-        #print tmp_list
-        return self
-
-    def __gt__(self, rhs):
-        global global_dict
-        global tmp_list
-
-        global_dict["type"]     = "gt"
-        global_dict["children"] = tmp_list
-        print "gt"
-
-        print "*** global_dict in gt ***"
-        print global_dict
-
-        tmp_list = []
-
-    def __lt__(self, rhs):
-        print "lt"
-
-    def __ne__(self, rhs):
-        global global_dict
-        global tmp_list
-
-        bind_indices = []
-
-#        for i, a_dict in enumerate(tmp_list):
-#            if a_dict.get("type") == "add":
-#                # write me!!
-#                pass
-#            if a_dict.get("name") == ".":
-#                bind_indices.append(i)
-
-        #print bind_indices
-        #getter = itemgetter(bind_indices)
-
-#        complex_list = tmp_list[min(bind_indices) - 1:max(bind_indices) + 2]
-#        complex_dict = {"type": "dot", "children": complex_list}
-#        #print complex_list
-#        tmp_list[min(bind_indices) - 1] = complex_dict
-#        del tmp_list[min(bind_indices) : max(bind_indices) + 2]
-        #print tmp_list
-
-        global_dict["type"]     = "neq"
-        global_dict["children"] = tmp_list
-        print "neq"
-
-        print "*** global_dict in ne ***"
-        print global_dict
-
-        tmp_list = []
-
-    def __add__(self,rhs):
-        global tmp_list
-        global tmp_dict
-#        tmp_dict["type"]     = "add"
-#        tmp_dict["children"] = tmp_list
-#        tmp_list = [tmp_dict]
-#        return self
-
-        if tmp_list[len(tmp_list)-2].has_key('type'):
-            tmp_list[len(tmp_list)-2]['children'].append(tmp_list.pop(len(tmp_list)-1))
-        else:
-            add_dict = {}
-            add_list = []
-            add_dict["type"] = "add"
-            add_list.append(tmp_list.pop(len(tmp_list)-1))
-            add_list.append(tmp_list.pop(len(tmp_list)-1))
-
-            add_dict["children"] = add_list
-
-            tmp_list.append(add_dict)
-
-        return self
-
-class MyDict(dict):
     def __init__(self):
-        super(MyDict, self).__init__()
+        self.__entity_types = {}
 
-    def __setitem__(self, key, val):
-        super(MyDict, self).__setitem__(key, val)
+    def add_entity_type(self, entity_type):
+        self.__entity_types[entity_type.name] = entity_type
 
-    def __getitem__(self, key):
-        retval = self.get(key)
-        if retval is None:
-            retval = AnyCallable(key)
-        return retval
+    def parse_species(self, sp_text):
+        split_list = sp_text.split('.')
+        if not len(split_list):
+            return None
+        split_list_new = []
+        for str in split_list:
+            split_list_new.append(str.strip())
+        entity_name_list = []
+        entity_content_list = []
+        for str in split_list_new:
+            if not str.endswith(')'):
+                return None
+            end_index = len(str) - 1
+            start_index = str.find('(')
+            if start_index == -1:
+                return None
+            if start_index == 0:
+                return None
+            entity_name = str[0:start_index]
+            if start_index == end_index - 1:
+                entity_content = ''
+            else:
+                entity_content = str[start_index + 1:end_index]
+            entity_name_list.append(entity_name.strip())
+            entity_content_list.append(entity_content.strip())
 
-class ReactionRules(object):
-    def __enter__(self):
-        pass
+        sp = model.Species()
+        binding_components = {}
+        for i, name in enumerate(entity_name_list):
 
-    def __exit__(self, *arg):
-        pass
+            # Creates an entity.
+            if not name in self.__entity_types:
+                return None
+            entity_type = self.__entity_types[name]
+            en = sp.add_entity(entity_type)
 
-class MoleculeTypes(object):
-    def __enter__(self):
-        pass
+            # Gets text string for components.
+            content_text = entity_content_list[i]
+            comma_index_set = set()
+            for j in range(len(content_text)):
+                if content_text[j] == ',':
+                    comma_index_set.add(j)
+            inside_bracket = False
+            for j in range(len(content_text)):
+                if content_text[j] == '[':
+                    inside_bracket = True
+                if content_text[j] == ']':
+                    inside_bracket = False
+                    continue
+                if inside_bracket:
+                    if content_text[j] == ',':
+                        comma_index_set.remove(j)
+            comma_index_list = list(comma_index_set)
+            comma_index_list.sort()
 
-    def __exit__(self, *arg):
-        global tmp_list
-        mole_entity_list = [] # string. check for double registration such as A and A.B.
-        mole_state_list = []  # string. check for state_type registration.
-        mole_state_dict = {}  # tuple.   key:State_type
-        for i in tmp_list:
+            split_list = []
+            start_index = 0
+            for comma_index in comma_index_list:
+                split_list.append(content_text[start_index:comma_index])
+                start_index = comma_index + 1
+            split_list.append(content_text[start_index:len(content_text)])
 
-            if i['name'] not in mole_entity_list and i['name'] != '.':
-                tmpmole = m.add_entity_type(i['name'])
-                mole_entity_list.append(i['name'])
+            split_list_new = []
+            for c_str in split_list:
+                split_list_new.append(c_str.strip())
 
-                for j in i['children']:
-                    if j.has_key('children'):
-                        if j['children'][0]['name'] not in mole_state_list:
-                            new_state = j['children'][0]['name']
-                            new_state_P = 'p' + new_state
-                            p_state = m.add_state_type('state_'+new_state, [new_state, new_state_P])
-                            mole_state_dict[new_state] = p_state
-                            mole_state_list.append(new_state)
-                        tmpmole.add_component(j['name'], {new_state: mole_state_dict[new_state]})
+            for c_str in split_list_new:
+                if not len(c_str):
+                    continue
+
+                # Binding.
+                binding_id = None
+                comp_str_list = c_str.split('!')
+                if len(comp_str_list) == 1:
+                    binding_state = model.BINDING_NONE
+                elif len(comp_str_list) == 2:
+                    binding_value = comp_str_list[1].strip()
+                    if binding_value.isdigit():
+                        binding_state = model.BINDING_SPECIFIED
+                        binding_id = int(binding_value)
                     else:
-                        tmpmole.add_component(j['name'])
+                        if binding_value == model.BINDING_UNSPECIFIED_STRING:
+                            binding_state = model.BINDING_UNSPECIFIED
+                        elif binding_value == model.BINDING_ANY_STRING:
+                            binding_state = model.BINDING_ANY
+                        else:
+                            return None
+                else:
+                    return None
 
-        print '*** tmp_list / MoleculeTypes.__exit__ ***'
-        print tmp_list
-        tmp_list = []
-#            parser.add_entity_type(tmpmole)
+                # A text string for the name and states of a component.
+                comp_name_and_states = comp_str_list[0].strip()
 
-globals = MyDict()
-globals['reaction_rules'] = ReactionRules()
-globals['molecule_types'] = MoleculeTypes()
+                # Name and states.
+                comp_str_list = comp_name_and_states.split('~')
+                if len(comp_str_list) == 1:
+                    comp_states_list = []
+                elif len(comp_str_list) == 2:
+                    comp_states_str = comp_str_list[1].strip()
+                    sb = comp_states_str.startswith('[')
+                    eb = comp_states_str.endswith(']')
+                    if sb and eb:
+                        comp_states_str = comp_states_str[\
+                            1:len(comp_states_str) - 1]
+                    elif not sb and not eb:
+                        pass
+                    else:
+                        return None
+                    comp_states_list = comp_states_str.split(',')
+                else:
+                    return None
 
-exec file(sys.argv[1]) in globals
+                # A text string for the name of a component.
+                comp_name = comp_str_list[0].strip()
 
-#print global_dict
+                # Finds the components.
+                components = en.find_components(comp_name)
+                if not len(components):
+                    return None
+                if len(components) != 1:
+                    raise Exception('Unsupported')
+                en_comp = components[0]
 
-#for i in m.state_types:
-#    print i, m.state_types[i]
+                # Sets the states.
+                for comp_state in comp_states_list:
+                    str_list = comp_state.split(':')
+                    if len(str_list) == 1:
+                        state_value = str_list[0]
+                        states = en_comp.states
+                        if len(states) != 1:
+                            return None
+                        state_name = states.keys()[0]
+                    elif len(str_list) == 2:
+                        state_name = str_list[0]
+                        if not state_name in en_comp.state_types:
+                            return None
+                        state_value = str_list[1]
+                    else:
+                        return None
+                    en_comp.set_state(state_name, state_value)
 
-#for i in m.entity_types.items():
-#    print i[1]
+                # Sets the binding state.
+                en_comp.binding_state = binding_state
+
+                # Sets binding component to the map.
+                if binding_id != None:
+                    if not binding_id in binding_components:
+                        binding_components[binding_id] = []
+                    binding_components[binding_id].append(en_comp)
+
+        # Sets the bindings.
+        for comps in binding_components.itervalues():
+            if len(comps) != 2:
+                return None
+            sp.add_binding(comps[0], comps[1])
+
+        return sp
+
+
+    def parse_species_array(self, sp_str_list, model=None):
+        sp_list = []
+        for sp_str in sp_str_list:
+            sp = self.parse_species(sp_str)
+            if sp is None:
+                print sp_str
+            if model != None:
+                sp = model.register_species(sp)
+            sp_list.append(sp)
+        return sp_list
+
+    def __split_species_array_string(self, sp_array_str):
+        plus_index_set = set()
+        for i in range(len(sp_array_str)):
+            if sp_array_str[i] == '+':
+                plus_index_set.add(i)
+        inside_bracket = False
+        for i in range(len(sp_array_str)):
+            if sp_array_str[i] == '(':
+                inside_bracket = True
+                continue
+            elif sp_array_str[i] == ')':
+                inside_bracket = False
+                continue
+            elif sp_array_str[i] == '+':
+                if inside_bracket:
+                    plus_index_set.remove(i)
+        plus_index_list = list(plus_index_set)
+        plus_index_list.sort()
+        split_str_list = []
+        start_index = 0
+        for index in plus_index_list:
+            split_str_list.append(sp_array_str[start_index:index])
+            start_index = index + 1
+            if start_index >= len(sp_array_str):
+                return None
+        split_str_list.append(sp_array_str[start_index:len(sp_array_str)])
+        return split_str_list
+
+    def parse_reaction(self, rule_text, m, id=0, concrete=False, \
+            condition=None, register=False, **attrs):
+        rp_str_list = rule_text.split('->')
+        if len(rp_str_list) != 2:
+            return None
+        reactants_str = rp_str_list[0]
+        if reactants_str.isspace() or len(reactants_str) == 0:
+            reactants = []
+        else:
+            reactants_str_list = self.__split_species_array_string(\
+                reactants_str)
+            reactants = self.parse_species_array(reactants_str_list, m)
+        products_str = rp_str_list[1]
+        if products_str.isspace() or len(products_str) == 0:
+            products = []
+        else:
+            products_str_list = self.__split_species_array_string(\
+                products_str)
+            products = self.parse_species_array(products_str_list, m)
+        if register:
+            rule = m.add_reaction_rule(reactants, products, condition, **attrs)
+        else:
+            rule = model.ReactionRule(id, m, reactants, products, concrete, \
+                condition, **attrs)
+        return rule
+
+
