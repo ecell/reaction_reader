@@ -1,5 +1,4 @@
 from __future__ import with_statement
-#from operator import itemgetter
 import sys
 from model import Model
 from parser import Parser
@@ -9,14 +8,11 @@ from model import BINDING_NONE
 from model import BINDING_ANY
 from model import BINDING_UNSPECIFIED
 
-m = Model()
+m      = Model()
 parser = Parser()
 
-#global_dict = {}
 global_list = []
-
-#tmp_dict = {}
-tmp_list = []
+tmp_list    = []
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -27,7 +23,6 @@ class AnyCallable(object):
         print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
-        #print tmp_list
 
     def __call__(self, *arg, **kwarg):
         global tmp_list
@@ -43,7 +38,6 @@ class AnyCallable(object):
         children = tmp_list[matched_indices[-1]:]
         del tmp_list[matched_indices[-1]:]
         tmp_list.append({"name": parent["name"], "children": children})
-        #print tmp_list
 
         if 'name' in tmp_list[len(tmp_list)-2]:
             if tmp_list[len(tmp_list)-2]['name'] is '.':
@@ -72,13 +66,12 @@ class AnyCallable(object):
     def __getitem__(self, key):
         global tmp_list
         print "parameter: " + str(key)
-        #print tmp_list[-1]
+
         if "children" in tmp_list[-1]:
             tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
         else:
             tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-#        tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-        #print tmp_list
+
         return self
 
     def operator(self, rhs):
@@ -87,11 +80,10 @@ class AnyCallable(object):
         tmp_dict = {}
         print rhs
 
-        tmp_dict["type"] = rhs
+        tmp_dict["type"]     = rhs
         tmp_dict["children"] = tmp_list
         global_list.append(tmp_dict)
 
-#        print tmp_list
         tmp_list = []
 
     def __gt__(self, rhs):
@@ -101,45 +93,10 @@ class AnyCallable(object):
         print "lt"
 
     def __ne__(self, rhs):
-#        global global_dict
-#        global tmp_list
-#
-#        bind_indices = []
-#
-##        for i, a_dict in enumerate(tmp_list):
-##            if a_dict.get("type") == "add":
-##                # write me!!
-##                pass
-##            if a_dict.get("name") == ".":
-##                bind_indices.append(i)
-#
-#        #print bind_indices
-#        #getter = itemgetter(bind_indices)
-#
-##        complex_list = tmp_list[min(bind_indices) - 1:max(bind_indices) + 2]
-##        complex_dict = {"type": "dot", "children": complex_list}
-##        #print complex_list
-##        tmp_list[min(bind_indices) - 1] = complex_dict
-##        del tmp_list[min(bind_indices) : max(bind_indices) + 2]
-#        #print tmp_list
-#
-#        global_dict["type"]     = "neq"
-#        global_dict["children"] = tmp_list
-#        print "neq"
-#
-#        print "*** global_dict in ne ***"
-#        print global_dict
-#
-#        tmp_list = []
         self.operator("neq")
 
     def __add__(self,rhs):
         global tmp_list
-#        global tmp_dict
-#        tmp_dict["type"]     = "add"
-#        tmp_dict["children"] = tmp_list
-#        tmp_list = [tmp_dict]
-#        return self
 
         if tmp_list[len(tmp_list)-2].has_key('type'):
             tmp_list[len(tmp_list)-2]['children'].append(tmp_list.pop(len(tmp_list)-1))
@@ -183,8 +140,8 @@ class MoleculeTypes(object):
     def __exit__(self, *arg):
         global tmp_list
         mole_entity_list = [] # string. check for double registration such as A and A.B.
-        mole_state_list = []  # string. check for state_type registration.
-        mole_state_dict = {}  # tuple.   key:State_type
+        mole_state_list  = [] # string. check for state_type registration.
+        mole_state_dict  = {} # tuple.   key:State_type
         for i in tmp_list:
 
             if i['name'] not in mole_entity_list and i['name'] != '.':
@@ -213,14 +170,6 @@ globals['reaction_rules'] = ReactionRules()
 globals['molecule_types'] = MoleculeTypes()
 
 exec file(sys.argv[1]) in globals
-
-#print global_list
-
-#for i, a_dict in enumerate(global_list):
-##    print i, a_dict['type']
-#    print i, a_dict['children'][0]
-#    print i, a_dict['children'][1]
-#    print ''
 
 def read_entity(sp, m, p, entity, binding_components):
 
