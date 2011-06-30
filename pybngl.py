@@ -1,21 +1,32 @@
 from __future__ import with_statement
-#from operator import itemgetter
 import sys
-from model import Model
-from parser import Parser
-from model import Species
-from model import BINDING_SPECIFIED
-from model import BINDING_NONE
-from model import BINDING_ANY
-from model import BINDING_UNSPECIFIED
+from model.model import Model
+from model.model import Species
+from model.model import BINDING_SPECIFIED
+from model.model import BINDING_NONE
+from model.model import BINDING_ANY
+from model.model import BINDING_UNSPECIFIED
+from model.parser import Parser
+from solver.ODESolver import ODESolver
+from process.process import FunctionMaker
+from Simulator import Simulator
+##from model import Model
+##from model import Species
+##from model import BINDING_SPECIFIED
+##from model import BINDING_NONE
+##from model import BINDING_ANY
+##from model import BINDING_UNSPECIFIED
+##from parser import Parser
+##from ODESolver import ODESolver
+##from process import FunctionMaker
+
 
 m = Model()
 parser = Parser()
+fm = FunctionMaker()
+sim = Simulator()
 
-#global_dict = {}
 global_list = []
-
-#tmp_dict = {}
 tmp_list = []
 
 class AnyCallable(object):
@@ -27,7 +38,6 @@ class AnyCallable(object):
         print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
-        #print tmp_list
 
     def __call__(self, *arg, **kwarg):
         global tmp_list
@@ -43,7 +53,6 @@ class AnyCallable(object):
         children = tmp_list[matched_indices[-1]:]
         del tmp_list[matched_indices[-1]:]
         tmp_list.append({"name": parent["name"], "children": children})
-        #print tmp_list
 
         if 'name' in tmp_list[len(tmp_list)-2]:
             if tmp_list[len(tmp_list)-2]['name'] is '.':
@@ -72,13 +81,10 @@ class AnyCallable(object):
     def __getitem__(self, key):
         global tmp_list
         print "parameter: " + str(key)
-        #print tmp_list[-1]
         if "children" in tmp_list[-1]:
             tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
         else:
             tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-#        tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
-        #print tmp_list
         return self
 
     def operator(self, rhs):
@@ -91,7 +97,6 @@ class AnyCallable(object):
         tmp_dict["children"] = tmp_list
         global_list.append(tmp_dict)
 
-#        print tmp_list
         tmp_list = []
 
     def __gt__(self, rhs):
@@ -101,45 +106,10 @@ class AnyCallable(object):
         print "lt"
 
     def __ne__(self, rhs):
-#        global global_dict
-#        global tmp_list
-#
-#        bind_indices = []
-#
-##        for i, a_dict in enumerate(tmp_list):
-##            if a_dict.get("type") == "add":
-##                # write me!!
-##                pass
-##            if a_dict.get("name") == ".":
-##                bind_indices.append(i)
-#
-#        #print bind_indices
-#        #getter = itemgetter(bind_indices)
-#
-##        complex_list = tmp_list[min(bind_indices) - 1:max(bind_indices) + 2]
-##        complex_dict = {"type": "dot", "children": complex_list}
-##        #print complex_list
-##        tmp_list[min(bind_indices) - 1] = complex_dict
-##        del tmp_list[min(bind_indices) : max(bind_indices) + 2]
-#        #print tmp_list
-#
-#        global_dict["type"]     = "neq"
-#        global_dict["children"] = tmp_list
-#        print "neq"
-#
-#        print "*** global_dict in ne ***"
-#        print global_dict
-#
-#        tmp_list = []
         self.operator("neq")
 
     def __add__(self,rhs):
         global tmp_list
-#        global tmp_dict
-#        tmp_dict["type"]     = "add"
-#        tmp_dict["children"] = tmp_list
-#        tmp_list = [tmp_dict]
-#        return self
 
         if tmp_list[len(tmp_list)-2].has_key('type'):
             tmp_list[len(tmp_list)-2]['children'].append(tmp_list.pop(len(tmp_list)-1))
@@ -174,7 +144,102 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *arg):
-        pass
+        id = 0
+
+        print '\n*** reactants ***'
+        reactants = read_patterns(m, parser, global_list[id]['children'][0])
+        for i in reactants:
+            print i
+
+        print '\n*** products ***'
+        products = read_patterns(m, parser, global_list[id]['children'][1])
+        for i in products:
+            print i
+
+        
+
+        rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
+        print m.reaction_rules.items()
+
+        N_A = 6.0221367e+23
+        sp_str_list = ['R(l~Y)', 'L(r)']
+        seed_species = parser.parse_species_array(sp_str_list, m)
+        seed_values = [10000. * N_A, 10000. * N_A]
+
+        results = m.generate_reaction_network(seed_species, 10)
+
+
+
+        print '<< reaction rules >>'
+        cnt = 1
+        for rule_id in sorted(m.reaction_rules.iterkeys()):
+            rule = m.reaction_rules[rule_id]
+            print cnt, rule.str_simple()
+            cnt += 1
+        print ''
+
+        print '<< species >>'
+        cnt = 1
+        for sp_id in sorted(m.concrete_species.iterkeys()):
+            sp = m.concrete_species[sp_id]
+            print cnt, sp.str_simple()
+            cnt += 1
+        print ''
+
+        print '<< reactions >>'
+        cnt = 1
+        for result in results:
+            for r in result.reactions:
+                print cnt, r.str_simple()
+                cnt += 1
+        print ''
+
+        sp_num = len(m.concrete_species)
+
+        # Initial values for species.
+        variables = []
+        for i in range(sp_num):
+            variables.append(0.0)
+        for i, v in enumerate(seed_values):
+            variables[i] = v
+
+        global fm
+        global sim
+
+        volume = 1
+        functions = fm.make_functions(m, results, volume)
+        the_solver = ODESolver()
+        sim.initialize(the_solver, functions, variables)
+
+        step_num = 120
+        sim.step(step_num)
+
+        output_series = sim.get_logged_data()
+        header = 'time, '
+        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
+            if i > 0:
+                header += ', '
+            sp = m.concrete_species[sp_id]
+            header += sp.str_simple()
+        print header
+        print output_series
+        print ''
+
+        output_terminal = output_series[step_num - 1]
+        result = str(output_terminal[0])
+        result += ': '
+        for i, v in enumerate(output_terminal):
+            if i > 1:
+                result += ', '
+            if i > 0:
+                value = v / N_A
+                result += str(value)
+
+        print header
+        print result
+
+
+
 
 class MoleculeTypes(object):
     def __enter__(self):
@@ -204,23 +269,9 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'])
                 parser.add_entity_type(tmpmole)
 
-#        print '*** tmp_list / MoleculeTypes.__exit__ ***'
-#        print tmp_list
+        print tmp_list
         tmp_list = []
 
-globals = MyDict()
-globals['reaction_rules'] = ReactionRules()
-globals['molecule_types'] = MoleculeTypes()
-
-exec file(sys.argv[1]) in globals
-
-#print global_list
-
-#for i, a_dict in enumerate(global_list):
-##    print i, a_dict['type']
-#    print i, a_dict['children'][0]
-#    print i, a_dict['children'][1]
-#    print ''
 
 def read_entity(sp, m, p, entity, binding_components):
 
@@ -229,26 +280,15 @@ def read_entity(sp, m, p, entity, binding_components):
         return
 
     entity_name = entity['name']
-#    print '*** entity_name***', entity_name
     entity_type = p._Parser__entity_types[entity_name]
     en = sp.add_entity(entity_type)
 
-#    print '*** sp ***'
-#    print sp
-
     for i in filter(lambda x: 'name' in x, entity['children']):
         comp_name = i['name']
-#        print 'compname: ', comp_name
         components = en.find_components(comp_name)
         try:
             en_comp = components[0]
             en_comp.binding_state = BINDING_NONE
-#            print '*** components ***\n', en_comp
-
-#            for j in filter(lambda x: 'children' in x, i['children']):
-##            for j in filter(lambda x: 'children' in x, i):
-#                print '***j***', j
-#                print '\n*** children of comp ***', j
 
             if 'children' in i:
                 for j in i['children']:
@@ -272,7 +312,6 @@ def read_entity(sp, m, p, entity, binding_components):
                             binding_components[binding_id].append(en_comp)
 
         except IndexError:
-#            print 'components not found (', comp_name, ')'
             quit()
         except KeyError:
             pass
@@ -286,7 +325,6 @@ def read_species(m, p, species):
 
     if species['name'] == '.':  #   A.B
         for entity in species['children']:
-#            print '***ent***', entity
             read_entity(sp, m, p, entity, bind_comp)
         for comps in bind_comp.itervalues():
             if len(comps) != 2:
@@ -318,31 +356,9 @@ def read_patterns(m, p, species):
     return s_list
 
 
-#print '**global_list***'
-#print global_list[1]
+globals = MyDict()
+globals['reaction_rules'] = ReactionRules()
+globals['molecule_types'] = MoleculeTypes()
 
-
-id = 10
-
-print '\n*** reactants ***'
-reactants = read_patterns(m, parser, global_list[id]['children'][0])
-for i in reactants:
-    print i
-
-print '\n*** products ***'
-products = read_patterns(m, parser, global_list[id]['children'][1])
-for i in products:
-    print i
-
-rule = m.add_reaction_rule(reactants, products)
-print m.reaction_rules.items()
-#print m.reaction_rules[1]
-
-
-#    egfr(Y1068(pY)[1]).Grb2(SH2[1],SH3) + Sos(dom) <> egfr(Y1068(pY)[1]).Grb2(SH2[1],SH3[2]).Sos(dom[2]) [michaelis_menten]
-
-N_A = 6.0221367e+23
-sp_str_list = ['Sos(dom)']
-seed_species = parser.parse_species_array(sp_str_list, m)
-seed_values = [10000. * N_A]
+exec file(sys.argv[1]) in globals
 
