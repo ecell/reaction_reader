@@ -10,24 +10,14 @@ from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
-##from model import Model
-##from model import Species
-##from model import BINDING_SPECIFIED
-##from model import BINDING_NONE
-##from model import BINDING_ANY
-##from model import BINDING_UNSPECIFIED
-##from parser import Parser
-##from ODESolver import ODESolver
-##from process import FunctionMaker
 
-
-m = Model()
+m      = Model()
 parser = Parser()
 fm = FunctionMaker()
 sim = Simulator()
 
 global_list = []
-tmp_list = []
+tmp_list    = []
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -85,6 +75,7 @@ class AnyCallable(object):
             tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
         else:
             tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+
         return self
 
     def operator(self, rhs):
@@ -93,7 +84,7 @@ class AnyCallable(object):
         tmp_dict = {}
         print rhs
 
-        tmp_dict["type"] = rhs
+        tmp_dict["type"]     = rhs
         tmp_dict["children"] = tmp_list
         global_list.append(tmp_dict)
 
@@ -248,8 +239,8 @@ class MoleculeTypes(object):
     def __exit__(self, *arg):
         global tmp_list
         mole_entity_list = [] # string. check for double registration such as A and A.B.
-        mole_state_list = []  # string. check for state_type registration.
-        mole_state_dict = {}  # tuple.   key:State_type
+        mole_state_list  = [] # string. check for state_type registration.
+        mole_state_dict  = {} # tuple.   key:State_type
         for i in tmp_list:
 
             if i['name'] not in mole_entity_list and i['name'] != '.':
