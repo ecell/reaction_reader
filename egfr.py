@@ -12,11 +12,11 @@ with molecule_types:
 
 with reaction_rules:
     # Ligand-receptor binding
-    egfr(l,r) + egfr(r) <> egfr(l[1],r).egf(r[1]) [michaelis_menten]
+    egfr(l,r) + egf(r) <> egfr(l[1],r).egf(r[1]) [michaelis_menten]
 
     # Note changed multiplicity
     # Receptor-aggregation
-    egfr(l[1],r) + edgr(l[2],r) <> egfr(l[1],r[3]).egfr(l[2],r[3]) [michaelis_menten]
+    egfr(l[1],r) + egfr(l[2],r) <> egfr(l[1],r[3]).egfr(l[2],r[3]) [michaelis_menten]
 
     # Transphosphorylation of egfr by RTK
     egfr(r[1],Y1068(Y)) > egfr(r[1],Y1068(pY)) [michaelis_menten]
