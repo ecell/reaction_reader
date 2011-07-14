@@ -2989,6 +2989,8 @@ class Model(object):
         # max iteration number.
         for i in range(max_iteration):
 
+
+
             # The counter for new species.
             new_species_cnt = 0
 
@@ -2998,6 +3000,14 @@ class Model(object):
             # Loops for the results.
             for result in results:
                 rule = result.reaction_rule
+
+                # print '<< reactions >>'
+                # cnt = 1
+                # for result in results:
+                #     for r in result.reactions:
+                #         print cnt, r.str_simple()
+                #         cnt += 1
+                # print ''
 
                 # Loops for the reactions.
                 for reaction in result.reactions:
