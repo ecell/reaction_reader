@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.16 2011/07/12 04:22:49 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.18 2011/07/13 08:32:06 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -28,9 +28,9 @@ N_A = 6.0221367e+23
 #step_num = 120
 
 #'''testODE_3.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
-#seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
-#step_num = 120
+sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
+seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
+step_num = 120
 
 #'''testODE_4.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
@@ -63,10 +63,10 @@ N_A = 6.0221367e+23
 #seed_values = [10000. * N_A, 0.]
 #step_num = 20
 
-sp_str_list = ['RasGTP(raf)', 'Raf(ras,mek,p1,Y~U)', 'MEK(raf,erk,p2,Y1~U,Y2~U)', 'ERK(mek,p3,Y1~U,Y2~U)', 'Pase1(raf)', 'Pase2(mek)', 'Pase3(erk)']
-seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-step_num = 20
-
+#'''egfr.py'''
+#sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
+#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+#step_num = 20
 
 m = Model()
 parser = Parser()
@@ -106,9 +106,7 @@ class AnyCallable(object):
                 tmp_list[-3]['children'].append(tmp_list.pop(-1))
                 tmp_list.pop(-1)
             else:
-                dot_list = []
-                dot_list.append(tmp_list.pop(-3)) # add A of A.B
-                dot_list.append(tmp_list.pop(-1)) # add B of A.B
+                dot_list = [tmp_list.pop(-3), tmp_list.pop(-1)]
                 tmp_list[-1]['children'] = dot_list
 
 
@@ -128,21 +126,24 @@ class AnyCallable(object):
     def __getitem__(self, key):
         global tmp_list
 #        print "parameter: " + str(key)
-        if "children" in tmp_list[-1]:
-            tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
-        else:
-            tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+
+        if type(key) == int: # [1]
+            if "children" in tmp_list[-1]:
+                tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
+            else:
+                tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+
+        else: # [michaelis_menten]
+            tmp_list[1]["children"].append({"type": "bracket", "value": key})
+
         return self
 
     def operator(self, rhs):
         global global_list
         global tmp_list
-        tmp_dict = {}
 #        print rhs
 
-        tmp_dict["type"] = rhs
-        tmp_dict["children"] = tmp_list
-        global_list.append(tmp_dict)
+        global_list.append({'type': rhs, 'children': tmp_list})
 
         tmp_list = []
 
@@ -162,13 +163,9 @@ class AnyCallable(object):
         if 'type' in tmp_list[-2] and tmp_list[-2]['type'] == 'add':
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
         else:
-            add_dict = {}
-            add_list = []
-            add_dict["type"] = "add"
-            add_list.append(tmp_list.pop(-2))
+            add_list = [tmp_list.pop(-2)]
             add_list.append(tmp_list.pop(-1))
-
-            add_dict["children"] = add_list
+            add_dict = {'type': 'add', 'children': add_list}
 
             tmp_list.append(add_dict)
 
@@ -193,44 +190,31 @@ class ReactionRules(object):
 
     def __exit__(self, *arg):
 
-#        print global_list
-
         for id, v in enumerate(global_list):
-
-#            v['children'][0]['children'].reverse()
-#            v['children'][1]['children'].reverse()
 
             reactants = read_patterns(m, parser, v['children'][0])
             products = read_patterns(m, parser, v['children'][1])
             rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
 
             if v['type'] == 'neq':
-                tmp = products
-                products = reactants
-                reactants = tmp
-                rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
+                rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=.3)
             
-               
-#        print '\n*** reactants ***'
-#        reactants = read_patterns(m, parser, global_list[id]['children'][0])
-#        for i in reactants:
-#            print i
-
-#        print '\n*** products ***'
-#        products = read_patterns(m, parser, global_list[id]['children'][1])
-#        for i in products:
-#            print i
-
-
-#        N_A = 6.0221367e+23
-#        sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
-#        seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
 
         seed_species = parser.parse_species_array(sp_str_list, m)
         results = m.generate_reaction_network(seed_species, 10)
+
+#        '''try to fix the order of inputs'''
+#
+#        for i in range((len(seed_species))):
+#            for j in range(1, len(m.concrete_species)+1):
+#                if seed_species[i] == m.concrete_species[j]:
+#                    tmp = m.concrete_species[j] 
+#                    m.concrete_species[j] = m.concrete_species[i+1]
+#                    m.concrete_species[i+1] = tmp
+
 
         print '<< reaction rules >>'
         cnt = 1
@@ -249,12 +233,18 @@ class ReactionRules(object):
         print ''
 
         print '<< reactions >>'
+        f = open(argvs[2], 'w')
+
         cnt = 1
         for result in results:
             for r in result.reactions:
                 print cnt, r.str_simple()
+                f.write(str(cnt)+' '+str(r.str_simple())+'\n')
                 cnt += 1
         print ''
+
+        f.close
+
 
         sp_num = len(m.concrete_species)
 
@@ -302,7 +292,6 @@ class ReactionRules(object):
 
 
 
-
 class MoleculeTypes(object):
     def __enter__(self):
         pass
@@ -331,14 +320,12 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'])
                 parser.add_entity_type(tmpmole)
 
-#        print tmp_list
         tmp_list = []
 
 
 def read_entity(sp, m, p, entity, binding_components):
 
     if 'type' in entity:
-#        print 'function'
         return
 
     entity_name = entity['name']
@@ -356,9 +343,7 @@ def read_entity(sp, m, p, entity, binding_components):
                 for j in i['children']:
 
                     if 'name' in j:  # states input
-                        k = en_comp.states.keys()[0]
-                        v = j['name']
-                        en_comp.set_state(k, v)
+                        en_comp.set_state(en_comp.states.keys()[0], j['name'])
 
                     if 'type' in j:  # binding input
                         binding_type = j['value']
@@ -378,8 +363,7 @@ def read_entity(sp, m, p, entity, binding_components):
                             en_comp.binding_state = BINDING_ANY
                             binding_id = int(binding_type)
                             if not binding_id in binding_components:
-                                binding_components[binding_id] = []
-                                binding_components[binding_id].append(en_comp)
+                                binding_components[binding_id] = [en_comp]
                             else:
                                 en_comp.binding_state = BINDING_SPECIFIED
                                 tmp = binding_components[binding_id].pop()
@@ -397,6 +381,11 @@ def read_entity(sp, m, p, entity, binding_components):
 def read_species(m, p, species):
 
     sp = Species()
+
+#    for i in [i for i in species['children'] if 'type' in i]:
+#        i['value']()
+
+#    [i['value']() for i in species['children'] if 'type' in i]
 
     bind_comp = {}
 
@@ -437,6 +426,12 @@ def read_patterns(m, p, species):
 
     return s_list
 
+argvs = sys.argv
+argc = len(argvs)
+
+if (argc != 3):
+    print 'Usage: # python %s ess_file reaction_output' % argvs[0]
+    quit()
 
 globals = MyDict()
 globals['reaction_rules'] = ReactionRules()
