@@ -1,3 +1,7 @@
+'''
+$Header: /home/takeuchi/0613/pybngl.py,v 1.16 2011/07/12 04:22:49 takeuchi Exp $
+'''
+
 from __future__ import with_statement
 import sys
 from model.model import Model
@@ -7,19 +11,61 @@ from model.model import BINDING_NONE
 from model.model import BINDING_ANY
 from model.model import BINDING_UNSPECIFIED
 from model.parser import Parser
-#from solver.ODESolver import ODESolver
+from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
 
-#from model import Model
-#from model import Species
-#from model import BINDING_SPECIFIED
-#from model import BINDING_NONE
-#from model import BINDING_ANY
-#from model import BINDING_UNSPECIFIED
-#from parser import Parser
-#from ODESolver import ODESolver
-#from process import FunctionMaker
+N_A = 6.0221367e+23
+
+#'''testODE_1.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
+#step_num = 120
+
+#'''testODE_2.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A]
+#step_num = 120
+
+#'''testODE_3.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
+#seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
+#step_num = 120
+
+#'''testODE_4.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
+#seed_values = [10000. * N_A, 5000. * N_A, 0.]
+#step_num = 120
+
+#'''testODE_11.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~pU)']
+#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
+#step_num = 200
+
+#'''testODE_12.ess'''
+#sp_str_list = ['R(l,d,Y~U)']
+#seed_values = [10000. * N_A]
+#step_num = 120
+
+#'''testODE_13.ess'''
+#sp_str_list = ['R(r1,r2)']
+#seed_values = [10000. * N_A]
+##results = m.generate_reaction_network(seed_species, 2)
+#step_num = 300
+
+#'''testODE_15.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
+#step_num = 40
+
+#'''testODE_16.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 0.]
+#step_num = 20
+
+sp_str_list = ['RasGTP(raf)', 'Raf(ras,mek,p1,Y~U)', 'MEK(raf,erk,p2,Y1~U,Y2~U)', 'ERK(mek,p3,Y1~U,Y2~U)', 'Pase1(raf)', 'Pase2(mek)', 'Pase3(erk)']
+seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+step_num = 20
 
 
 m = Model()
@@ -36,13 +82,13 @@ class AnyCallable(object):
 
         tmp_list.append({"name": key})
 
-        print "start: " + key
+#        print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
 
     def __call__(self, *arg, **kwarg):
         global tmp_list
-        print "end:" + self._key
+#        print "end:" + self._key
 
         matched_indices = []
 
@@ -55,16 +101,16 @@ class AnyCallable(object):
         del tmp_list[matched_indices[-1]:]
         tmp_list.append({"name": parent["name"], "children": children})
 
-        if 'name' in tmp_list[len(tmp_list)-2]:
-            if tmp_list[len(tmp_list)-2]['name'] is '.':
-                if 'name' in tmp_list[len(tmp_list)-3] and tmp_list[len(tmp_list)-3]['name'] is '.':
-                    tmp_list[len(tmp_list)-3]['children'].append(tmp_list.pop(len(tmp_list)-1))
-                    tmp_list.pop(len(tmp_list)-1)
-                elif len(tmp_list)-2 <> 0:
-                    dot_list = []
-                    dot_list.append(tmp_list.pop(len(tmp_list)-1))
-                    dot_list.append(tmp_list.pop(len(tmp_list)-2))
-                    tmp_list[len(tmp_list)-1]['children'] = dot_list
+        if len(tmp_list) >= 3 and tmp_list[-2]['name'] is '.':
+            if 'name' in tmp_list[-3] and tmp_list[-3]['name'] is '.':
+                tmp_list[-3]['children'].append(tmp_list.pop(-1))
+                tmp_list.pop(-1)
+            else:
+                dot_list = []
+                dot_list.append(tmp_list.pop(-3)) # add A of A.B
+                dot_list.append(tmp_list.pop(-1)) # add B of A.B
+                tmp_list[-1]['children'] = dot_list
+
 
         return self
 
@@ -81,7 +127,7 @@ class AnyCallable(object):
 
     def __getitem__(self, key):
         global tmp_list
-        print "parameter: " + str(key)
+#        print "parameter: " + str(key)
         if "children" in tmp_list[-1]:
             tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
         else:
@@ -92,7 +138,7 @@ class AnyCallable(object):
         global global_list
         global tmp_list
         tmp_dict = {}
-        print rhs
+#        print rhs
 
         tmp_dict["type"] = rhs
         tmp_dict["children"] = tmp_list
@@ -104,7 +150,8 @@ class AnyCallable(object):
         self.operator("gt")
 
     def __lt__(self, rhs):
-        print "lt"
+#        print "lt"
+        pass
 
     def __ne__(self, rhs):
         self.operator("neq")
@@ -112,14 +159,14 @@ class AnyCallable(object):
     def __add__(self,rhs):
         global tmp_list
 
-        if tmp_list[len(tmp_list)-2].has_key('type'):
-            tmp_list[len(tmp_list)-2]['children'].append(tmp_list.pop(len(tmp_list)-1))
+        if 'type' in tmp_list[-2] and tmp_list[-2]['type'] == 'add':
+            tmp_list[-2]['children'].append(tmp_list.pop(-1))
         else:
             add_dict = {}
             add_list = []
             add_dict["type"] = "add"
-            add_list.append(tmp_list.pop(len(tmp_list)-1))
-            add_list.append(tmp_list.pop(len(tmp_list)-1))
+            add_list.append(tmp_list.pop(-2))
+            add_list.append(tmp_list.pop(-1))
 
             add_dict["children"] = add_list
 
@@ -146,8 +193,13 @@ class ReactionRules(object):
 
     def __exit__(self, *arg):
 
+#        print global_list
 
         for id, v in enumerate(global_list):
+
+#            v['children'][0]['children'].reverse()
+#            v['children'][1]['children'].reverse()
+
             reactants = read_patterns(m, parser, v['children'][0])
             products = read_patterns(m, parser, v['children'][1])
             rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
@@ -170,13 +222,15 @@ class ReactionRules(object):
 #            print i
 
 
-        N_A = 6.0221367e+23
-        sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
-        seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+#        N_A = 6.0221367e+23
+#        sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
+#        seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+
+#        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
+#        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
 
         seed_species = parser.parse_species_array(sp_str_list, m)
         results = m.generate_reaction_network(seed_species, 10)
-
 
         print '<< reaction rules >>'
         cnt = 1
@@ -202,50 +256,49 @@ class ReactionRules(object):
                 cnt += 1
         print ''
 
-#        sp_num = len(m.concrete_species)
-#
-#        # Initial values for species.
-#        variables = []
-#        for i in range(sp_num):
-#            variables.append(0.0)
-#        for i, v in enumerate(seed_values):
-#            print i, v
-#            variables[i] = v
-#
-#        global fm
-#        global sim
-#
-#        volume = 1
-#        functions = fm.make_functions(m, results, volume)
-#        the_solver = ODESolver()
-#        sim.initialize(the_solver, functions, variables)
-#
+        sp_num = len(m.concrete_species)
+
+        # Initial values for species.
+        variables = []
+        for i in range(sp_num):
+            variables.append(0.0)
+        for i, v in enumerate(seed_values):
+            variables[i] = v
+
+        global fm
+        global sim
+
+        volume = 1
+        functions = fm.make_functions(m, results, volume)
+        the_solver = ODESolver()
+        sim.initialize(the_solver, functions, variables)
+
 #        step_num = 120
-#        sim.step(step_num)
-#
-#        output_series = sim.get_logged_data()
-#        header = 'time, '
-#        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
-#            if i > 0:
-#                header += ', '
-#            sp = m.concrete_species[sp_id]
-#            header += sp.str_simple()
-#        print header
-#        print output_series
-#        print ''
-#
-#        output_terminal = output_series[step_num - 1]
-#        result = str(output_terminal[0])
-#        result += ': '
-#        for i, v in enumerate(output_terminal):
-#            if i > 1:
-#                result += ', '
-#            if i > 0:
-#                value = v / N_A
-#                result += str(value)
-#
-#        print header
-#        print result
+        sim.step(step_num)
+
+        output_series = sim.get_logged_data()
+        header = 'time, '
+        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
+            if i > 0:
+                header += ', '
+            sp = m.concrete_species[sp_id]
+            header += sp.str_simple()
+        print header
+        print output_series
+        print ''
+
+        output_terminal = output_series[step_num - 1]
+        result = str(output_terminal[0])
+        result += ': '
+        for i, v in enumerate(output_terminal):
+            if i > 1:
+                result += ', '
+            if i > 0:
+                value = v / N_A
+                result += str(value)
+
+        print header
+        print result
 
 
 
@@ -278,7 +331,7 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'])
                 parser.add_entity_type(tmpmole)
 
-        print tmp_list
+#        print tmp_list
         tmp_list = []
 
 
