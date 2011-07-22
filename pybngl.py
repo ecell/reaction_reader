@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.22 2011/07/19 08:24:48 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.24 2011/07/21 06:43:55 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -19,9 +19,9 @@ from model.model import IncludingEntityCondition
 N_A = 6.0221367e+23
 
 #'''testODE_1.ess'''
-sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-seed_values = [10000. * N_A, 10000. * N_A]
-step_num = 120
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
+#step_num = 120
 
 #'''testODE_2.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)']
@@ -38,14 +38,24 @@ step_num = 120
 #seed_values = [10000. * N_A, 5000. * N_A, 0.]
 #step_num = 120
 
+#'''testODE_5.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A, 100. * N_A]
+#step_num = 120
+
+#'''testODE_6.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A, 100. * N_A]
+#step_num = 120
+
 #'''testODE_11.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
 #step_num = 200
 
 #'''testODE_12.ess'''
-#sp_str_list = ['R(l,d,Y~U)']
-#seed_values = [10000. * N_A]
+sp_str_list = ['R(l,d,Y~U)']
+seed_values = [10000. * N_A]
 #step_num = 120
 
 #'''testODE_13.ess'''
@@ -140,10 +150,12 @@ class AnyCallable(object):
                 tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
 
         else: # [michaelis_menten]
-            if len(tmp_list) == 2:
-                tmp_list[1]['children'].append({"type": "bracket", "value": key})
-            else:
+            if 'children' not in tmp_list[-1] and 'value' not in tmp_list[-1]: # 7/20 clean up for [*clude_*]
+                tmp_list.pop(-1)
+            if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
                 tmp_list.append({"type": "bracket", "value": key})
+            else:
+                tmp_list[1]['children'].append({"type": "bracket", "value": key})
 
         return self
 
@@ -183,9 +195,12 @@ class AnyCallable(object):
                 tmp_list.append(add_dict)
             else:                              # A+B+C(products)
                 if tmp_list[1].get('type') == 'add':
-                    for i in [i for i in tmp_list if tmp_list.index(i)>1]:
-                        tmp_list[1]['children'].append(i)
-                        tmp_list.remove(i)
+#                    for i in [i for i in tmp_list if tmp_list.index(i)>1]:
+#                        tmp_list[1]['children'].append(i)
+#                        tmp_list.remove(i)
+                    for i in range(2, len(tmp_list)):
+                        tmp_list[1]['children'].append(tmp_list[i])
+                    del tmp_list[2:]
                 else:                          # A+B(products)
                     add_list = []
 #                    for i in [i for i in tmp_list if tmp_list.index(i)>0]:
@@ -193,14 +208,11 @@ class AnyCallable(object):
 #                        tmp_list.remove(i)
 #                    add_dict = {'type':'add', 'children': add_list}
 #                    tmp_list.append(add_dict)
-
                     for i in range(1, len(tmp_list)):
                         add_list.append(tmp_list[i])
                     del tmp_list[1:]
                     add_dict = {'type':'add', 'children': add_list}
                     tmp_list.append(add_dict)
-
-
 
         return self
 
@@ -232,9 +244,9 @@ class ReactionRules(object):
         for id, v in enumerate(global_list):
 
             reactants, con_list = read_patterns(m, parser, v['children'][0])
-#            print 'aaa', con_list, type(condition)
+#            print 'aaa', con_list
             products, con_list = read_patterns(m, parser, v['children'][1])
-#            print 'ddd', con_list, type(condition)
+#            print 'ddd', con_list
 
             for i in con_list:
                 if type(i) == float: # [michaelis_menten(0.1)]
@@ -271,7 +283,7 @@ class ReactionRules(object):
             rule = m.reaction_rules[rule_id]
             print '# ', cnt, rule.str_simple()
             cnt += 1
-        print '# '
+        print '#'
 
         print '# << species >>'
         cnt = 1
@@ -279,7 +291,7 @@ class ReactionRules(object):
             sp = m.concrete_species[sp_id]
             print '# ', cnt, sp.str_simple()
             cnt += 1
-        print '# '
+        print '#'
 
         print '# << reactions >>'
 
@@ -293,7 +305,7 @@ class ReactionRules(object):
                 if len(sys.argv) == 3:
                     f.write(str(cnt)+' '+str(r.str_simple())+'\n')
                 cnt += 1
-        print '# '
+        print '#'
 
         if len(sys.argv) == 3:
             f.close
