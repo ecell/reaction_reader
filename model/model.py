@@ -14,6 +14,7 @@ BINDING_ANY_STRING = '+'
 REACTANTS = 1
 PRODUCTS = 2
 
+import sys
 
 class StateType(object):
     '''Defines the state type of the component.'''
@@ -1858,15 +1859,15 @@ class ReactionRule(object):
         attrs: Map of attributes.
         '''
 
-        print '*** reactants ***'
+        print '# *** reactants ***'
         for i in reactants:
-            print i
-            print ''
+            print '# ', str(i).partition("@")[0].replace('\n','')
+            print '# '
 
-        print '*** products ***'
+        print '# *** products ***'
         for i in products:
-            print i
-            print ''
+            print '# ', str(i).partition("@")[0].replace('\n','')
+            print '# '
 
         self.__id = id
         self.__model = model
@@ -2893,6 +2894,7 @@ class Model(object):
         condition: The condition for this reaction rule.
         attrs: Map of attributes.
         '''
+
         # Gets the condition for this reaction rule.
         cond = None
         if not condition is None:
@@ -3305,7 +3307,8 @@ class IncludingEntityCondition(Condition):
         # Searches the existence of an entity of given type.
         ret = False
         for en in sp.entities.itervalues():
-            if en.entity_type == self.entity_type:
+#            if en.entity_type == self.entity_type:
+            if en.entity_type.name == self.entity_type.name:
                 ret = True
                 break
         return ret

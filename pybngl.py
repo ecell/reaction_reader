@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.18 2011/07/13 08:32:06 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.22 2011/07/19 08:24:48 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -14,13 +14,14 @@ from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
+from model.model import IncludingEntityCondition
 
 N_A = 6.0221367e+23
 
 #'''testODE_1.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 120
+sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+seed_values = [10000. * N_A, 10000. * N_A]
+step_num = 120
 
 #'''testODE_2.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)']
@@ -28,9 +29,9 @@ N_A = 6.0221367e+23
 #step_num = 120
 
 #'''testODE_3.ess'''
-sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
-seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
-step_num = 120
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
+#seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
+#step_num = 120
 
 #'''testODE_4.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
@@ -38,7 +39,7 @@ step_num = 120
 #step_num = 120
 
 #'''testODE_11.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~pU)']
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
 #step_num = 200
 
@@ -66,6 +67,11 @@ step_num = 120
 #'''egfr.py'''
 #sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
 #seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+#step_num = 20
+
+#'''RasRafMEKREK.py'''
+#sp_str_list = ['RasG(raf,Y1~U,Y2~U)', 'Raf(ras,mek,p1,Y~U)', 'MEK(raf,erk,p2,Y1~U,Y2~U)', 'ERK(mek,p3,Y1~U,Y2~U)', 'Pase1(raf)', 'Pase2(mek)', 'Pase3(erk)']
+#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
 #step_num = 20
 
 m = Model()
@@ -101,8 +107,8 @@ class AnyCallable(object):
         del tmp_list[matched_indices[-1]:]
         tmp_list.append({"name": parent["name"], "children": children})
 
-        if len(tmp_list) >= 3 and tmp_list[-2]['name'] is '.':
-            if 'name' in tmp_list[-3] and tmp_list[-3]['name'] is '.':
+        if len(tmp_list) >= 3 and tmp_list[-2].get('name') is '.':
+            if tmp_list[-3].get('name') is '.':
                 tmp_list[-3]['children'].append(tmp_list.pop(-1))
                 tmp_list.pop(-1)
             else:
@@ -134,7 +140,10 @@ class AnyCallable(object):
                 tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
 
         else: # [michaelis_menten]
-            tmp_list[1]["children"].append({"type": "bracket", "value": key})
+            if len(tmp_list) == 2:
+                tmp_list[1]['children'].append({"type": "bracket", "value": key})
+            else:
+                tmp_list.append({"type": "bracket", "value": key})
 
         return self
 
@@ -160,14 +169,38 @@ class AnyCallable(object):
     def __add__(self,rhs):
         global tmp_list
 
-        if 'type' in tmp_list[-2] and tmp_list[-2]['type'] == 'add':
+        # saisyo ni reactants to products de waketa hou ga ii kamo
+
+
+        if tmp_list[-2].get('type') == 'add':  # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
         else:
-            add_list = [tmp_list.pop(-2)]
-            add_list.append(tmp_list.pop(-1))
-            add_dict = {'type': 'add', 'children': add_list}
+            if len(tmp_list) == 2:             # A+B(reactants)
+#                add_list = [tmp_list.pop(-2)]
+#                add_list.append(tmp_list.pop(-1))
+                add_list = [tmp_list.pop(-2), tmp_list.pop(-1)]
+                add_dict = {'type': 'add', 'children': add_list}
+                tmp_list.append(add_dict)
+            else:                              # A+B+C(products)
+                if tmp_list[1].get('type') == 'add':
+                    for i in [i for i in tmp_list if tmp_list.index(i)>1]:
+                        tmp_list[1]['children'].append(i)
+                        tmp_list.remove(i)
+                else:                          # A+B(products)
+                    add_list = []
+#                    for i in [i for i in tmp_list if tmp_list.index(i)>0]:
+#                        add_list.append(i)
+#                        tmp_list.remove(i)
+#                    add_dict = {'type':'add', 'children': add_list}
+#                    tmp_list.append(add_dict)
 
-            tmp_list.append(add_dict)
+                    for i in range(1, len(tmp_list)):
+                        add_list.append(tmp_list[i])
+                    del tmp_list[1:]
+                    add_dict = {'type':'add', 'children': add_list}
+                    tmp_list.append(add_dict)
+
+
 
         return self
 
@@ -190,11 +223,27 @@ class ReactionRules(object):
 
     def __exit__(self, *arg):
 
+#        print global_list
+
+        con_list = []
+        speed = 0
+        condition = None
+
         for id, v in enumerate(global_list):
 
-            reactants = read_patterns(m, parser, v['children'][0])
-            products = read_patterns(m, parser, v['children'][1])
-            rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
+            reactants, con_list = read_patterns(m, parser, v['children'][0])
+#            print 'aaa', con_list, type(condition)
+            products, con_list = read_patterns(m, parser, v['children'][1])
+#            print 'ddd', con_list, type(condition)
+
+            for i in con_list:
+                if type(i) == float: # [michaelis_menten(0.1)]
+                    speed = i
+                else: # [include_reactants(2, A)]
+                    condition = i
+
+            rule = m.add_reaction_rule(reactants, products, condition, k_name='MassAction', k=speed)
+#            rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
 
             if v['type'] == 'neq':
                 rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=.3)
@@ -216,34 +265,38 @@ class ReactionRules(object):
 #                    m.concrete_species[i+1] = tmp
 
 
-        print '<< reaction rules >>'
+        print '# << reaction rules >>'
         cnt = 1
         for rule_id in sorted(m.reaction_rules.iterkeys()):
             rule = m.reaction_rules[rule_id]
-            print cnt, rule.str_simple()
+            print '# ', cnt, rule.str_simple()
             cnt += 1
-        print ''
+        print '# '
 
-        print '<< species >>'
+        print '# << species >>'
         cnt = 1
         for sp_id in sorted(m.concrete_species.iterkeys()):
             sp = m.concrete_species[sp_id]
-            print cnt, sp.str_simple()
+            print '# ', cnt, sp.str_simple()
             cnt += 1
-        print ''
+        print '# '
 
-        print '<< reactions >>'
-        f = open(argvs[2], 'w')
+        print '# << reactions >>'
+
+        if len(sys.argv) == 3:
+            f = open(sys.argv[2], 'w')
 
         cnt = 1
         for result in results:
             for r in result.reactions:
-                print cnt, r.str_simple()
-                f.write(str(cnt)+' '+str(r.str_simple())+'\n')
+                print '# ', cnt, r.str_simple()
+                if len(sys.argv) == 3:
+                    f.write(str(cnt)+' '+str(r.str_simple())+'\n')
                 cnt += 1
-        print ''
+        print '# '
 
-        f.close
+        if len(sys.argv) == 3:
+            f.close
 
 
         sp_num = len(m.concrete_species)
@@ -273,9 +326,13 @@ class ReactionRules(object):
                 header += ', '
             sp = m.concrete_species[sp_id]
             header += sp.str_simple()
-        print header
-        print output_series
-        print ''
+        print '# ', header
+#        print output_series
+        print '#'
+        for i in output_series:
+            for j in i:
+                print j,
+            print ''
 
         output_terminal = output_series[step_num - 1]
         result = str(output_terminal[0])
@@ -287,8 +344,8 @@ class ReactionRules(object):
                 value = v / N_A
                 result += str(value)
 
-        print header
-        print result
+        print '# ', header
+        print '# ', result
 
 
 
@@ -406,15 +463,19 @@ def read_species(m, p, species):
 def read_patterns(m, p, species):
 
     s_list = []
-    
+    con_list = []
 
-    if 'type' in species and species['type'] == 'add':
+    if species.get('type') == 'add':
         for entity in species['children']:
-            sp = read_species(m, p, entity)
-            sp.concrete = False
-            sp = m.register_species(sp)  # koko de m.concrete_species ni hairu
+            if 'name' in entity:
+                sp = read_species(m, p, entity)
+                sp.concrete = False
+                sp = m.register_species(sp)  # koko de m.concrete_species ni hairu
 #            m.concrete_species.clear()   # syouganai node kesu
-            s_list.append(sp)
+                s_list.append(sp)
+
+            else:
+                con_list.append(entity['value'])
 
     else:
         sp = read_species(m, p, species)
@@ -424,13 +485,15 @@ def read_patterns(m, p, species):
         sp.concrete = False
         s_list.append(sp)
 
-    return s_list
 
-argvs = sys.argv
-argc = len(argvs)
+        for i in [i for i in species['children'] if 'type' in i]:
+            con_list.append(i['value'])
 
-if (argc != 3):
-    print 'Usage: # python %s ess_file reaction_output' % argvs[0]
+    return s_list, con_list
+
+
+if (len(sys.argv) != 2 and len(sys.argv) != 3):
+    print 'Usage: # python %s ess_file [reaction_output]' % sys.argv[0]
     quit()
 
 globals = MyDict()
@@ -438,4 +501,3 @@ globals['reaction_rules'] = ReactionRules()
 globals['molecule_types'] = MoleculeTypes()
 
 exec file(sys.argv[1]) in globals
-
