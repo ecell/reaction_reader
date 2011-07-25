@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/pybngl.py,v 1.26 2011/07/22 05:31:14 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.27 2011/07/25 01:23:48 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -53,9 +53,9 @@ N_A = 6.0221367e+23
 #step_num = 120
 
 #'''testODE_7.ess'''
-sp_str_list = ['R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)', 'R(l,d,Y~U!1).A(SH2!1,Y~U)']
-seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
-step_num = 120
+#sp_str_list = ['R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)', 'R(l,d,Y~U!1).A(SH2!1,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
+#step_num = 120
 
 #'''testODE_11.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
@@ -94,9 +94,9 @@ step_num = 120
 #step_num = 20
 
 #'''testODE_E.ess'''
-#sp_str_list = ['Q(s, m, r, p~U)', 'S(q, v~pU)', 'M(q, v~pU)', 'R(q, v~pU)']
-#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-#step_num = 20
+sp_str_list = ['Q(s, m, r, p~U)', 'S(q, v~pU)', 'M(q, v~pU)', 'R(q, v~pU)']
+seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+step_num = 20
 
 m = Model()
 parser = Parser()
@@ -246,6 +246,8 @@ class ReactionRules(object):
         speed = 0
         condition = None
 
+        seed_species = parser.parse_species_array(sp_str_list, m)
+
         for id, v in enumerate(global_list):
 
             reactants, con_list = read_patterns(m, parser, v['children'][0])
@@ -275,8 +277,6 @@ class ReactionRules(object):
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
-
-        seed_species = parser.parse_species_array(sp_str_list, m)
         results = m.generate_reaction_network(seed_species, 10)
 
         print '# << reaction rules >>'
