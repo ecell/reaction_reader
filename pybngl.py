@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.24 2011/07/21 06:43:55 takeuchi Exp $
+$Header: /home/d8051105/pybngl.py,v 1.26 2011/07/22 05:31:14 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -15,6 +15,10 @@ from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
 from model.model import IncludingEntityCondition
+from model.model import NotCondition
+from model.model import AndCondition
+from model.model import REACTANTS
+from model.model import PRODUCTS
 
 N_A = 6.0221367e+23
 
@@ -48,14 +52,19 @@ N_A = 6.0221367e+23
 #seed_values = [10000. * N_A, 5000. * N_A, 100. * N_A]
 #step_num = 120
 
+#'''testODE_7.ess'''
+sp_str_list = ['R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)', 'R(l,d,Y~U!1).A(SH2!1,Y~U)']
+seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
+step_num = 120
+
 #'''testODE_11.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
 #step_num = 200
 
 #'''testODE_12.ess'''
-sp_str_list = ['R(l,d,Y~U)']
-seed_values = [10000. * N_A]
+#sp_str_list = ['R(l,d,Y~U)']
+#seed_values = [10000. * N_A]
 #step_num = 120
 
 #'''testODE_13.ess'''
@@ -82,6 +91,11 @@ seed_values = [10000. * N_A]
 #'''RasRafMEKREK.py'''
 #sp_str_list = ['RasG(raf,Y1~U,Y2~U)', 'Raf(ras,mek,p1,Y~U)', 'MEK(raf,erk,p2,Y1~U,Y2~U)', 'ERK(mek,p3,Y1~U,Y2~U)', 'Pase1(raf)', 'Pase2(mek)', 'Pase3(erk)']
 #seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+#step_num = 20
+
+#'''testODE_E.ess'''
+#sp_str_list = ['Q(s, m, r, p~U)', 'S(q, v~pU)', 'M(q, v~pU)', 'R(q, v~pU)']
+#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
 #step_num = 20
 
 m = Model()
@@ -144,18 +158,20 @@ class AnyCallable(object):
 #        print "parameter: " + str(key)
 
         if type(key) == int: # [1]
+            addval = {"type": "bracket", "value": str(key)}
             if "children" in tmp_list[-1]:
-                tmp_list[-1]["children"].append({"type": "bracket", "value": str(key)})
+                tmp_list[-1]["children"].append(addval)
             else:
-                tmp_list[-1]["children"] = [{"type": "bracket", "value": str(key)}]
+                tmp_list[-1]["children"] = [addval]
 
         else: # [michaelis_menten]
+            addval = {"type": "bracket", "value": key}
             if 'children' not in tmp_list[-1] and 'value' not in tmp_list[-1]: # 7/20 clean up for [*clude_*]
                 tmp_list.pop(-1)
             if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
-                tmp_list.append({"type": "bracket", "value": key})
+                tmp_list.append(addval)
             else:
-                tmp_list[1]['children'].append({"type": "bracket", "value": key})
+                tmp_list[1]['children'].append(addval)
 
         return self
 
@@ -181,38 +197,27 @@ class AnyCallable(object):
     def __add__(self,rhs):
         global tmp_list
 
-        # saisyo ni reactants to products de waketa hou ga ii kamo
-
-
-        if tmp_list[-2].get('type') == 'add':  # A+B+C(reactants)
+        if tmp_list[-2].get('type') == 'add':      # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
-        else:
-            if len(tmp_list) == 2:             # A+B(reactants)
-#                add_list = [tmp_list.pop(-2)]
-#                add_list.append(tmp_list.pop(-1))
-                add_list = [tmp_list.pop(-2), tmp_list.pop(-1)]
-                add_dict = {'type': 'add', 'children': add_list}
-                tmp_list.append(add_dict)
-            else:                              # A+B+C(products)
-                if tmp_list[1].get('type') == 'add':
-#                    for i in [i for i in tmp_list if tmp_list.index(i)>1]:
-#                        tmp_list[1]['children'].append(i)
-#                        tmp_list.remove(i)
-                    for i in range(2, len(tmp_list)):
-                        tmp_list[1]['children'].append(tmp_list[i])
-                    del tmp_list[2:]
-                else:                          # A+B(products)
-                    add_list = []
-#                    for i in [i for i in tmp_list if tmp_list.index(i)>0]:
-#                        add_list.append(i)
-#                        tmp_list.remove(i)
-#                    add_dict = {'type':'add', 'children': add_list}
-#                    tmp_list.append(add_dict)
-                    for i in range(1, len(tmp_list)):
-                        add_list.append(tmp_list[i])
-                    del tmp_list[1:]
-                    add_dict = {'type':'add', 'children': add_list}
-                    tmp_list.append(add_dict)
+
+        elif len(tmp_list) == 2:                   # A+B(reactants)
+            add_list = [tmp_list.pop(-2), tmp_list.pop(-1)]
+            add_dict = {'type': 'add', 'children': add_list}
+            tmp_list.append(add_dict)
+
+        elif tmp_list[1].get('type') == 'add':     # A+B+C(products)
+            for i in range(2, len(tmp_list)):
+                tmp_list[1]['children'].append(tmp_list[i])
+            del tmp_list[2:]
+
+        else:                                      # A+B(products)
+#            add_list = []
+#            for i in range(1, len(tmp_list)):
+#                add_list.append(tmp_list[i])
+            add_list = tmp_list[1:]
+            del tmp_list[1:]
+            add_dict = {'type':'add', 'children': add_list}
+            tmp_list.append(add_dict)
 
         return self
 
@@ -248,17 +253,24 @@ class ReactionRules(object):
             products, con_list = read_patterns(m, parser, v['children'][1])
 #            print 'ddd', con_list
 
-            for i in con_list:
-                if type(i) == float: # [michaelis_menten(0.1)]
-                    speed = i
-                else: # [include_reactants(2, A)]
-                    condition = i
+            for con_idx, con_func in enumerate(con_list):
+                if type(con_func) == float: # [SPEED_FUNCTION]
+                    speed = con_func
+                    con_list.pop(con_idx)
+
+            if len(con_list) >= 2:          # [CONDITION_FUNCTION]
+                condition = AndCondition(con_list)
+            elif con_list != []:
+                condition = con_list[0]
+#            else:
+#                condition = None
 
             rule = m.add_reaction_rule(reactants, products, condition, k_name='MassAction', k=speed)
-#            rule = m.add_reaction_rule(reactants, products, k_name='MassAction', k=.3)
 
+            # ToDo: swap reactants/products of condition
             if v['type'] == 'neq':
-                rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=.3)
+                condition = swap_condition(con_list)
+                rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=speed)
             
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
@@ -266,16 +278,6 @@ class ReactionRules(object):
 
         seed_species = parser.parse_species_array(sp_str_list, m)
         results = m.generate_reaction_network(seed_species, 10)
-
-#        '''try to fix the order of inputs'''
-#
-#        for i in range((len(seed_species))):
-#            for j in range(1, len(m.concrete_species)+1):
-#                if seed_species[i] == m.concrete_species[j]:
-#                    tmp = m.concrete_species[j] 
-#                    m.concrete_species[j] = m.concrete_species[i+1]
-#                    m.concrete_species[i+1] = tmp
-
 
         print '# << reaction rules >>'
         cnt = 1
@@ -339,7 +341,6 @@ class ReactionRules(object):
             sp = m.concrete_species[sp_id]
             header += sp.str_simple()
         print '# ', header
-#        print output_series
         print '#'
         for i in output_series:
             for j in i:
@@ -421,13 +422,6 @@ def read_entity(sp, m, p, entity, binding_components):
                         elif binding_type == '?':
                             en_comp.binding_state = BINDING_UNSPECIFIED
 
-#                        elif binding_type.isdigit():
-#                            en_comp.binding_state = BINDING_SPECIFIED
-#                            binding_id = int(binding_type)
-#                            if not binding_id in binding_components:
-#                                binding_components[binding_id] = []
-#                            binding_components[binding_id].append(en_comp)
-
                         elif binding_type.isdigit():
                             en_comp.binding_state = BINDING_ANY
                             binding_id = int(binding_type)
@@ -450,11 +444,6 @@ def read_entity(sp, m, p, entity, binding_components):
 def read_species(m, p, species):
 
     sp = Species()
-
-#    for i in [i for i in species['children'] if 'type' in i]:
-#        i['value']()
-
-#    [i['value']() for i in species['children'] if 'type' in i]
 
     bind_comp = {}
 
@@ -507,6 +496,33 @@ def read_patterns(m, p, species):
 if (len(sys.argv) != 2 and len(sys.argv) != 3):
     print 'Usage: # python %s ess_file [reaction_output]' % sys.argv[0]
     quit()
+
+def swap_condition(con_list):
+
+    # #input: list of condition (one or more)
+    # #output one condition or list of conditions
+
+    # if len(con_list) == 1:
+    #     new_condition = con_list[0]
+    #     if new_condition.__class__.__name__ == 'NotCondition':
+    #         print 'sdaf'
+    #         print new_condition.__condition
+    #         print 'sdaf'
+    #     if new_condition.side == REACTANTS:
+    #         new_condition.__side = PRODUCTS
+    #     else:
+    #         new_condition.__side = REACTANTS
+    #     return new_condition
+    # else:
+    #     new_con_list = []
+    #     for i in con_list:
+    #         if new_condition.side == REACTANTS:
+    #             new_condition.__side = PRODUCTS
+    #         else:
+    #             new_condition.__side = REACTANTS
+    #         new_con_list.append(new_conidtion)
+    #     return new_con_list
+    pass
 
 globals = MyDict()
 globals['reaction_rules'] = ReactionRules()
