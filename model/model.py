@@ -3218,6 +3218,11 @@ class NotCondition(Condition):
         '''
         self.__condition = condition
 
+    @property
+    def condition(self):
+        '''Returns the condition.'''
+        return self.__condition
+
     def satisfies(self, obj):
         '''
         Checks and returns whether a given object do not satisfy the child 
