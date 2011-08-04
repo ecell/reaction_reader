@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.27 2011/07/25 01:23:48 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.28 2011/07/27 07:37:46 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -19,6 +19,7 @@ from model.model import NotCondition
 from model.model import AndCondition
 from model.model import REACTANTS
 from model.model import PRODUCTS
+from model.model import Error
 
 N_A = 6.0221367e+23
 
@@ -57,6 +58,21 @@ N_A = 6.0221367e+23
 #seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
 #step_num = 120
 
+#'''testODE_8.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
+#step_num = 120
+
+#'''testODE_9.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
+#step_num = 120
+
+#'''testODE_10.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
+#step_num = 120
+
 #'''testODE_11.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
@@ -70,7 +86,7 @@ N_A = 6.0221367e+23
 #'''testODE_13.ess'''
 #sp_str_list = ['R(r1,r2)']
 #seed_values = [10000. * N_A]
-##results = m.generate_reaction_network(seed_species, 2)
+#results = m.generate_reaction_network(seed_species, 2)
 #step_num = 300
 
 #'''testODE_15.ess'''
@@ -81,6 +97,16 @@ N_A = 6.0221367e+23
 #'''testODE_16.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)']
 #seed_values = [10000. * N_A, 0.]
+#step_num = 20
+
+#'''testODE_17.ess'''
+#sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
+#step_num = 20
+
+#'''testODE_18.ess'''
+#sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
 #step_num = 20
 
 #'''egfr.py'''
@@ -94,14 +120,18 @@ N_A = 6.0221367e+23
 #step_num = 20
 
 #'''testODE_E.ess'''
-sp_str_list = ['Q(s, m, r, p~U)', 'S(q, v~pU)', 'M(q, v~pU)', 'R(q, v~pU)']
-seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-step_num = 20
+#sp_str_list = ['Q(s, m, r, p~U)', 'S(q, v~pU)', 'M(q, v~pU)', 'R(q, v~pU)']
+#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+#sp_str_list = ['Q(t, l, f)', 'S(m, l)', 'M(m, l)', 'R(m, l)']
+#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
+#step_num = 20
 
 m = Model()
 parser = Parser()
 fm = FunctionMaker()
 sim = Simulator()
+
+m.disallow_implicit_disappearance = True
 
 global_list = []
 tmp_list = []
@@ -264,8 +294,8 @@ class ReactionRules(object):
                 condition = AndCondition(con_list)
             elif con_list != []:
                 condition = con_list[0]
-#            else:
-#                condition = None
+            else:
+                condition = None
 
             rule = m.add_reaction_rule(reactants, products, condition, k_name='MassAction', k=speed)
 
@@ -277,7 +307,12 @@ class ReactionRules(object):
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
-        results = m.generate_reaction_network(seed_species, 10)
+
+        try:
+            results = m.generate_reaction_network(seed_species, 10)
+        except Error, inst:
+            print inst
+            exit()
 
         print '# << reaction rules >>'
         cnt = 1
