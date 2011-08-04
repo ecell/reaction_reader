@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.28 2011/07/27 07:37:46 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.29 2011/07/28 08:27:50 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -89,6 +89,11 @@ N_A = 6.0221367e+23
 #results = m.generate_reaction_network(seed_species, 2)
 #step_num = 300
 
+#'''testODE_14.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
+#seed_values = [200. * N_A, 200. * N_A, 50. * N_A]
+#step_num = 1000
+
 #'''testODE_15.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)']
 #seed_values = [10000. * N_A, 10000. * N_A]
@@ -100,9 +105,9 @@ N_A = 6.0221367e+23
 #step_num = 20
 
 #'''testODE_17.ess'''
-#sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 20
+sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
+seed_values = [10000. * N_A, 10000. * N_A]
+step_num = 20
 
 #'''testODE_18.ess'''
 #sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
@@ -285,6 +290,7 @@ class ReactionRules(object):
             products, con_list = read_patterns(m, parser, v['children'][1])
 #            print 'ddd', con_list
 
+
             for con_idx, con_func in enumerate(con_list):
                 if type(con_func) == float: # [SPEED_FUNCTION]
                     speed = con_func
@@ -299,10 +305,12 @@ class ReactionRules(object):
 
             rule = m.add_reaction_rule(reactants, products, condition, k_name='MassAction', k=speed)
 
+
             # ToDo: swap reactants/products of condition
             if v['type'] == 'neq':
                 condition = swap_condition(con_list)
-                rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=speed)
+#                rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=speed)
+                rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed)
             
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
@@ -534,30 +542,26 @@ if (len(sys.argv) != 2 and len(sys.argv) != 3):
 
 def swap_condition(con_list):
 
-    # #input: list of condition (one or more)
-    # #output one condition or list of conditions
+    def swap_side(con):
+        if con.__class__.__name__ == 'NotCondition':
+            return NotCondition(swap_side(con.condition))
+        if con.side == REACTANTS:
+            side = PRODUCTS
+        else:
+            side = REACTANTS
+        return IncludingEntityCondition(side, con.index+1, con.entity_type)
 
-    # if len(con_list) == 1:
-    #     new_condition = con_list[0]
-    #     if new_condition.__class__.__name__ == 'NotCondition':
-    #         print 'sdaf'
-    #         print new_condition.__condition
-    #         print 'sdaf'
-    #     if new_condition.side == REACTANTS:
-    #         new_condition.__side = PRODUCTS
-    #     else:
-    #         new_condition.__side = REACTANTS
-    #     return new_condition
-    # else:
-    #     new_con_list = []
-    #     for i in con_list:
-    #         if new_condition.side == REACTANTS:
-    #             new_condition.__side = PRODUCTS
-    #         else:
-    #             new_condition.__side = REACTANTS
-    #         new_con_list.append(new_conidtion)
-    #     return new_con_list
-    pass
+    new_condition = None
+
+    if len(con_list) == 0:
+        new_conditin = None
+    elif len(con_list) == 1:
+        new_condition = swap_side(con_list[0])
+    else:
+        new_condition = AndCondition([swap_side(i) for i in con_list])
+
+    return new_condition
+
 
 globals = MyDict()
 globals['reaction_rules'] = ReactionRules()
