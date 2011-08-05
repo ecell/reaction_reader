@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.29 2011/07/28 08:27:50 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.33 2011/08/02 08:23:44 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -24,9 +24,9 @@ from model.model import Error
 N_A = 6.0221367e+23
 
 #'''testODE_1.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 120
+sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+seed_values = [10000. * N_A, 10000. * N_A]
+step_num = 120
 
 #'''testODE_2.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)']
@@ -59,11 +59,6 @@ N_A = 6.0221367e+23
 #step_num = 120
 
 #'''testODE_8.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
-#step_num = 120
-
-#'''testODE_9.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
 #seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
 #step_num = 120
@@ -105,14 +100,19 @@ N_A = 6.0221367e+23
 #step_num = 20
 
 #'''testODE_17.ess'''
-sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
-seed_values = [10000. * N_A, 10000. * N_A]
-step_num = 20
+#sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
+#step_num = 20
 
 #'''testODE_18.ess'''
 #sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
 #seed_values = [10000. * N_A, 10000. * N_A]
 #step_num = 20
+
+#'''testODE_9.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
+#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
+#step_num = 120
 
 #'''egfr.py'''
 #sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
@@ -153,6 +153,7 @@ class AnyCallable(object):
 
     def __call__(self, *arg, **kwarg):
         global tmp_list
+
 #        print "end:" + self._key
 
         matched_indices = []
@@ -170,10 +171,11 @@ class AnyCallable(object):
             if tmp_list[-3].get('name') is '.':
                 tmp_list[-3]['children'].append(tmp_list.pop(-1))
                 tmp_list.pop(-1)
+            elif 'children' in tmp_list[-2]:
+                pass
             else:
                 dot_list = [tmp_list.pop(-3), tmp_list.pop(-1)]
                 tmp_list[-1]['children'] = dot_list
-
 
         return self
 
@@ -181,15 +183,18 @@ class AnyCallable(object):
         pass
 
     def __getattr__(self, key):
+
+        global tmp_list
+
         try:
             return super(AnyCallable, self).__getattr__(key)
         except:
-            global tmp_list
             tmp_list.append({"name": "."})
             return AnyCallable(key, self)
 
     def __getitem__(self, key):
         global tmp_list
+
 #        print "parameter: " + str(key)
 
         if type(key) == int: # [1]
@@ -200,9 +205,10 @@ class AnyCallable(object):
                 tmp_list[-1]["children"] = [addval]
 
         else: # [michaelis_menten]
-            addval = {"type": "bracket", "value": key}
-            if 'children' not in tmp_list[-1] and 'value' not in tmp_list[-1]: # 7/20 clean up for [*clude_*]
-                tmp_list.pop(-1)
+            effect_list = tmp_list[2:]
+            del tmp_list[2:]
+            addval = {"type": "effector", "value": effect_list}
+
             if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
                 tmp_list.append(addval)
             else:
@@ -213,6 +219,7 @@ class AnyCallable(object):
     def operator(self, rhs):
         global global_list
         global tmp_list
+
 #        print rhs
 
         global_list.append({'type': rhs, 'children': tmp_list})
@@ -232,7 +239,20 @@ class AnyCallable(object):
     def __add__(self,rhs):
         global tmp_list
 
-        if tmp_list[-2].get('type') == 'add':      # A+B+C(reactants)
+#        if tmp_list[1]['children'][-1].get('type') == 'effector':
+#            eff_dict = tmp_list[1]['children'].pop(-1)
+#
+#            if tmp_list[1].get('type') == 'add':   # A+B+C [D](products)
+#                tmp_list[1]['children'].append(eff_dict['value'].pop(0))
+#                tmp_list[1]['children'].append(eff_dict)
+#
+#            else:                                  # A+B [D](products)
+#                add_list = [tmp_list.pop(-1), eff_dict['value'].pop(0)]
+#                add_list.append(eff_dict)
+#                add_dict = {'type': 'add', 'children': add_list}
+#                tmp_list.append(add_dict)
+
+        if tmp_list[-2].get('type') == 'add':    # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
 
         elif len(tmp_list) == 2:                   # A+B(reactants)
@@ -240,21 +260,42 @@ class AnyCallable(object):
             add_dict = {'type': 'add', 'children': add_list}
             tmp_list.append(add_dict)
 
+
+        elif tmp_list[1]['children'][-1].get('type') == 'effector':
+            eff_dict = tmp_list[1]['children'].pop(-1)
+
+            if tmp_list[1].get('type') == 'add':   # A+B+C [D](products)
+                tmp_list[1]['children'].append(eff_dict['value'].pop(0))
+                tmp_list[1]['children'].append(eff_dict)
+
+            else:                                  # A+B [D](products)
+                add_list = [tmp_list.pop(-1), eff_dict['value'].pop(0)]
+                add_list.append(eff_dict)
+                add_dict = {'type': 'add', 'children': add_list}
+                tmp_list.append(add_dict)
+
+
         elif tmp_list[1].get('type') == 'add':     # A+B+C(products)
             for i in range(2, len(tmp_list)):
                 tmp_list[1]['children'].append(tmp_list[i])
             del tmp_list[2:]
 
         else:                                      # A+B(products)
-#            add_list = []
-#            for i in range(1, len(tmp_list)):
-#                add_list.append(tmp_list[i])
             add_list = tmp_list[1:]
             del tmp_list[1:]
             add_dict = {'type':'add', 'children': add_list}
             tmp_list.append(add_dict)
 
         return self
+
+    def __or__(self, rhs):
+#        print rhs
+
+        addval = {'type': 'bracket', 'value':rhs}
+        if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
+            tmp_list.append(addval)
+        else:
+            tmp_list[1]['children'].append(addval)
 
 class MyDict(dict):
     def __init__(self):
@@ -275,10 +316,11 @@ class ReactionRules(object):
 
     def __exit__(self, *arg):
 
-#        print global_list
+#        print_tree(global_list)
 
         con_list = []
         speed = 0
+        speed_r = 0
         condition = None
 
         seed_species = parser.parse_species_array(sp_str_list, m)
@@ -286,14 +328,19 @@ class ReactionRules(object):
         for id, v in enumerate(global_list):
 
             reactants, con_list = read_patterns(m, parser, v['children'][0])
-#            print 'aaa', con_list
             products, con_list = read_patterns(m, parser, v['children'][1])
-#            print 'ddd', con_list
-
 
             for con_idx, con_func in enumerate(con_list):
                 if type(con_func) == float: # [SPEED_FUNCTION]
+                    speed_r = con_func
                     speed = con_func
+                    con_list.pop(con_idx)
+                elif type(con_func) == tuple: # [MassAction2(.1, .2)]
+                    speed = con_func[0] # MassAction2(
+                    if con_func[1] == None:
+                       speed_r = con_func[0]
+                    else:
+                        speed_r = con_func[1]
                     con_list.pop(con_idx)
 
             if len(con_list) >= 2:          # [CONDITION_FUNCTION]
@@ -305,12 +352,9 @@ class ReactionRules(object):
 
             rule = m.add_reaction_rule(reactants, products, condition, k_name='MassAction', k=speed)
 
-
-            # ToDo: swap reactants/products of condition
             if v['type'] == 'neq':
                 condition = swap_condition(con_list)
-#                rule = m.add_reaction_rule(products, reactants, k_name='MassAction', k=speed)
-                rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed)
+                rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed_r)
             
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
@@ -518,7 +562,7 @@ def read_patterns(m, p, species):
 #            m.concrete_species.clear()   # syouganai node kesu
                 s_list.append(sp)
 
-            else:
+            elif entity.get('type') == 'bracket':
                 con_list.append(entity['value'])
 
     else:
@@ -531,7 +575,8 @@ def read_patterns(m, p, species):
 
 
         for i in [i for i in species['children'] if 'type' in i]:
-            con_list.append(i['value'])
+            if i.get('type') == 'bracket':
+                con_list.append(i['value'])
 
     return s_list, con_list
 
@@ -561,6 +606,30 @@ def swap_condition(con_list):
         new_condition = AndCondition([swap_side(i) for i in con_list])
 
     return new_condition
+
+def print_tree(a, n=0, idx=0):
+    for i in a: # rules
+        for j in i: # j = ['type'|'name'|'children'|'value']
+
+            if i[j] == []:
+                print ''
+
+            elif j == 'children':
+                print ' '*n, j, ':',
+                print_tree(i[j], n+12, a.index(i))
+
+            elif j== 'value':
+                if type(i[j])==list:
+                    print ' '*n, j, ':',
+                    print_tree(i[j], n+12, a.index(i))
+                else:
+                    print ' '*n, j, ':', i[j]
+
+            else:
+                if a.index(i)==0:
+                    print ' '*0, j, ':', i[j]
+                else:
+                    print ' '*n, j, ':', i[j]
 
 
 globals = MyDict()
