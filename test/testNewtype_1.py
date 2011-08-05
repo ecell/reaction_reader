@@ -16,4 +16,5 @@ with molecule_types:
     B(b)
 
 with reaction_rules:
-    L(r) + R(l) > L(r[1]).R(l[1]) [A(a), B(b)]
+    L(r) + R(l) <> L(r[1]).R(l[1]) [A(a), B(b)] | (0.1, 0.3)
+
