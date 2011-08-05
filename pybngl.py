@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.33 2011/08/02 08:23:44 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.34 2011/08/04 04:16:10 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -23,9 +23,12 @@ from model.model import Error
 
 N_A = 6.0221367e+23
 
+seed_values = []
+seed_species = []
+
 #'''testODE_1.ess'''
-sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-seed_values = [10000. * N_A, 10000. * N_A]
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
+#seed_values = [10000. * N_A, 10000. * N_A]
 step_num = 120
 
 #'''testODE_2.ess'''
@@ -131,6 +134,11 @@ step_num = 120
 #seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
 #step_num = 20
 
+#'''testODE_A.ess'''
+#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(a)']
+#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A]
+#step_num = 120
+
 m = Model()
 parser = Parser()
 fm = FunctionMaker()
@@ -171,7 +179,7 @@ class AnyCallable(object):
             if tmp_list[-3].get('name') is '.':
                 tmp_list[-3]['children'].append(tmp_list.pop(-1))
                 tmp_list.pop(-1)
-            elif 'children' in tmp_list[-2]:
+            elif 'children' in tmp_list[-2]:     # > A.B [C]
                 pass
             else:
                 dot_list = [tmp_list.pop(-3), tmp_list.pop(-1)]
@@ -239,20 +247,7 @@ class AnyCallable(object):
     def __add__(self,rhs):
         global tmp_list
 
-#        if tmp_list[1]['children'][-1].get('type') == 'effector':
-#            eff_dict = tmp_list[1]['children'].pop(-1)
-#
-#            if tmp_list[1].get('type') == 'add':   # A+B+C [D](products)
-#                tmp_list[1]['children'].append(eff_dict['value'].pop(0))
-#                tmp_list[1]['children'].append(eff_dict)
-#
-#            else:                                  # A+B [D](products)
-#                add_list = [tmp_list.pop(-1), eff_dict['value'].pop(0)]
-#                add_list.append(eff_dict)
-#                add_dict = {'type': 'add', 'children': add_list}
-#                tmp_list.append(add_dict)
-
-        if tmp_list[-2].get('type') == 'add':    # A+B+C(reactants)
+        if tmp_list[-2].get('type') == 'add':      # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
 
         elif len(tmp_list) == 2:                   # A+B(reactants)
@@ -316,14 +311,16 @@ class ReactionRules(object):
 
     def __exit__(self, *arg):
 
-#        print_tree(global_list)
+        global seed_species
+
+        print_tree(global_list)
 
         con_list = []
         speed = 0
         speed_r = 0
         condition = None
 
-        seed_species = parser.parse_species_array(sp_str_list, m)
+#        seed_species = parser.parse_species_array(sp_str_list, m)
 
         for id, v in enumerate(global_list):
 
@@ -331,19 +328,19 @@ class ReactionRules(object):
             products, con_list = read_patterns(m, parser, v['children'][1])
 
             for con_idx, con_func in enumerate(con_list):
-                if type(con_func) == float: # [SPEED_FUNCTION]
+                if type(con_func) == float:   # [SPEED_FUNCTION]
                     speed_r = con_func
                     speed = con_func
                     con_list.pop(con_idx)
                 elif type(con_func) == tuple: # [MassAction2(.1, .2)]
-                    speed = con_func[0] # MassAction2(
+                    speed = con_func[0]
                     if con_func[1] == None:
                        speed_r = con_func[0]
                     else:
                         speed_r = con_func[1]
                     con_list.pop(con_idx)
 
-            if len(con_list) >= 2:          # [CONDITION_FUNCTION]
+            if len(con_list) >= 2:            # [CONDITION_FUNCTION]
                 condition = AndCondition(con_list)
             elif con_list != []:
                 condition = con_list[0]
@@ -558,8 +555,7 @@ def read_patterns(m, p, species):
             if 'name' in entity:
                 sp = read_species(m, p, entity)
                 sp.concrete = False
-                sp = m.register_species(sp)  # koko de m.concrete_species ni hairu
-#            m.concrete_species.clear()   # syouganai node kesu
+                sp = m.register_species(sp)
                 s_list.append(sp)
 
             elif entity.get('type') == 'bracket':
@@ -568,8 +564,7 @@ def read_patterns(m, p, species):
     else:
         sp = read_species(m, p, species)
         sp.concrete = False
-        sp = m.register_species(sp)  # koko de m.concrete_species ni hairu
-#        m.concrete_species.clear()   # syouganai node kesu
+        sp = m.register_species(sp)
         sp.concrete = False
         s_list.append(sp)
 
@@ -580,10 +575,6 @@ def read_patterns(m, p, species):
 
     return s_list, con_list
 
-
-if (len(sys.argv) != 2 and len(sys.argv) != 3):
-    print 'Usage: # python %s ess_file [reaction_output]' % sys.argv[0]
-    quit()
 
 def swap_condition(con_list):
 
@@ -607,7 +598,7 @@ def swap_condition(con_list):
 
     return new_condition
 
-def print_tree(a, n=0, idx=0):
+def print_tree(a, n=0):
     for i in a: # rules
         for j in i: # j = ['type'|'name'|'children'|'value']
 
@@ -616,12 +607,12 @@ def print_tree(a, n=0, idx=0):
 
             elif j == 'children':
                 print ' '*n, j, ':',
-                print_tree(i[j], n+12, a.index(i))
+                print_tree(i[j], n+12)
 
             elif j== 'value':
                 if type(i[j])==list:
                     print ' '*n, j, ':',
-                    print_tree(i[j], n+12, a.index(i))
+                    print_tree(i[j], n+12)
                 else:
                     print ' '*n, j, ':', i[j]
 
@@ -632,8 +623,39 @@ def print_tree(a, n=0, idx=0):
                     print ' '*n, j, ':', i[j]
 
 
+class MoleculeInits(object):
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *arg):
+        global tmp_list
+        global seed_values
+        global seed_species
+
+        sp_list = []
+
+        for i in tmp_list:
+
+            seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
+
+            sp = read_species(m, parser, i)
+            sp.concrete = True
+            sp = m.register_species(sp)
+            sp_list.append(sp)
+
+        seed_species = sp_list
+
+        tmp_list = []
+
+
+if (len(sys.argv) != 2 and len(sys.argv) != 3):
+    print 'Usage: # python %s ess_file [reaction_output]' % sys.argv[0]
+    quit()
+
+
 globals = MyDict()
 globals['reaction_rules'] = ReactionRules()
+globals['molecule_inits'] = MoleculeInits()
 globals['molecule_types'] = MoleculeTypes()
 
 exec file(sys.argv[1]) in globals
