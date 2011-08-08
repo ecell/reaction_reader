@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.34 2011/08/04 04:16:10 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.36 2011/08/05 08:22:30 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -215,7 +215,7 @@ class AnyCallable(object):
         else: # [michaelis_menten]
             effect_list = tmp_list[2:]
             del tmp_list[2:]
-            addval = {"type": "effector", "value": effect_list}
+            addval = {"xxx": "effector", "value": effect_list}
 
             if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
                 tmp_list.append(addval)
@@ -230,7 +230,17 @@ class AnyCallable(object):
 
 #        print rhs
 
-        global_list.append({'type': rhs, 'children': tmp_list})
+        eff_dict = None
+
+        for i, v in enumerate(tmp_list[1]['children']):
+            if v.get('xxx') == 'effector':
+                eff_dict = tmp_list[1]['children'].pop(i)
+
+        tmp_dict = {'type': rhs, 'children': tmp_list}
+        if eff_dict:
+            tmp_dict.update(eff_dict)
+
+        global_list.append(tmp_dict)
 
         tmp_list = []
 
@@ -598,29 +608,27 @@ def swap_condition(con_list):
 
     return new_condition
 
+
 def print_tree(a, n=0):
-    for i in a: # rules
-        for j in i: # j = ['type'|'name'|'children'|'value']
+
+    def pr_str(n, j, v=''):
+        return ' '*n + j + ' : ' + str(v)
+
+    for idx, i in enumerate(a): # rules
+        for j in i:             # j = ['type'|'name'|'children'|'value']
 
             if i[j] == []:
                 print ''
 
-            elif j == 'children':
-                print ' '*n, j, ':',
-                print_tree(i[j], n+12)
-
-            elif j== 'value':
-                if type(i[j])==list:
-                    print ' '*n, j, ':',
+            elif j == 'children' or j == 'value':
+                print pr_str(n, j),
+                if type(i[j]) == list:
                     print_tree(i[j], n+12)
                 else:
-                    print ' '*n, j, ':', i[j]
+                    print i[j]
 
             else:
-                if a.index(i)==0:
-                    print ' '*0, j, ':', i[j]
-                else:
-                    print ' '*n, j, ':', i[j]
+                print pr_str(n*bool(idx), j, i[j])
 
 
 class MoleculeInits(object):
