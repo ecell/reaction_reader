@@ -58,7 +58,7 @@ with reaction_rules:
            egfr(Y1148(pY)[1]).Shc(PTB[1],Y317(pY)[2]).Grb2(SH2[2],SH3) | MassAction2(1.667e-06, .1)
 
     egfr(Y1148(pY)[1]).Shc(PTB[1],Y317(pY)) + Grb2(SH2,SH3[3]).Sos(dom[3]) <> \
-           egfr(Y1148(pY)[1]).Shc(PTB[1],Y317(pY)[2]).Grb2(SH2[2],SH3[3]).Sos(dom[3]) | MassAction(5e-06, .0429)
+           egfr(Y1148(pY)[1]).Shc(PTB[1],Y317(pY)[2]).Grb2(SH2[2],SH3[3]).Sos(dom[3]) | MassAction2(5e-06, .0429)
 
     Shc(PTB[1],Y317(pY)[2]).Grb2(SH2[2],SH3) + Sos(dom) <> \
            Shc(PTB[1],Y317(pY)[2]).Grb2(SH2[2],SH3[3]).Sos(dom[3]) | MassAction2(5.556e-06, 0.0214)
