@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.36 2011/08/05 08:22:30 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.37 2011/08/09 05:03:11 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -205,7 +205,7 @@ class AnyCallable(object):
 
 #        print "parameter: " + str(key)
 
-        if type(key) == int: # [1]
+        if type(key) == int or type(key) == float: # [1]
             addval = {"type": "bracket", "value": str(key)}
             if "children" in tmp_list[-1]:
                 tmp_list[-1]["children"].append(addval)
