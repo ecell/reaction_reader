@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.37 2011/08/09 05:03:11 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.38 2011/08/10 08:47:42 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -115,7 +115,7 @@ step_num = 120
 #'''testODE_9.ess'''
 #sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
 #seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
-#step_num = 120
+step_num = 120
 
 #'''egfr.py'''
 #sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
@@ -236,6 +236,11 @@ class AnyCallable(object):
             if v.get('xxx') == 'effector':
                 eff_dict = tmp_list[1]['children'].pop(i)
 
+        for i, v in enumerate(tmp_list[0]['children']):
+            if v.get('name') == '_':
+                tmp_list[0]['children'].pop(i)
+                rhs = 'neq'
+
         tmp_dict = {'type': rhs, 'children': tmp_list}
         if eff_dict:
             tmp_dict.update(eff_dict)
@@ -249,7 +254,8 @@ class AnyCallable(object):
 
     def __lt__(self, rhs):
 #        print "lt"
-        pass
+        tmp_list[0]['children'].append(tmp_list.pop(-1))
+        return True
 
     def __ne__(self, rhs):
         self.operator("neq")
