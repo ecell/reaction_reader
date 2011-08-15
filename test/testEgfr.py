@@ -20,10 +20,6 @@ with reaction_rules:
     # Ligand-receptor binding
     egfr(l,r) + egf(r) <> egfr(l[1],r).egf(r[1]) | MassAction2(1.667e-06, .06)
 
-    #egfr(l,r) + egf(r) <> egfr(l[1],r).egf(r[1]) [MassAction, (.1, )]
-    #egfr(l,r) + egf(r) <> egfr(l[1],r).egf(r[1]) [egfr(l,r), egf(r)], MassAction, {"Vmax": 1.0, "Km": 2.0}
-    #        [MassAction(effector= [egfr(l,r), egf(r)], params={"Vmax": 1.0, "Km": 2.0})]
-
     # Note changed multiplicity
     # Receptor-aggregation
     #egfr(l[1],r) + egfr(l[2],r) <> egfr(l[1],r[3]).egfr(l[2],r[3]) [MassAction(.1)]
