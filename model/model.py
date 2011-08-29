@@ -468,12 +468,15 @@ class EntityComponent(object):
         '''
         retval = self.name
         if len(self.states):
-            retval += '~'
+#            retval += '~'
+            retval += '('
         if len(self.states) == 1:
             item = self.states.items()[0]
             state_name = item[0]
             index = item[1]
             retval += self.__state_repr(state_name, index)
+        if len(self.states):
+            retval += ')'
         elif len(self.states) > 1:
             retval += '['
             for i, (state_name, index) in enumerate(self.states.iteritems()):
@@ -484,13 +487,16 @@ class EntityComponent(object):
                 retval += self.__state_repr(state_name, index)
             retval += ']'
         if self.binding_state != BINDING_NONE:
-            retval += '!'
+#            retval += '!'
+            retval += '['
         if self.binding_state == BINDING_SPECIFIED and self.binding is not None:
             retval += '%d' % self.binding.id
         elif self.binding_state == BINDING_UNSPECIFIED:
             retval += BINDING_UNSPECIFIED_STRING
         elif self.binding_state == BINDING_ANY:
             retval += BINDING_ANY_STRING
+        if self.binding_state != BINDING_NONE:
+            retval += ']'
         return retval
 
     def __str__(self):
@@ -1859,15 +1865,15 @@ class ReactionRule(object):
         attrs: Map of attributes.
         '''
 
-        print '# *** reactants ***'
-        for i in reactants:
-            print '# ', str(i).partition("@")[0].replace('\n','')
-            print '# '
+#        print '# *** reactants ***'
+#        for i in reactants:
+#            print '# ', str(i).partition("@")[0].replace('\n','')
+#            print '# '
 
-        print '# *** products ***'
-        for i in products:
-            print '# ', str(i).partition("@")[0].replace('\n','')
-            print '# '
+#        print '# *** products ***'
+#        for i in products:
+#            print '# ', str(i).partition("@")[0].replace('\n','')
+#            print '# '
 
         self.__id = id
         self.__model = model
@@ -2115,7 +2121,8 @@ class ReactionRule(object):
         '''
         retval = ''
         retval += self.__str_species(self.__reactants)
-        retval += ' -> '
+#        retval += ' -> '
+        retval += ' > '
         retval += self.__str_species(self.__products)
         if not self.__condition is None:
             retval += ' %s' % str(self.__condition)
@@ -2987,6 +2994,7 @@ class Model(object):
         species_list: The list of seed species.
         max_iteration: The maximum number of the iteration.
         '''
+
         assert max_iteration > 0
 
         # Reactions for each reaction ruls.
