@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.38 2011/08/10 08:47:42 takeuchi Exp $
+$Header: /home/d8051105/shared/pybngl.py,v 1.42 2011/08/22 06:35:41 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -20,140 +20,13 @@ from model.model import AndCondition
 from model.model import REACTANTS
 from model.model import PRODUCTS
 from model.model import Error
-
-N_A = 6.0221367e+23
-
-seed_values = []
-seed_species = []
-
-#'''testODE_1.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-step_num = 120
-
-#'''testODE_2.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A]
-#step_num = 120
-
-#'''testODE_3.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
-#seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
-#step_num = 120
-
-#'''testODE_4.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'R(l,d,Y~pU)']
-#seed_values = [10000. * N_A, 5000. * N_A, 0.]
-#step_num = 120
-
-#'''testODE_5.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 100. * N_A]
-#step_num = 120
-
-#'''testODE_6.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 100. * N_A]
-#step_num = 120
-
-#'''testODE_7.ess'''
-#sp_str_list = ['R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)', 'R(l,d,Y~U!1).A(SH2!1,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 3000. * N_A]
-#step_num = 120
-
-#'''testODE_8.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
-#step_num = 120
-
-#'''testODE_10.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 120
-
-#'''testODE_11.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
-#step_num = 200
-
-#'''testODE_12.ess'''
-#sp_str_list = ['R(l,d,Y~U)']
-#seed_values = [10000. * N_A]
-#step_num = 120
-
-#'''testODE_13.ess'''
-#sp_str_list = ['R(r1,r2)']
-#seed_values = [10000. * N_A]
-#results = m.generate_reaction_network(seed_species, 2)
-#step_num = 300
-
-#'''testODE_14.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
-#seed_values = [200. * N_A, 200. * N_A, 50. * N_A]
-#step_num = 1000
-
-#'''testODE_15.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 40
-
-#'''testODE_16.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)']
-#seed_values = [10000. * N_A, 0.]
-#step_num = 20
-
-#'''testODE_17.ess'''
-#sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 20
-
-#'''testODE_18.ess'''
-#sp_str_list = ['R(l,d,Y~U!1).A(SH2!1,Y~U)','L(r!1).R(l!1,d,Y~U!2).A(SH2!2,Y~U)']
-#seed_values = [10000. * N_A, 10000. * N_A]
-#step_num = 20
-
-#'''testODE_9.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'L(r!1).R(l!1,d,Y~U)']
-#seed_values = [10000. * N_A, 5000. * N_A, 2000. * N_A]
-step_num = 120
-
-#'''egfr.py'''
-#sp_str_list = ['egfr(l, r, Y1068~Y, Y1148~Y)', 'egf(r)', 'Sos(dom)', 'Shc(PTB, Y317~Y)', 'Grb2(SH2, SH3)']
-#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-#step_num = 20
-
-#'''RasRafMEKREK.py'''
-#sp_str_list = ['RasG(raf,Y1~U,Y2~U)', 'Raf(ras,mek,p1,Y~U)', 'MEK(raf,erk,p2,Y1~U,Y2~U)', 'ERK(mek,p3,Y1~U,Y2~U)', 'Pase1(raf)', 'Pase2(mek)', 'Pase3(erk)']
-#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-#step_num = 20
-
-#'''testODE_E.ess'''
-#sp_str_list = ['Q(s, m, r, p~U)', 'S(q, v~pU)', 'M(q, v~pU)', 'R(q, v~pU)']
-#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-#sp_str_list = ['Q(t, l, f)', 'S(m, l)', 'M(m, l)', 'R(m, l)']
-#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A, 10000. * N_A]
-#step_num = 20
-
-#'''testODE_A.ess'''
-#sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(a)']
-#seed_values = [10000. * N_A, 10000. * N_A, 10000. * N_A]
-#step_num = 120
-
-m = Model()
-parser = Parser()
-fm = FunctionMaker()
-sim = Simulator()
-
-m.disallow_implicit_disappearance = True
-
-global_list = []
-tmp_list = []
+from optparse import OptionParser
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
         global tmp_list
 
-        tmp_list.append({"name": key})
+        tmp_list.append({'name': key})
 
 #        print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
@@ -167,13 +40,13 @@ class AnyCallable(object):
         matched_indices = []
 
         for i, a_dict in enumerate(tmp_list):
-            if a_dict.get("name") == self._key:
+            if a_dict.get('name') == self._key:
                 matched_indices.append(i)
 
         parent   = tmp_list.pop(matched_indices[-1])
         children = tmp_list[matched_indices[-1]:]
         del tmp_list[matched_indices[-1]:]
-        tmp_list.append({"name": parent["name"], "children": children})
+        tmp_list.append({'name': parent['name'], 'children': children})
 
         if len(tmp_list) >= 3 and tmp_list[-2].get('name') is '.':
             if tmp_list[-3].get('name') is '.':
@@ -197,7 +70,7 @@ class AnyCallable(object):
         try:
             return super(AnyCallable, self).__getattr__(key)
         except:
-            tmp_list.append({"name": "."})
+            tmp_list.append({'name': '.'})
             return AnyCallable(key, self)
 
     def __getitem__(self, key):
@@ -206,16 +79,16 @@ class AnyCallable(object):
 #        print "parameter: " + str(key)
 
         if type(key) == int or type(key) == float: # [1]
-            addval = {"type": "bracket", "value": str(key)}
+            addval = {'type': 'bracket', 'value': str(key)}
             if "children" in tmp_list[-1]:
-                tmp_list[-1]["children"].append(addval)
+                tmp_list[-1]['children'].append(addval)
             else:
-                tmp_list[-1]["children"] = [addval]
+                tmp_list[-1]['children'] = [addval]
 
         else: # [michaelis_menten]
             effect_list = tmp_list[2:]
             del tmp_list[2:]
-            addval = {"xxx": "effector", "value": effect_list}
+            addval = {'xxx': 'effector', 'value': effect_list}
 
             if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
                 tmp_list.append(addval)
@@ -250,7 +123,7 @@ class AnyCallable(object):
         tmp_list = []
 
     def __gt__(self, rhs):
-        self.operator("gt")
+        self.operator('gt')
 
     def __lt__(self, rhs):
 #        print "lt"
@@ -258,7 +131,7 @@ class AnyCallable(object):
         return True
 
     def __ne__(self, rhs):
-        self.operator("neq")
+        self.operator('neq')
 
     def __add__(self,rhs):
         global tmp_list
@@ -332,8 +205,7 @@ class ReactionRules(object):
         print_tree(global_list)
 
         con_list = []
-        speed = 0
-        speed_r = 0
+        speed = speed_r = 0
         condition = None
 
 #        seed_species = parser.parse_species_array(sp_str_list, m)
@@ -345,15 +217,11 @@ class ReactionRules(object):
 
             for con_idx, con_func in enumerate(con_list):
                 if type(con_func) == float:   # [SPEED_FUNCTION]
-                    speed_r = con_func
-                    speed = con_func
+                    speed = speed_r = con_func
                     con_list.pop(con_idx)
                 elif type(con_func) == tuple: # [MassAction2(.1, .2)]
                     speed = con_func[0]
-                    if con_func[1] == None:
-                       speed_r = con_func[0]
-                    else:
-                        speed_r = con_func[1]
+                    speed_r = con_func[int(bool(con_func[1]))]
                     con_list.pop(con_idx)
 
             if len(con_list) >= 2:            # [CONDITION_FUNCTION]
@@ -370,96 +238,6 @@ class ReactionRules(object):
                 rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed_r)
             
 
-#        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
-#        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
-
-        try:
-            results = m.generate_reaction_network(seed_species, 10)
-        except Error, inst:
-            print inst
-            exit()
-
-        print '# << reaction rules >>'
-        cnt = 1
-        for rule_id in sorted(m.reaction_rules.iterkeys()):
-            rule = m.reaction_rules[rule_id]
-            print '# ', cnt, rule.str_simple()
-            cnt += 1
-        print '#'
-
-        print '# << species >>'
-        cnt = 1
-        for sp_id in sorted(m.concrete_species.iterkeys()):
-            sp = m.concrete_species[sp_id]
-            print '# ', cnt, sp.str_simple()
-            cnt += 1
-        print '#'
-
-        print '# << reactions >>'
-
-        if len(sys.argv) == 3:
-            f = open(sys.argv[2], 'w')
-
-        cnt = 1
-        for result in results:
-            for r in result.reactions:
-                print '# ', cnt, r.str_simple()
-                if len(sys.argv) == 3:
-                    f.write(str(cnt)+' '+str(r.str_simple())+'\n')
-                cnt += 1
-        print '#'
-
-        if len(sys.argv) == 3:
-            f.close
-
-
-        sp_num = len(m.concrete_species)
-
-        # Initial values for species.
-        variables = []
-        for i in range(sp_num):
-            variables.append(0.0)
-        for i, v in enumerate(seed_values):
-            variables[i] = v
-
-        global fm
-        global sim
-
-        volume = 1
-        functions = fm.make_functions(m, results, volume)
-        the_solver = ODESolver()
-        sim.initialize(the_solver, functions, variables)
-
-#        step_num = 120
-        sim.step(step_num)
-
-        output_series = sim.get_logged_data()
-        header = 'time, '
-        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
-            if i > 0:
-                header += ', '
-            sp = m.concrete_species[sp_id]
-            header += sp.str_simple()
-        print '# ', header
-        print '#'
-        for i in output_series:
-            for j in i:
-                print j,
-            print ''
-
-        output_terminal = output_series[step_num - 1]
-        result = str(output_terminal[0])
-        result += ': '
-        for i, v in enumerate(output_terminal):
-            if i > 1:
-                result += ', '
-            if i > 0:
-                value = v / N_A
-                result += str(value)
-
-        print '# ', header
-        print '# ', result
-
 
 
 class MoleculeTypes(object):
@@ -468,9 +246,9 @@ class MoleculeTypes(object):
 
     def __exit__(self, *arg):
         global tmp_list
+
         mole_entity_list = [] # string. check for double registration such as A and A.B.
-        mole_state_list = []  # string. check for state_type registration.
-        mole_state_dict = {}  # tuple.   key:State_type
+
         for i in tmp_list:
 
             if i['name'] not in mole_entity_list and i['name'] != '.':
@@ -479,15 +257,13 @@ class MoleculeTypes(object):
 
                 for j in i['children']:
                     if j.has_key('children'):
-                        if j['children'][0]['name'] not in mole_state_list:
-                            new_state = j['children'][0]['name']
-                            new_state_P = 'p' + new_state
-                            p_state = m.add_state_type('state_'+new_state, [new_state, new_state_P])
-                            mole_state_dict[new_state] = p_state
-                            mole_state_list.append(new_state)
-                        tmpmole.add_component(j['name'], {new_state: mole_state_dict[new_state]})
+                        state_name = 'state_'+i['name']+'_'+j['name']
+                        state = [k['name'] for k in j['children']]
+                        p_state = m.add_state_type(state_name, state)
+                        tmpmole.add_component(j['name'], {j['name']: p_state})
                     else:
                         tmpmole.add_component(j['name'])
+
                 parser.add_entity_type(tmpmole)
 
         tmp_list = []
@@ -662,14 +438,139 @@ class MoleculeInits(object):
         tmp_list = []
 
 
-if (len(sys.argv) != 2 and len(sys.argv) != 3):
-    print 'Usage: # python %s ess_file [reaction_output]' % sys.argv[0]
-    quit()
+class Pybngl(object):
+
+    def __init__(self):
+        globals = MyDict()
+        globals['reaction_rules'] = ReactionRules()
+        globals['molecule_inits'] = MoleculeInits()
+        globals['molecule_types'] = MoleculeTypes()
+
+        try:
+            exec file(args[0]) in globals
+            self.Simulation()
+        except IndexError:
+            OptParse.print_help()
+            exit(1)
+        
+    def Simulation(self):
+#        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
+#        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
+
+        fm = FunctionMaker()
+        sim = Simulator()
+
+        try:
+            results = m.generate_reaction_network(seed_species, options.itr_num)
+        except Error, inst:
+            print inst
+            exit()
+
+        print '# << reaction rules >>'
+        cnt = 1
+        for rule_id in sorted(m.reaction_rules.iterkeys()):
+            rule = m.reaction_rules[rule_id]
+            print '# ', cnt, rule.str_simple()
+            cnt += 1
+        print '#'
+
+        print '# << species >>'
+        cnt = 1
+        for sp_id in sorted(m.concrete_species.iterkeys()):
+            sp = m.concrete_species[sp_id]
+            print '# ', cnt, sp.str_simple()
+            cnt += 1
+        print '#'
+
+        print '# << reactions >>'
+
+        cnt = 1
+        for result in results:
+            for r in result.reactions:
+                print '# ', cnt, r.str_simple()
+                cnt += 1
+        print '#'
 
 
-globals = MyDict()
-globals['reaction_rules'] = ReactionRules()
-globals['molecule_inits'] = MoleculeInits()
-globals['molecule_types'] = MoleculeTypes()
+        if options.rulefile != None:
+            f = open(options.rulefile, 'w')
+            cnt = 1
+            for result in results:
+                for r in result.reactions:
+                    f.write(str(cnt)+' '+str(r.str_simple())+'\n')
+                    cnt += 1
+            f.close
 
-exec file(sys.argv[1]) in globals
+        sp_num = len(m.concrete_species)
+
+        # Initial values for species.
+        variables = []
+        for i in range(sp_num):
+            variables.append(0.0)
+        for i, v in enumerate(seed_values):
+            variables[i] = v
+
+#        global fm
+#        global sim
+
+        volume = 1
+        functions = fm.make_functions(m, results, volume)
+        the_solver = ODESolver()
+        sim.initialize(the_solver, functions, variables)
+
+#        step_num = 120
+        sim.step(step_num)
+
+        output_series = sim.get_logged_data()
+        header = 'time, '
+        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
+            if i > 0:
+                header += ', '
+            sp = m.concrete_species[sp_id]
+            header += sp.str_simple()
+        print '# ', header
+        print '#'
+        for i in output_series:
+            for j in i:
+                print j,
+            print ''
+
+        output_terminal = output_series[step_num - 1]
+        result = str(output_terminal[0])
+        result += ': '
+        for i, v in enumerate(output_terminal):
+            if i > 1:
+                result += ', '
+            if i > 0:
+                value = v / N_A
+                result += str(value)
+
+        print '# ', header
+        print '# ', result
+
+
+if __name__ == '__main__':
+
+    N_A = 6.0221367e+23
+
+    seed_values = []
+    seed_species = []
+
+    global_list = []
+    tmp_list = []
+
+    m = Model()
+    parser = Parser()
+
+    usage = "python pybngl.py [options] SIMULATION_FILE"
+    OptParse = OptionParser(usage=usage)
+    OptParse.add_option('-t', dest='rulefile', metavar='RULE_FILE', help='write rules to RULE_FILE')
+    OptParse.add_option('-s', dest='step_num', type=int, default=120, help='set step num')
+    OptParse.add_option('-i', dest='itr_num', type=int, default=10, help='set rule iteration num')
+    OptParse.add_option('-d', dest='disap_flag', action='store_false', default=True, help='allow implicit disappearance')
+
+    (options, args) = OptParse.parse_args()
+    step_num = options.step_num
+    m.disallow_implicit_disappearance = options.disap_flag
+
+    pybngl = Pybngl()
