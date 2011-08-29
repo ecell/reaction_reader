@@ -18,4 +18,5 @@ with reaction_rules:
 #     R(r2) + R(r1, r2) > R(r2[1]).R(r1[1], r2) [MassAction(0.1)]
 #     R(r2[1]).R(r1[1], r2) > R(r2) + R(r1, r2) [MassAction(0.3)]
 
-     R(r2) + R(r1, r2) <> R(r2[1]).R(r1[1], r2) | MassAction2(.1, .3)
+#     R(r2) + R(r1, r2) <> R(r2[1]).R(r1[1], r2) | MassAction2(.1, .3)
+     R(r2) + R(r1, r2) <_> R(r2[1]).R(r1[1], r2) | MassAction2(.1, .3)

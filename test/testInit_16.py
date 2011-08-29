@@ -10,7 +10,8 @@ from func import *
 
 with molecule_types:
      L(r)
-     R(l, d, Y(U))
+#     R(l, d, Y(U))
+     R(l, d, Y(U, P))
 
 with molecule_inits:
      L(r) [10000]

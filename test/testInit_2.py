@@ -11,7 +11,8 @@ from func import *
 
 with molecule_types:
      L(r)
-     R(l, d, Y(U))
+#     R(l, d, Y(U))
+     R(l, d, Y(U, P))
 
 with molecule_inits:
     L(r) [10000]
@@ -28,4 +29,5 @@ with reaction_rules:
 #     L(r) + R(l) <> L(r[1]).R(l[1]) | (MassAction(.1), MassAction(.3))
 
 
-     L(r) + R(l) <> L(r[1]).R(l[1]) | MassAction2(.1, .3)
+#     L(r) + R(l) <> L(r[1]).R(l[1]) | MassAction2(.1, .3)
+     L(r) + R(l) <_> L(r[1]).R(l[1]) | MassAction2(.1, .3)

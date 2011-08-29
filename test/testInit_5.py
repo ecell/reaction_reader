@@ -14,8 +14,10 @@ from func import *
 
 with molecule_types:
      L(r)
-     R(l, d, Y(U))
-     A(SH2, Y(U))
+#     R(l, d, Y(U))
+     R(l, d, Y(U, P))
+#     A(SH2, Y(U))
+     A(SH2, Y(U, P))
 
 with molecule_inits:
     L(r) [10000]
@@ -28,5 +30,8 @@ with reaction_rules:
 #     R(Y) + A(SH2) > R(Y[1]).A(SH2[1]) [michaelis_menten(.2)]
 #     R(Y[1]).A(SH2[1]) > R(Y) + A(SH2) [michaelis_menten(.4)]
 
-     L(r) + R(l) <> L(r[1]).R(l[1]) | MassAction2(.1, .3)
-     R(Y) + A(SH2) <> R(Y[1]).A(SH2[1]) | MassAction2(.2, .4)
+#     L(r) + R(l) <> L(r[1]).R(l[1]) | MassAction2(.1, .3)
+#     R(Y) + A(SH2) <> R(Y[1]).A(SH2[1]) | MassAction2(.2, .4)
+
+     L(r) + R(l) <_> L(r[1]).R(l[1]) | MassAction2(.1, .3)
+     R(Y) + A(SH2) <_> R(Y[1]).A(SH2[1]) | MassAction2(.2, .4)
