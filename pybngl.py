@@ -236,7 +236,7 @@ class ReactionRules(object):
             if v['type'] == 'neq':
                 condition = swap_condition(con_list)
                 rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed_r)
-            
+
 
 
 
@@ -452,7 +452,7 @@ class Pybngl(object):
         except IndexError:
             OptParse.print_help()
             exit(1)
-        
+
     def Simulation(self):
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
