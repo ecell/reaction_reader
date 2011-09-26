@@ -1,5 +1,5 @@
 '''
-$Header: /home/d8051105/shared/pybngl.py,v 1.42 2011/08/22 06:35:41 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.42 2011/08/22 06:35:41 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -21,6 +21,9 @@ from model.model import REACTANTS
 from model.model import PRODUCTS
 from model.model import Error
 from optparse import OptionParser
+
+import itertools as it
+from copy import deepcopy
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -181,6 +184,18 @@ class AnyCallable(object):
         else:
             tmp_list[1]['children'].append(addval)
 
+    def __mod__(self, rhs):
+#        print "label: " + str(rhs)
+
+        if type(rhs) == int or type(rhs) == float: # %1
+            addval = {'type': 'label', 'value': str(rhs)}
+            if "children" in tmp_list[-1]:
+                tmp_list[-1]['children'].append(addval)
+            else:
+                tmp_list[-1]['children'] = [addval]
+
+
+
 class MyDict(dict):
     def __init__(self):
         super(MyDict, self).__init__()
@@ -201,16 +216,142 @@ class ReactionRules(object):
     def __exit__(self, *arg):
 
         global seed_species
+        global global_list
 
-        print_tree(global_list)
-
+#        print_tree(global_list)
+        
         con_list = []
         speed = speed_r = 0
         condition = None
 
 #        seed_species = parser.parse_species_array(sp_str_list, m)
 
+
+        ########## rule extention function will be written here ##########
+
+#        state_info_dict = {}
+#        state_id_dict = {}
+#        state_list = []
+
+        def func1(l):
+            for v in l: # reactants & products
+                if v.get('type') == 'add':
+                    for vv in v['children']:
+                        func2(vv)
+                else:
+                    func2(v)
+
+        def func2(l):
+            if l.get('name') == '.':
+                for v in l['children']:
+                    func3(v)
+            else:
+                func3(l)
+
+        def func3(l):
+            if 'children' in l:
+                for i in l['children']:
+                    if 'children' in i:
+                        for j in i['children']: # hukusuu % ga aru baai koko de mawasu
+                            if j.get('type') == 'label': # {type:bracket} mo aru
+                                for k in mole_list:
+#                                    if k['name'] == l['name']:
+                                    if k.get('name') == l['name']:
+                                        for m in k['children']:
+#                                            if m['name'] == i['name']:
+                                            if m.get('name') == i['name']:
+                                                state_info_dict[j['value']] = m['children'] #overwrite
+
+
+#            print '...'
+#            print 'a: ', l
+#            for i in [l[i] for i in l if 'children' in l and i == 'children']:
+#                print 'b: ', i
+#                for j in [j['children'] for j in i if 'children' in j]:
+#                    print 'c: ', j
+#                    for k in [k for k in j if k['type'] == 'label']:
+#                        print 'd: ', k, k['value'], l['name']
+#                        for m in [m for m in mole_list if m['name'] == l['name']]:
+#                            print 'e: ', m
+
+
+#                for j in [i[j] for j in i if 'children' in i and j == 'children']:
+#                    print j
+
+
+
+
+                
+
+        def func4(l, s_list):
+            add_flag = 0
+            for v in l: # reactants & products
+                if v.get('type') == 'add':
+                    for vv in v['children']:
+                        add_flag = func5(vv, s_list) or add_flag
+                else:
+                    add_flag = func5(v, s_list) or add_flag
+            return add_flag
+
+        def func5(l, s_list):
+            add_flag = 0
+            if l.get('name') == '.':
+                for v in l['children']:
+                    add_flag = func6(v, s_list) or add_flag
+            else:
+                add_flag = func6(l, s_list)
+            return add_flag
+
+        def func6(l, s_list):
+            add_flag = 0
+            if 'children' in l:
+                for i in l['children']:
+                    if 'children' in i:
+                        for j in i['children']: # hukusuu % ga aru baai koko de mawasu
+                            if j.get('type') == 'label': # {type:bracket} mo aru
+                                i['children'].append({'name': s_list[state_id_dict[j['value']]]})
+                                add_flag = 1
+            return add_flag
+                                
+
+        valid_global_list = []
+
+        for i in global_list:
+            state_info_dict = {}
+            state_id_dict = {}
+            state_list = []
+            func1(i['children'])
+
+            
+            for p, v in enumerate(state_info_dict):
+                state_id_dict[v] = p
+                add_state = []
+                for j in state_info_dict[v]:
+                    add_state.append(j['name'])
+                state_list.append(add_state)
+
+
+
+            add_flag = 0
+            for j in it.product(*state_list):
+
+#                print j
+
+                k = deepcopy(i)
+                add_flag = func4(k['children'], j)
+                if add_flag == 1:
+                    valid_global_list.append(k)
+            if add_flag == 0:
+                valid_global_list.append(i)
+
+        global_list = valid_global_list
+
+
+        ##################################################################
+
         for id, v in enumerate(global_list):
+
+#            print id
 
             reactants, con_list = read_patterns(m, parser, v['children'][0])
             products, con_list = read_patterns(m, parser, v['children'][1])
@@ -236,7 +377,7 @@ class ReactionRules(object):
             if v['type'] == 'neq':
                 condition = swap_condition(con_list)
                 rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed_r)
-
+            
 
 
 
@@ -246,6 +387,9 @@ class MoleculeTypes(object):
 
     def __exit__(self, *arg):
         global tmp_list
+        global mole_list
+
+        print_tree(tmp_list)
 
         mole_entity_list = [] # string. check for double registration such as A and A.B.
 
@@ -266,6 +410,7 @@ class MoleculeTypes(object):
 
                 parser.add_entity_type(tmpmole)
 
+        mole_list = deepcopy(tmp_list)
         tmp_list = []
 
 
@@ -291,7 +436,9 @@ def read_entity(sp, m, p, entity, binding_components):
                     if 'name' in j:  # states input
                         en_comp.set_state(en_comp.states.keys()[0], j['name'])
 
-                    if 'type' in j:  # binding input
+
+                    if j.get('type') is'bracket':  # binding input
+
                         binding_type = j['value']
                         if binding_type == '+':
                             en_comp.binding_state = BINDING_ANY
@@ -452,10 +599,11 @@ class Pybngl(object):
         except IndexError:
             OptParse.print_help()
             exit(1)
-
+        
     def Simulation(self):
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
+
 
         fm = FunctionMaker()
         sim = Simulator()
@@ -558,6 +706,8 @@ if __name__ == '__main__':
 
     global_list = []
     tmp_list = []
+
+    mole_list = []
 
     m = Model()
     parser = Parser()
