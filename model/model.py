@@ -2244,9 +2244,9 @@ class ReactionRule(object):
         '''
 
         # Checks the input species.
-        for sp in reactant_species_list:
-            assert sp.check_concreteness()
-            assert sp in self.model.species.values()
+#        for sp in reactant_species_list:
+#            assert sp.check_concreteness()
+#            assert sp in self.model.species.values()
 
         # Updates the reactant species list for dummy reactants 
         # that exist when new species appears in this reaction.
