@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.42 2011/08/22 06:35:41 takeuchi Exp $
+$Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.47 2011/10/07 02:22:29 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -518,8 +518,18 @@ class Pybngl(object):
         the_solver = ODESolver()
         sim.initialize(the_solver, functions, variables)
 
-#        step_num = 120
-        sim.step(step_num)
+
+        if end_time != -1:
+            step_interval = end_time / (step_num-1)
+            for i in range(step_num):
+                cur_time = sim.the_time
+                sim.step()
+                the_solver.set_step_interval(step_interval)
+                sim.the_time = cur_time + step_interval
+                the_solver.set_next_time(sim.the_time)
+        else:
+            sim.step(step_num)
+
 
         output_series = sim.get_logged_data()
         header = 'time, '
@@ -535,7 +545,7 @@ class Pybngl(object):
                 print j,
             print ''
 
-        output_terminal = output_series[step_num - 1]
+        output_terminal = output_series[-1]
         result = str(output_terminal[0])
         result += ': '
         for i, v in enumerate(output_terminal):
@@ -547,6 +557,8 @@ class Pybngl(object):
 
         print '# ', header
         print '# ', result
+
+        print len(output_series)
 
 
 if __name__ == '__main__':
@@ -564,13 +576,15 @@ if __name__ == '__main__':
 
     usage = "python pybngl.py [options] SIMULATION_FILE"
     OptParse = OptionParser(usage=usage)
-    OptParse.add_option('-t', dest='rulefile', metavar='RULE_FILE', help='write rules to RULE_FILE')
+    OptParse.add_option('-r', dest='rulefile', metavar='RULE_FILE', help='write rules to RULE_FILE')
     OptParse.add_option('-s', dest='step_num', type=int, default=120, help='set step num')
     OptParse.add_option('-i', dest='itr_num', type=int, default=10, help='set rule iteration num')
     OptParse.add_option('-d', dest='disap_flag', action='store_false', default=True, help='allow implicit disappearance')
-
+    OptParse.add_option('-t', dest='end_time', type=float, default=-1, help='set step num')
+    
     (options, args) = OptParse.parse_args()
     step_num = options.step_num
     m.disallow_implicit_disappearance = options.disap_flag
+    end_time = options.end_time
 
     pybngl = Pybngl()
