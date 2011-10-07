@@ -1,3 +1,7 @@
+'''
+$Header: /home/takeuchi/0613/solver/ODESolver.pyx,v 1.2 2011/10/06 01:42:02 takeuchi Exp $
+'''
+
 __all__ = ["ODESolver"]
 
 cdef extern from "Defs.hpp":
@@ -40,6 +44,9 @@ cdef extern from "ODESolver.hpp":
         long int step()
         void integrate(double)
         double reschedule()
+        void set_next_time(double)
+        double get_step_interval()
+        void set_step_interval(double)
     c_Solver *new_Solver "new ODESolver"()
     void del_Solver "delete"(c_Solver*) 
 
@@ -83,9 +90,13 @@ cdef class ODESolver:
         '''Get the variable value specified by index.'''
         return self.thisptr.get_value(index)
 
-    def get_time(self):
+    def get_current_time(self):
         '''Get the current time.'''
         return self.thisptr.get_current_time()
+
+    def get_step_interval(self):
+        '''Get the current step interval.'''
+        return self.thisptr.get_step_interval()
 
     def integrate(self, a_time):
         '''Integrate'''
@@ -110,5 +121,14 @@ cdef class ODESolver:
         status_event.threshold = py_status_event['thres']
         status_event.status_code = py_status_event['code']
         self.thisptr.register_status_event(status_event)
+
+    def set_next_time(self, hoge):
+        '''set next time'''
+        self.thisptr.set_next_time(hoge)
+
+    def set_step_interval(self, a_time):
+        '''Set the step interval.'''
+        self.thisptr.set_step_interval(a_time)
+
 
 import_array()
