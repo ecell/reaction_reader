@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.47 2011/10/07 02:22:29 takeuchi Exp $
+$Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.48 2011/10/11 02:46:19 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -510,8 +510,6 @@ class Pybngl(object):
         for i, v in enumerate(seed_values):
             variables[i] = v
 
-#        global fm
-#        global sim
 
         volume = 1
         functions = fm.make_functions(m, results, volume)
@@ -519,16 +517,14 @@ class Pybngl(object):
         sim.initialize(the_solver, functions, variables)
 
 
-        if end_time != -1:
-            step_interval = end_time / (step_num-1)
-            for i in range(step_num):
-                cur_time = sim.the_time
-                sim.step()
-                the_solver.set_step_interval(step_interval)
-                sim.the_time = cur_time + step_interval
-                the_solver.set_next_time(sim.the_time)
-        else:
+
+        if (end_time != -1):   # t_end is defined
+            sim.run(end_time)
+            sim.the_time = end_time
+            sim.step()
+        else:                 # t_end is not defined
             sim.step(step_num)
+
 
 
         output_series = sim.get_logged_data()
@@ -558,7 +554,7 @@ class Pybngl(object):
         print '# ', header
         print '# ', result
 
-        print len(output_series)
+        print '# ', len(output_series)
 
 
 if __name__ == '__main__':
