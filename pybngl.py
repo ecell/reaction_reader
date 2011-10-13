@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.48 2011/10/11 02:46:19 takeuchi Exp $
+$Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.50 2011/10/13 04:34:23 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -519,9 +519,14 @@ class Pybngl(object):
 
 
         if (end_time != -1):   # t_end is defined
-            sim.run(end_time)
-            sim.the_time = end_time
+            while(sim.the_time + the_solver.get_step_interval() <end_time):
+                sim.step()
             sim.step()
+            sim.the_time = end_time
+            the_solver.set_next_time(sim.the_time)
+            the_solver.set_step_interval(sim.the_time - the_solver.get_current_time())
+            sim.step()
+
         else:                 # t_end is not defined
             sim.step(step_num)
 
