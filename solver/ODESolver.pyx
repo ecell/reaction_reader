@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/solver/ODESolver.pyx,v 1.2 2011/10/06 01:42:02 takeuchi Exp $
+$Header: /home/takeuchi/0613/solver/ODESolver.pyx,v 1.2 2011/10/06 01:42:02 takeuchi Exp takeuchi $
 '''
 
 __all__ = ["ODESolver"]
@@ -47,6 +47,7 @@ cdef extern from "ODESolver.hpp":
         void set_next_time(double)
         double get_step_interval()
         void set_step_interval(double)
+        double get_next_time()
     c_Solver *new_Solver "new ODESolver"()
     void del_Solver "delete"(c_Solver*) 
 
@@ -130,5 +131,9 @@ cdef class ODESolver:
         '''Set the step interval.'''
         self.thisptr.set_step_interval(a_time)
 
+
+    def get_next_time(self):
+        '''Get the next time.'''
+        return self.thisptr.get_next_time()
 
 import_array()
