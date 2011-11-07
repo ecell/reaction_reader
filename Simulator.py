@@ -42,7 +42,7 @@ class Simulator:
             self.dimension_algebraic = 0
             self.solver.initialize(variable_array)
 
-        self.the_time = self.solver.get_time()
+        self.the_time = self.solver.get_current_time()
         self.outputs_series = []
 
         # Register Functions
@@ -55,9 +55,9 @@ class Simulator:
         '''Set a first order ordinal diferential equation.'''
         self.solver.register_function(function)
 
-    def __log_data(self):
+    def log_data(self):
         '''Log the local time and the variables.'''
-        outputs = numpy.array([self.solver.get_time()])
+        outputs = numpy.array([self.solver.get_current_time()])
         variable_array = numpy.empty(self.dimension)
 
         if self.dimension_algebraic > 0:
@@ -80,10 +80,10 @@ class Simulator:
         '''Get the logged data series.'''
         return numpy.array(self.outputs_series)
 
-    def get_time(self):
+    def get_current_time(self):
         '''Get the current time.'''
         if self.solver != 0:
-            return self.solver.get_time()
+            return self.solver.get_current_time()
         else:
             return 0
 
@@ -95,7 +95,7 @@ class Simulator:
         self.solver.integrate(self.the_time)
         state_event = self.solver.step()
         self.the_time = self.solver.reschedule()
-        self.__log_data()
+        self.log_data()
         return state_event
 
     def step(self, n = 1):
