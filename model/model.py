@@ -1869,7 +1869,7 @@ class ReactionRule(object):
 #        for i in reactants:
 #            print '# ', str(i).partition("@")[0].replace('\n','')
 #            print '# '
-
+#
 #        print '# *** products ***'
 #        for i in products:
 #            print '# ', str(i).partition("@")[0].replace('\n','')
@@ -2222,6 +2222,7 @@ class ReactionRule(object):
         return True
 
     def __create_all_combinations(self, el_lists):
+
         arrays = []
         for i, el_list in enumerate(el_lists):
             if i == 0:
@@ -2236,9 +2237,36 @@ class ReactionRule(object):
                         a.append(el)
                         arrays_new.append(a)
                 arrays = arrays_new
+
         return arrays
 
     def generate_reactions(self, reactant_species_list):
+        '''
+        Returns own reaction rule as the result of reaction generation.
+        '''
+        
+        reactants_new = []
+        for sp in self.__reactants:
+            if not sp.dummy:
+                reactants_new.append(sp)
+        self.__reactants = reactants_new
+
+        products_new = []
+        for sp in self.__products:
+            if not sp.dummy:
+                products_new.append(sp)
+        self.__products = products_new
+
+        reactions = []
+
+        reaction = self.__model.add_concrete_reaction(\
+            self, self.__reactants, self.__products)
+        reactions.append(reaction)
+
+        return reactions
+
+
+    def generate_reactions_orig(self, reactant_species_list):
         '''
         Generates reactions from given species under this reaction rule.
         '''
@@ -2357,6 +2385,9 @@ class ReactionRule(object):
                 if reaction is None:
                     continue
                 reactions.append(reaction)
+
+        for i in reactions:
+            print type(i)
 
         return reactions
 
@@ -3062,6 +3093,7 @@ class Model(object):
             for r in reactions:
                 result.add_reaction(r)
             result_list.append(result)
+
         return result_list
 
 
