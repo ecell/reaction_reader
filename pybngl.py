@@ -579,7 +579,7 @@ if __name__ == '__main__':
     OptParse = OptionParser(usage=usage)
     OptParse.add_option('-r', dest='rulefile', metavar='RULE_FILE', help='write rules to RULE_FILE')
     OptParse.add_option('-s', dest='step_num', type=int, default=120, help='set step num')
-    OptParse.add_option('-i', dest='itr_num', type=int, default=10, help='set rule iteration num')
+    OptParse.add_option('-i', dest='itr_num', type=int, default=1, help='set rule iteration num')
     OptParse.add_option('-d', dest='disap_flag', action='store_false', default=True, help='allow implicit disappearance')
     OptParse.add_option('-t', dest='end_time', type=float, default=-1, help='set step num')
     
