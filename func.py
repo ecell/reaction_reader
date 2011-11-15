@@ -1,4 +1,4 @@
-from model.model import *
+from model.Model import *
 #from model.model import IncludingEntityCondition
 
 def michaelis_menten(a=None):

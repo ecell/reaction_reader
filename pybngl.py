@@ -4,22 +4,22 @@ $Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.50 2011/10/13 04:34:23 takeu
 
 from __future__ import with_statement
 import sys
-from model.model import Model
-from model.model import Species
-from model.model import BINDING_SPECIFIED
-from model.model import BINDING_NONE
-from model.model import BINDING_ANY
-from model.model import BINDING_UNSPECIFIED
+from model.Model import Model
+from model.Species import Species
+from model.Model import BINDING_SPECIFIED
+from model.Model import BINDING_NONE
+from model.Model import BINDING_ANY
+from model.Model import BINDING_UNSPECIFIED
 from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
-from model.model import IncludingEntityCondition
-from model.model import NotCondition
-from model.model import AndCondition
-from model.model import REACTANTS
-from model.model import PRODUCTS
-from model.model import Error
+#from model.model import IncludingEntityCondition
+#from model.model import NotCondition
+#from model.model import AndCondition
+#from model.model import REACTANTS
+#from model.model import PRODUCTS
+#from model.model import Error
 from optparse import OptionParser
 
 class AnyCallable(object):
@@ -491,6 +491,7 @@ class Pybngl(object):
                 cnt += 1
         print '#'
 
+	#import pdb; pdb.set_trace()
 
         if options.rulefile != None:
             f = open(options.rulefile, 'w')
