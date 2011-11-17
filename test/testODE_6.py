@@ -18,7 +18,7 @@ with molecule_types:
      A(SH2, Y(U))
 
 with reaction_rules:
-     L(r) + R(l) > L(r[1]).R(l[1]) [michaelis_menten(.1)] [include_reactants(2, A)] 
-     L(r[1]).R(l[1]) > L(r) + R(l) [michaelis_menten(.3)] [include_products(2, A)]
-     R(Y) + A(SH2) > R(Y[1]).A(SH2[1]) [michaelis_menten(.2)] [exclude_reactants(1, L)]
-     R(Y[1]).A(SH2[1]) > R(Y) + A(SH2) [michaelis_menten(.4)] [exclude_products(1, L)]
+     L(r) + R(l) > L(r[1]).R(l[1]) (.1, include_reactants(2, A))
+     L(r[1]).R(l[1]) > L(r) + R(l) (.3, include_reactants(2, A))
+     R(Y) + A(SH2) > R(Y[1]).A(SH2[1]) (.5, include_reactants(1, L))
+     R(Y[1]).A(SH2[1]) > R(Y) + A(SH2) (.4, include_reactants(1, L))

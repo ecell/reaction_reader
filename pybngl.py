@@ -14,12 +14,12 @@ from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
-#from model.model import IncludingEntityCondition
-#from model.model import NotCondition
-#from model.model import AndCondition
-#from model.model import REACTANTS
-#from model.model import PRODUCTS
-#from model.model import Error
+from model.Model import IncludingEntityCondition
+from model.Model import NotCondition
+from model.Model import AndCondition
+from model.Model import REACTANTS
+from model.Model import PRODUCTS
+from model.Model import Error
 from optparse import OptionParser
 
 class AnyCallable(object):

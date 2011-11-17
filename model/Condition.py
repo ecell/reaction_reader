@@ -1,3 +1,5 @@
+from Model import *
+
 class Condition(object):
     '''
     The base class of conditions.
