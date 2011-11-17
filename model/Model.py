@@ -1,3 +1,6 @@
+# Constants for the condition of reaction rule.
+REACTANTS = 1
+PRODUCTS = 2
 
 import sys
 from Binding import *
@@ -8,14 +11,9 @@ from Entity import *
 from EntityComponent import *
 from EntityType import *
 from Pair import *
-from PatternMatchingEntityPair import *
-from PatternMatchingInfo import *
-from ReactantsSpeciesEntityPair import *
-from ReactionProductEntityPair import *
 from ReactionResult import *
 from ReactionRule import *
 from StateType import *
-
 
 class Model(object):
     '''
