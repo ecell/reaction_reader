@@ -1,6 +1,6 @@
 from generac_func import *
 from Pair import *
-from Model import *
+from Error import *
 from Species import *
 
 class ReactionRule(object):

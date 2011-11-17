@@ -4,22 +4,23 @@ $Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.50 2011/10/13 04:34:23 takeu
 
 from __future__ import with_statement
 import sys
-from model.Model import Model
+from model.Model import *
+#from model.Model import Model
+#from model.Model import BINDING_SPECIFIED
+#from model.Model import BINDING_NONE
+#from model.Model import BINDING_ANY
+#from model.Model import BINDING_UNSPECIFIED
+#from model.Model import IncludingEntityCondition
+#from model.Model import NotCondition
+#from model.Model import AndCondition
+#from model.Model import REACTANTS
+#from model.Model import PRODUCTS
+
 from model.Species import Species
-from model.Model import BINDING_SPECIFIED
-from model.Model import BINDING_NONE
-from model.Model import BINDING_ANY
-from model.Model import BINDING_UNSPECIFIED
 from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
-from model.Model import IncludingEntityCondition
-from model.Model import NotCondition
-from model.Model import AndCondition
-from model.Model import REACTANTS
-from model.Model import PRODUCTS
-from model.Model import Error
 from optparse import OptionParser
 
 class AnyCallable(object):
@@ -303,7 +304,8 @@ def read_entity(sp, m, p, entity, binding_components):
                     if 'name' in j:  # states input
                         en_comp.set_state(en_comp.states.keys()[0], j['name'])
 
-                    if 'type' in j:  # binding input
+                    if j.get('type') is 'bracket':
+                    #if 'type' in j:  # binding input
                         binding_type = j['value']
                         if binding_type == '+':
                             en_comp.binding_state = BINDING_ANY
