@@ -181,6 +181,18 @@ class AnyCallable(object):
         else:
             tmp_list[1]['children'].append(addval)
 
+    def __mod__(self, rhs):
+#        print "label: " + str(rhs)
+
+        if type(rhs) == int or type(rhs) == float: # %1
+            addval = {'type': 'label', 'value': str(rhs)}
+            if "children" in tmp_list[-1]:
+                tmp_list[-1]['children'].append(addval)
+            else:
+                tmp_list[-1]['children'] = [addval]
+
+
+
 class MyDict(dict):
     def __init__(self):
         super(MyDict, self).__init__()
