@@ -1,5 +1,7 @@
 from generac_func import *
 from Pair import *
+from Model import *
+from Species import *
 
 class ReactionRule(object):
     '''
@@ -418,7 +420,6 @@ class ReactionRule(object):
             self, self.__reactants, self.__products)
         reactions.append(reaction)
 
-	import pdb; pdb.set_trace()
 
         return reactions
 
@@ -549,6 +550,8 @@ class ReactionRule(object):
 
         for i in reactions:
             print type(i)
+
+	import pdb; pdb.set_trace()
 
         return reactions
 
