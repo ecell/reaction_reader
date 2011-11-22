@@ -1,15 +1,31 @@
-from model.Model import *
+from model.model import *
 #from model.model import IncludingEntityCondition
 
 def michaelis_menten(a=None):
 #    print '*** michaelis_menten(',a,') is called ***'
     return float(a)
 
-def MassAction(a=None):
-    return float(a)
+#def MassAction(a=None, b=None):
+#    if b == None:
+#        return float(a)
+#    else:
+#        return float(a), float(b)
+#
+#def MassAction2(a=None, b=None):
+#    return a, b
 
-def MassAction2(a=None, b=None):
-    return a, b
+def MassAction(a, b=None):
+    if b == None:
+        return ["MassAction", a]
+    else:
+        return ["MassAction", (a, b)]
+
+#def MassAction2(a, b):
+#    return MassAction(a, b)
+
+def OriginalFunction(a):
+    return ["OriginalFunction", a]
+
 
 def include_reactants(a=None, b=None):
 #    print '*** include_reactants(', a, ',', b._key, ') is called ***'
