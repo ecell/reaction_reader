@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/Dropbox/quick/pybngl.py,v 1.50 2011/10/13 04:34:23 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.53 2011/11/22 08:28:00 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -184,15 +184,12 @@ class AnyCallable(object):
 
     def __mod__(self, rhs):
 #        print "label: " + str(rhs)
-
         if type(rhs) == int or type(rhs) == float: # %1
             addval = {'type': 'label', 'value': str(rhs)}
             if "children" in tmp_list[-1]:
                 tmp_list[-1]['children'].append(addval)
             else:
                 tmp_list[-1]['children'] = [addval]
-
-
 
 class MyDict(dict):
     def __init__(self):
@@ -215,11 +212,13 @@ class ReactionRules(object):
 
         global seed_species
 
-        print_tree(global_list)
+        if show_mes:
+            print_tree(global_list)
 
         con_list = []
         speed = speed_r = 0
         condition = None
+        func_name = func_name_r = 'MassAction'
 
 #        seed_species = parser.parse_species_array(sp_str_list, m)
 
@@ -228,27 +227,53 @@ class ReactionRules(object):
             reactants, con_list = read_patterns(m, parser, v['children'][0])
             products, con_list = read_patterns(m, parser, v['children'][1])
 
+#            for con_idx, con_func in enumerate(con_list):
+#                if type(con_func) == float:   # [SPEED_FUNCTION]
+#                    speed = speed_r = con_func
+#                    con_list.pop(con_idx)
+#                elif type(con_func) == tuple: # [MassAction2(.1, .2)]
+#                    speed = con_func[0]
+#                    speed_r = con_func[int(bool(con_func[1]))]
+#                    con_list.pop(con_idx)
+
+#            if len(con_list) >= 2:            # [CONDITION_FUNCTION]
+#                condition = AndCondition(con_list)
+#            elif con_list != []:
+#                condition = con_list[0]
+#            else:
+#                condition = None
+
             for con_idx, con_func in enumerate(con_list):
-                if type(con_func) == float:   # [SPEED_FUNCTION]
-                    speed = speed_r = con_func
-                    con_list.pop(con_idx)
-                elif type(con_func) == tuple: # [MassAction2(.1, .2)]
-                    speed = con_func[0]
-                    speed_r = con_func[int(bool(con_func[1]))]
-                    con_list.pop(con_idx)
 
-            if len(con_list) >= 2:            # [CONDITION_FUNCTION]
-                condition = AndCondition(con_list)
-            elif con_list != []:
-                condition = con_list[0]
-            else:
-                condition = None
+                if type(con_func) in [int, float]:        # | 0.1
+                    speed = con_func
 
-            rule = m.add_reaction_rule(reactants, products, condition, k_name='MassAction', k=speed)
+                elif type (con_func) == list:             # | MassAction(0.1)
+                    func_name = con_func[0]
+                    speed = con_func[1]
+                    
+                elif type(con_func) == tuple:
+                    if type(con_func[0]) in [int, float]: # | 0.1 of (0.1, 0.2)
+                        speed = con_func[0]
+
+                    if type(con_func[1]) in [int, float]: # | 0.2 of (0.1, 0.2)
+                        speed_r = con_func[1]
+
+                    if type(con_func[0]) == list: # | MA(1) of (MA(1), MA(0.2))
+                        func_name = con_func[0][0]
+                        speed = con_func[0][1]
+
+                    if type(con_func[1]) == list: # | MA(2) of (MA(1), MA(0.2))
+                        func_name_r = con_func[1][0]
+                        speed_r = con_func[1][1]
+
+            rule = m.add_reaction_rule(reactants, products, condition, \
+                                           k_name=func_name, k=speed)
 
             if v['type'] == 'neq':
-                condition = swap_condition(con_list)
-                rule = m.add_reaction_rule(products, reactants, condition, k_name='MassAction', k=speed_r)
+#                condition = swap_condition(con_list)
+                rule = m.add_reaction_rule(products, reactants, condition, \
+                                               k_name=func_name_r, k=speed_r)
             
 
 
@@ -304,8 +329,7 @@ def read_entity(sp, m, p, entity, binding_components):
                     if 'name' in j:  # states input
                         en_comp.set_state(en_comp.states.keys()[0], j['name'])
 
-                    if j.get('type') is 'bracket':
-                    #if 'type' in j:  # binding input
+                    if j.get('type') is 'bracket': # binding input
                         binding_type = j['value']
                         if binding_type == '+':
                             en_comp.binding_state = BINDING_ANY
@@ -419,7 +443,11 @@ def print_tree(a, n=0):
             elif j == 'children' or j == 'value':
                 print pr_str(n, j),
                 if type(i[j]) == list:
-                    print_tree(i[j], n+12)
+                    if type(i[j][0]) == dict: # for species
+                        print_tree(i[j], n+12)
+                    else:
+                        print i[j]  # for function (['MassAction', 0.3])
+
                 else:
                     print i[j]
 
@@ -480,33 +508,34 @@ class Pybngl(object):
             print inst
             exit()
 
-        print '# << reaction rules >>'
-        cnt = 1
-        for rule_id in sorted(m.reaction_rules.iterkeys()):
-            rule = m.reaction_rules[rule_id]
-            print '# ', cnt, rule.str_simple()
-            cnt += 1
-        print '#'
-
-        print '# << species >>'
-        cnt = 1
-        for sp_id in sorted(m.concrete_species.iterkeys()):
-            sp = m.concrete_species[sp_id]
-            print '# ', cnt, sp.str_simple()
-            cnt += 1
-        print '#'
-
-        print '# << reactions >>'
-
-        cnt = 1
-        for result in results:
-            for r in result.reactions:
-                print '# ', cnt, r.str_simple()
+        # Outputs information to stdout
+        if show_mes:
+            print '# << reaction rules >>'
+            cnt = 1
+            for rule_id in sorted(m.reaction_rules.iterkeys()):
+                rule = m.reaction_rules[rule_id]
+                print '# ', cnt, rule.str_simple()
                 cnt += 1
-        print '#'
+            print '#'
 
-	#import pdb; pdb.set_trace()
+            print '# << species >>'
+            cnt = 1
+            for sp_id in sorted(m.concrete_species.iterkeys()):
+                sp = m.concrete_species[sp_id]
+                print '# ', cnt, sp.str_simple()
+                cnt += 1
+            print '#'
 
+            print '# << reactions >>'
+            cnt = 1
+            for result in results:
+                for r in result.reactions:
+                    print '# ', cnt, r.str_simple()
+                    cnt += 1
+            print '#'
+
+
+        # Outputs reactions to rulefile
         if options.rulefile != None:
             f = open(options.rulefile, 'w')
             cnt = 1
@@ -594,13 +623,15 @@ if __name__ == '__main__':
     OptParse = OptionParser(usage=usage)
     OptParse.add_option('-r', dest='rulefile', metavar='RULE_FILE', help='write rules to RULE_FILE')
     OptParse.add_option('-s', dest='step_num', type=int, default=120, help='set step num')
-    OptParse.add_option('-i', dest='itr_num', type=int, default=1, help='set rule iteration num')
+    OptParse.add_option('-i', dest='itr_num', type=int, default=10, help='set rule iteration num')
     OptParse.add_option('-d', dest='disap_flag', action='store_false', default=True, help='allow implicit disappearance')
     OptParse.add_option('-t', dest='end_time', type=float, default=-1, help='set step num')
+    OptParse.add_option('-v', dest='show_mes', action='store_true', default=False, help='show verbose messages')
     
     (options, args) = OptParse.parse_args()
     step_num = options.step_num
     m.disallow_implicit_disappearance = options.disap_flag
     end_time = options.end_time
+    show_mes = options.show_mes
 
     pybngl = Pybngl()
