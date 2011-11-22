@@ -1,3 +1,33 @@
+class OriginalFunctionFluxProcess:
+    def __init__(self, k_value, volume, reactants, species):
+        self.volume = volume
+        self.k_value = k_value
+        self.reactants = reactants
+        self.N_A = 6.0221367e+23
+        # Get Species' name
+        # for i, v in enumerate(species): print species[v].str_simple()
+        # import pdb; pdb.set_trace()
+
+    def __call__(self, variable_array, time):
+        # Get Species' value
+        # print variable_array
+        velocity = self.k_value * self.volume * self.N_A
+        for r in self.reactants:
+            coefficient = r['coef']
+            value = variable_array[r['id']]
+            while coefficient > 0:
+                velocity *= value / (self.volume * self.N_A)
+                coefficient -= 1
+
+        return velocity
+
+    def __str__(self):
+        retval = 'MassAction('
+        retval += 'k=%f, ' % self.k_value
+        retval += 'reactants=%s' % self.reactants
+        retval += ')'
+        return retval
+
 class MassActionFluxProcess:
     def __init__(self, k_value, volume, reactants):
         self.volume = volume
@@ -92,7 +122,7 @@ class FunctionMaker(object):
 
         # Creates rule list.
         rule_list = self.__create_rule_list(m, reaction_results)
-        
+
         # Process list
         processes = []
         for rule in rule_list:
@@ -100,6 +130,9 @@ class FunctionMaker(object):
             if k_name == 'MassAction':
                 process = MassActionFluxProcess(rule['k'], volume,
                     rule['reactants'])
+            elif k_name == 'OriginalFunction':
+                process = OriginalFunctionFluxProcess(rule['k'], volume,
+                    rule['reactants'], m.concrete_species)
             else:
                 msg = 'Unsupported process: %s' % k_name
                 raise Exception(msg)
