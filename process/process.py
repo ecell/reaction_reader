@@ -1,5 +1,6 @@
 class OriginalFunctionFluxProcess:
-    def __init__(self, k_value, volume, reactants, species):
+    def __init__(self, k_value, volume, reactants, species, effectors):
+        print [i.str_simple() for i in effectors]
         self.volume = volume
         self.k_value = k_value
         self.reactants = reactants
@@ -112,6 +113,8 @@ class FunctionMaker(object):
                     rule['products'].append(\
                         {'id': variable_id, 'coef': 1})
 
+                rule['e_list'] = r['e_list']
+
                 rule_list.append(rule)
 
         return rule_list
@@ -132,7 +135,7 @@ class FunctionMaker(object):
                     rule['reactants'])
             elif k_name == 'OriginalFunction':
                 process = OriginalFunctionFluxProcess(rule['k'], volume,
-                    rule['reactants'], m.concrete_species)
+                    rule['reactants'], m.concrete_species, rule['e_list'])
             else:
                 msg = 'Unsupported process: %s' % k_name
                 raise Exception(msg)
