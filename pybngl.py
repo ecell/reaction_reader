@@ -1,7 +1,6 @@
 '''
 $Header: /home/takeuchi/0613/pybngl.py,v 1.53 2011/11/22 08:28:00 takeuchi Exp $
 '''
-
 from __future__ import with_statement
 import sys
 from model.Model import *
@@ -22,6 +21,7 @@ from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
 from optparse import OptionParser
+
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -219,11 +219,18 @@ class ReactionRules(object):
         speed = speed_r = 0
         condition = None
         func_name = func_name_r = 'MassAction'
+        effector_list = []
 
 #        seed_species = parser.parse_species_array(sp_str_list, m)
 
+        
         for id, v in enumerate(global_list):
 
+            # create effector list
+            if v.get('value') != None:
+                effector_list = [read_species(parser, i) for i in v['value']]
+
+            # create reactants/products
             reactants, con_list = read_patterns(m, parser, v['children'][0])
             products, con_list = read_patterns(m, parser, v['children'][1])
 
@@ -243,6 +250,7 @@ class ReactionRules(object):
 #            else:
 #                condition = None
 
+            # set speed function
             for con_idx, con_func in enumerate(con_list):
 
                 if type(con_func) in [int, float]:        # | 0.1
@@ -268,14 +276,12 @@ class ReactionRules(object):
                         speed_r = con_func[1][1]
 
             rule = m.add_reaction_rule(reactants, products, condition, \
-                                           k_name=func_name, k=speed)
+                               k_name=func_name, k=speed, e_list=effector_list)
 
             if v['type'] == 'neq':
 #                condition = swap_condition(con_list)
                 rule = m.add_reaction_rule(products, reactants, condition, \
-                                               k_name=func_name_r, k=speed_r)
-            
-
+                           k_name=func_name_r, k=speed_r, e_list=effector_list)
 
 
 class MoleculeTypes(object):
@@ -307,7 +313,7 @@ class MoleculeTypes(object):
         tmp_list = []
 
 
-def read_entity(sp, m, p, entity, binding_components):
+def read_entity(sp, p, entity, binding_components):
 
     if 'type' in entity:
         return
@@ -355,7 +361,7 @@ def read_entity(sp, m, p, entity, binding_components):
             pass
 
 
-def read_species(m, p, species):
+def read_species(p, species):
 
     sp = Species()
 
@@ -363,14 +369,14 @@ def read_species(m, p, species):
 
     if species['name'] == '.':  #   A.B
         for entity in species['children']:
-            read_entity(sp, m, p, entity, bind_comp)
+            read_entity(sp, p, entity, bind_comp)
         for comps in bind_comp.itervalues():
             if len(comps) != 2:
                 pass
             else:
                 sp.add_binding(comps[0], comps[1])
     else:                       #   A
-        read_entity(sp, m, p, species, bind_comp)
+        read_entity(sp, p, species, bind_comp)
 
     return sp
 
@@ -383,7 +389,7 @@ def read_patterns(m, p, species):
     if species.get('type') == 'add':
         for entity in species['children']:
             if 'name' in entity:
-                sp = read_species(m, p, entity)
+                sp = read_species(p, entity)
                 sp.concrete = False
                 sp = m.register_species(sp)
                 s_list.append(sp)
@@ -392,7 +398,7 @@ def read_patterns(m, p, species):
                 con_list.append(entity['value'])
 
     else:
-        sp = read_species(m, p, species)
+        sp = read_species(p, species)
         sp.concrete = False
         sp = m.register_species(sp)
         sp.concrete = False
@@ -470,7 +476,7 @@ class MoleculeInits(object):
 
             seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
 
-            sp = read_species(m, parser, i)
+            sp = read_species(parser, i)
             sp.concrete = True
             sp = m.register_species(sp)
             sp_list.append(sp)
