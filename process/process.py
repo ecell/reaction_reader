@@ -5,13 +5,18 @@ class OriginalFunctionFluxProcess:
         self.k_value = k_value
         self.reactants = reactants
         self.N_A = 6.0221367e+23
+        self.species = species
         # Get Species' name
         # for i, v in enumerate(species): print species[v].str_simple()
-        # import pdb; pdb.set_trace()
 
     def __call__(self, variable_array, time):
         # Get Species' value
         # print variable_array
+
+        # Print Species' name and value
+        for i, v in enumerate(self.species):
+            print self.species[v].str_simple(), variable_array[i]
+
         velocity = self.k_value * self.volume * self.N_A
         for r in self.reactants:
             coefficient = r['coef']
