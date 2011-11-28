@@ -26,6 +26,8 @@ with reaction_rules:
 
 #    L(r) + R(l) > L(r[1]).R(l[1]) > L(r[1]).R(l[1]) [A(a), B(b)] | (0.1, 0.3)
 
-    L(r) + R(l) <_> L(r[1]).R(l[1]) [A(a), B(b)] | (0.1, 0.3)
-
 #    L(r) + R(l) > L(r[1]).R(l[1]) | 0.1
+
+#    L(r) + R(l) <_> L(r[1]).R(l[1]) [A(a), B(b)] | (0.1, 0.3)
+
+    L(r) + R(l) <_> L(r[1]).R(l[1]) [A(a), B(b)] | (OriginalFunction(0.1), 0.3)
