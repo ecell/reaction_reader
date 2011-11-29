@@ -1,21 +1,51 @@
-class OriginalFunctionFluxProcess:
+import inspect as ins
+import sys
+
+class FluxProcess(object):
+    def conc(self, sp_list):
+        '''
+        returns values of species in sp_list which has species idx
+        '''
+        # return [va[i] for i in sp_list]
+
+        va = ins.getargvalues(ins.stack()[2][0]).locals['variable_array']
+        retval = []
+
+        try:
+            for i in sp_list:
+                retval.append(va[i])
+        except IndexError:
+            print 'IndexError in FluxProcess.'
+            sys.exit()
+        else:
+            return retval
+
+class OriginalFunctionFluxProcess(FluxProcess):
     def __init__(self, k_value, volume, reactants, species, effectors):
-        print [i.str_simple() for i in effectors]
         self.volume = volume
         self.k_value = k_value
         self.reactants = reactants
         self.N_A = 6.0221367e+23
         self.species = species
+
         # Get Species' name
-        # for i, v in enumerate(species): print species[v].str_simple()
+        # print [x.str_simple() for x in self.species.values()]
+        # for i, v in enumerate(species): print i+1, species[v].str_simple()
+
+        # Get Reactors' name
+        # print [i.str_simple() for i in effectors]
 
     def __call__(self, variable_array, time):
         # Get Species' value
         # print variable_array
 
         # Print Species' name and value
-        for i, v in enumerate(self.species):
-            print self.species[v].str_simple(), variable_array[i]
+        # for i, v in enumerate(self.species):
+        #     print self.species[v].str_simple(), variable_array[i]
+        
+        # (2011/11/29) : example of conc()
+        sp_list = [x['id'] for x in self.reactants]
+        # print self.conc(sp_list)
 
         velocity = self.k_value * self.volume * self.N_A
         for r in self.reactants:
@@ -28,13 +58,15 @@ class OriginalFunctionFluxProcess:
         return velocity
 
     def __str__(self):
-        retval = 'MassAction('
+        retval = 'OriginalFunction('
         retval += 'k=%f, ' % self.k_value
         retval += 'reactants=%s' % self.reactants
+        retval += 'species=%s' % self.species
+        retval += 'effectors=%s' % self.effectos
         retval += ')'
         return retval
 
-class MassActionFluxProcess:
+class MassActionFluxProcess(FluxProcess):
     def __init__(self, k_value, volume, reactants):
         self.volume = volume
         self.k_value = k_value
