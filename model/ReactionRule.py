@@ -1,6 +1,5 @@
-from generac_func import *
 from Pair import *
-from Error import *
+from general_func import *
 from Species import *
 
 class ReactionRule(object):
@@ -9,7 +8,7 @@ class ReactionRule(object):
     '''
 
     def __init__(self, id, model, reactants, products, concrete, \
-        condition=None, is_label=False, **attrs):
+        condition=None, **attrs):
         '''
         Initializes this reaction rule.
 
@@ -39,10 +38,13 @@ class ReactionRule(object):
             self.__attrs[k] = v
 
         # Checks whether given species are registered to the model.
-        for sp in reactants:
-            assert sp in self.model.species.values()
-        for sp in products:
-            assert sp in self.model.species.values()
+#
+#        (11/12/12) comment out to process species with 'label'
+#
+#        for sp in reactants:
+#            assert sp in self.model.species.values()
+#        for sp in products:
+#            assert sp in self.model.species.values()
 
         if concrete:
             # Checks the concreteness of species.
@@ -81,13 +83,11 @@ class ReactionRule(object):
         else:
             # Sets the given condition to the attribute.
             self.__condition = condition
-
             # Adds the dummy species to the reactants.
             self.__add_dummies(reactants, products)
-
-            # Creates the correspondence list.
-#            import pdb; pdb.set_trace()
-            if not is_label:
+            
+            if attrs.get('lbl') != True:  # 12/12
+                # Creates the correspondence list.
                 self.__create_correspondence()
 
     def __create_temporary_species(\
@@ -167,6 +167,7 @@ class ReactionRule(object):
                 found = False
                 for j, p in enumerate(self.__products):
                     for pe in p.entities.itervalues():
+
                         if re.entity_type is pe.entity_type:
                             # The product entity must be more specific
                             # than the reactant entity 
@@ -191,7 +192,6 @@ class ReactionRule(object):
                     msg = ""
                     msg += 'This reaction rule is invalid: %s.' \
                         % self.str_simple()
-                    import pdb; pdb.set_trace()
                     raise Error(msg)
 
         correspondence_list = create_correspondence_list(\
@@ -383,6 +383,13 @@ class ReactionRule(object):
 
     def __create_all_combinations(self, el_lists):
 
+#        print "###"
+#        for x in el_lists:
+#            print x
+#            for y in x:
+#                print "#"
+#                print y
+
         arrays = []
         for i, el_list in enumerate(el_lists):
             if i == 0:
@@ -400,137 +407,109 @@ class ReactionRule(object):
 
         return arrays
 
-    def generate_reactions(self, reactant_species_list):
+    def generate_reactions_new(self, reactant_species_list):
         '''
-        Returns own reaction rule as the result of reaction generation.
-        '''
-        
-        reactants_new = []
-        for sp in self.__reactants:
-            if not sp.dummy:
-                reactants_new.append(sp)
-        self.__reactants = reactants_new
-
-        products_new = []
-        for sp in self.__products:
-            if not sp.dummy:
-                products_new.append(sp)
-        self.__products = products_new
-
-        reactions = []
-
-        reaction = self.__model.add_concrete_reaction(\
-            self, self.__reactants, self.__products)
-        reactions.append(reaction)
-
-
-        return reactions
-
-
-    def generate_reactions_orig(self, reactant_species_list):
-        '''
-        Generates reactions from given species under this reaction rule.
+        Returns own reaction rule (with label) as the result of reaction generation.
         '''
 
-        # Checks the input species.
-#        for sp in reactant_species_list:
-#            assert sp.check_concreteness()
-#            assert sp in self.model.species.values()
 
-        # Updates the reactant species list for dummy reactants 
-        # that exist when new species appears in this reaction.
-        for sp in self.__temporary_species_list:
-            reactant_species_list.append(sp.copy())
+#        self.reactants[0].has_label()
+
+        # remove dummy species (original)
+        self._ReactionRule__reactants = [x for x in self.reactants if not x.dummy]
+        self._ReactionRule__products = [x for x in self.products if not x.dummy]
+
 
         # Creates a list of lists for each reactant species.
+        '''
+        reactant_array is needed for the case of "A(%1)+B(%2)>C(%1)+D(%2)"
+        array should be [(A,B)|(0,0), (0,1), (1,0), (1,1)]
+        '''
+
         reactant_lists = []
+
         for pattern in self.__reactants:
+
             r_list = []
             for r in reactant_species_list:
                 # Applies the reactant patterns to given species.
                 if r.matches(pattern, True):
-                    if pattern.dummy:
-                        # If the pattern is a dummy species,
-                        # selects only the equal reactant species.
-                        if r.equals(pattern):
-                            r_list.append(r.copy())
-                            break
-                    else:
-                        r_list.append(r.copy())
+                    r_list.append(r.copy())
 
-            # If no species matches to the reactant pattern, 
+            # If no species matches to the reactant pattern,
             # returns an empty list.
             if len(r_list) == 0:
                 return []
 
             reactant_lists.append(r_list)
 
-	#import pdb; pdb.set_trace()
-
-        # Creates a list of lists of concrete reactants species 
+        # Creates a list of lists of concrete reactants species
         # for each reaction.
         reactant_arrays = self.__create_all_combinations(reactant_lists)
-
-	#import pdb; pdb.set_trace()
-
+        '''
+        reactant_arrays is [[GLU(12)], [GLU(13)]]
+        '''
         # Creates the species of products.
         product_lists = []
-        for reactant_list in reactant_arrays:
-            p_lists = self.__create_products(reactant_list)
-            product_lists.append(p_lists)
+        for reactant_list in reactant_arrays: # GLU
 
-        # Creates a list of reactions.
+            # Creates the label dictionary.
+            label_dict = {}
+            for i in reactant_list: # 12/13
+                for j in self.reactants: # loop for species list
+                    if i.matches(j):
+                        for a, b in enumerate(j.entities):
+                            Ent = j.entities[b]
+                            for c, d in enumerate(Ent.components):
+                                Com = Ent.components[d]
+                                try: # get label
+                                    target = i.entities[b].components[d].states.values()[0]
+                                    label_dict[Com.label] = target
+                                except: # Species w/o labeled entities
+                                    pass
+
+            # Creates the product species specified by label dict.
+            p_lists = []
+            for i in self.products:
+                labeled_prod = i.copy()
+#                for idx, j in enumerate(labeled_prod.entities):
+#                    LEnt = labeled_prod.entities[j]
+#                    for idx2, k in enumerate(LEnt.components):
+#                        LCom = LEnt.components[k]
+#                        LCom.states[LCom.states.keys()[0]] = label_dict[LCom.label]
+                for LEnt in labeled_prod.entities.itervalues():
+                    for LCom in LEnt.components.itervalues():
+                        if hasattr(LCom, "label"):
+                            LCom.states[LCom.states.keys()[0]] = label_dict[LCom.label]
+
+                p_lists.append(labeled_prod)
+            product_lists.append([p_lists])
+
+        # Creates a list of reactions
         reactions = []
         for i, reactants in enumerate(reactant_arrays):
             p_lists = product_lists[i]
 
             # Remove duplicated combination of the products.
-            p_lists_new = []
-            for j, products in enumerate(p_lists):
-                if j == 0:
-                    p_lists_new.append(products)
-                else:
-                    exists = False
-                    for sp_list in p_lists_new:
-                        if self.__is_equal_species_list(sp_list, products):
-                            exists = True
-                            break
-                    if not exists:
-                        p_lists_new.append(products)
+            p_lists_new = p_lists
 
             for products in p_lists_new:
-                # If the number of generated product species is 
-                # different from that of the reaction rule, 
+                # If the number of generated products species is
+                # different from that of the reaction rule,
                 # skips this products.
                 if len(products) != len(self.input_products):
                     continue
 
-                # Checks whether the products are different from 
-                # the reactants.
-                if len(products) == len(reactants):
-                    r_list = list(reactants)
-                    p_list = list(products)
-                    for i, r in enumerate(reactants):
-                        for j, p in enumerate(products):
-                            if r.equals(p):
-                                if r in r_list:
-                                    r_list.remove(r)
-                                if p in p_list:
-                                    p_list.remove(p)
-                    if not len(r_list) and not len(p_list):
-                        # If the length is different, skip this reaction.
-                        continue
-
-                # Removes temporay reactant speciess used for 
-                # appearance of species.
-                reactants_temp = list(reactants)
-                for r in reactants_temp:
-                    if self.__is_temporary_species(r):
-                        reactants.remove(r)
-
-                # Regiesters concrete species.
+                # Registers concrete speices.
                 products_new = []
                 for p in products:
+
+                    # Removes label info to register clean species to model.
+                    for Ent in p.entities.itervalues():
+                        for Com in Ent.components.itervalues():
+                            if hasattr(Com, "label"):
+                                del Com.label
+
                     p_new = self.__model.register_species(p)
                     products_new.append(p_new)
 
@@ -544,6 +523,26 @@ class ReactionRule(object):
                     assert r_found is not None
                     reactants_new.append(r_found)
 
+
+                # Checks whether the products are different from 
+                # the reactants.
+#                if len(products) == len(reactants):
+#                    r_list = list(reactants)
+#                    p_list = list(products)
+#                    for i, r in enumerate(reactants):
+#                        for j, p in enumerate(products):
+#                            if r.equals(p):
+#                                if r in r_list:
+#                                    r_list.remove(r)
+#                                if p in p_list:
+#                                    p_list.remove(p)
+#                    if not len(r_list) and not len(p_list):
+#                        # If the length is different, skip this reaction.
+#                        continue
+
+
+
+
                 # Registers a concrete reaction.
                 reaction = self.__model.add_concrete_reaction(\
                     self, reactants_new, products_new)
@@ -551,12 +550,157 @@ class ReactionRule(object):
                     continue
                 reactions.append(reaction)
 
-        for i in reactions:
-            print type(i)
-
-#	#import pdb; pdb.set_trace()
+#        if len(reactions) != 0: print reactions[0]
 
         return reactions
+
+
+    def generate_reactions(self, reactant_species_list):
+        '''
+        Generates reactions from given species under this reaction rule.
+        '''
+        # species_list -> reactant_species_list -> 3 items
+        # reactants in rule -> self.reactants -> 2 items
+
+        # Checks existance of label(%) in reactants.
+        # If it isn't(use_label_flag == False), remaining process is used.
+#        use_label_flag = False
+#        for i in self.reactants: # Species
+#            for j, v in enumerate(i.entities): # Entities
+#                Ent = i.entities[v]
+#                for k, w in enumerate(Ent.components):
+#                    Com = Ent.components[w]
+#                    if 'label' in Com.__dict__:
+#                        use_label_flag = True
+        use_label_flag = True in [x.has_label() for x in self.reactants]
+        
+        if use_label_flag:
+            return self.generate_reactions_new(reactant_species_list)
+        else:
+
+
+            # Checks the input species.
+#            for sp in reactant_species_list:
+#                assert sp.check_concreteness()
+#                assert sp in self.model.species.values()
+
+            # Updates the reactant species list for dummy reactants 
+            # that exist when new species appears in this reaction.
+            for sp in self.__temporary_species_list:
+                reactant_species_list.append(sp.copy())
+
+            # Creates a list of lists for each reactant species.
+
+            reactant_lists = []
+
+            for pattern in self.__reactants:
+
+                r_list = []
+                for r in reactant_species_list:
+                    # Applies the reactant patterns to given species.
+                    if r.matches(pattern, True):
+                        if pattern.dummy:
+                            # If the pattern is a dummy species,
+                            # selects only the equal reactant species.
+                            if r.equals(pattern):
+                                r_list.append(r.copy())
+                                break
+                        else:
+                            r_list.append(r.copy())
+
+                # If no species matches to the reactant pattern, 
+                # returns an empty list. 
+                if len(r_list) == 0:
+                    return []
+
+                reactant_lists.append(r_list)
+
+            # Creates a list of lists of concrete reactants species 
+            # for each reaction.
+            reactant_arrays = self.__create_all_combinations(reactant_lists)
+
+            # Creates the species of products.
+            product_lists = []
+
+            for reactant_list in reactant_arrays:
+                p_lists = self.__create_products(reactant_list)
+                product_lists.append(p_lists)
+
+            # Creates a list of reactions.
+            reactions = []
+            for i, reactants in enumerate(reactant_arrays):
+                p_lists = product_lists[i]
+
+                # Remove duplicated combination of the products.
+                p_lists_new = []
+                for j, products in enumerate(p_lists):
+                    if j == 0:
+                        p_lists_new.append(products)
+                    else:
+                        exists = False
+                        for sp_list in p_lists_new:
+                            if self.__is_equal_species_list(sp_list, products):
+                                exists = True
+                                break
+                        if not exists:
+                            p_lists_new.append(products)
+
+                for products in p_lists_new:
+                    # If the number of generated product species is 
+                    # different from that of the reaction rule, 
+                    # skips this products.
+                    if len(products) != len(self.input_products):
+                        continue
+
+                # Checks whether the products are different from 
+                # the reactants.
+#                if len(products) == len(reactants):
+#                    r_list = list(reactants)
+#                    p_list = list(products)
+#                    for i, r in enumerate(reactants):
+#                        for j, p in enumerate(products):
+#                            if r.equals(p):
+#                                if r in r_list:
+#                                    r_list.remove(r)
+#                                if p in p_list:
+#                                    p_list.remove(p)
+#                    if not len(r_list) and not len(p_list):
+#                        # If the length is different, skip this reaction.
+#                        continue
+
+                    # Removes temporay reactant speciess used for 
+                    # appearance of species.
+                    reactants_temp = list(reactants)
+                    for r in reactants_temp:
+                        if self.__is_temporary_species(r):
+                            reactants.remove(r)
+
+                    # Regiesters concrete species.
+                    products_new = []
+                    for p in products:
+                        p_new = self.__model.register_species(p)
+                        products_new.append(p_new)
+
+                    reactants_new = []
+                    for r in reactants:
+                        r_found = None
+                        for sp in self.__model.species.itervalues():
+                            if sp.equals(r):
+                                r_found = sp
+                                break
+                        assert r_found is not None
+                        reactants_new.append(r_found)
+
+                    # Registers a concrete reaction.
+                    reaction = self.__model.add_concrete_reaction(\
+                        self, reactants_new, products_new)
+                    if reaction is None:
+                        continue
+                    reactions.append(reaction)
+
+#            if len(reactions) != 0: print reactions[0]
+
+            return reactions
 
     def __is_equal_species_list(self, list_1, list_2):
         if len(list_1) != len(list_2):
@@ -592,13 +736,9 @@ class ReactionRule(object):
             reactant_species_correspondence_lists.append(\
                 list(info.correspondences))
 
-	#import pdb; pdb.set_trace()
-	
         reactant_species_correspondence_lists = \
             self.__create_all_combinations(\
                 reactant_species_correspondence_lists)
-
-	#import pdb; pdb.set_trace()
 
         # Recreate the correspondece between all reactants and species.
         rs_correspondence_list = []
@@ -629,6 +769,7 @@ class ReactionRule(object):
         '''
         # Loops for all correspondence between reactant-species. 
         created_species_lists = []
+        a = self.__reactant_product_correspondences
         for reactant_product_correspondence in \
             self.__reactant_product_correspondences:
             created_species_list = self.__apply_reaction_rule_sub(\
