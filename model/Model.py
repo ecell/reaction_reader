@@ -181,7 +181,6 @@ class Model(object):
         condition: The condition for this reaction rule.
         attrs: Map of attributes.
         '''
-
         # Gets the condition for this reaction rule.
         cond = None
         if not condition is None:
@@ -204,6 +203,7 @@ class Model(object):
 
         self.__serial_reaction_rules = serial
         self.__reaction_rules[serial] = reaction_rule
+
         return reaction_rule
 
     def add_concrete_reaction(self, rule, reactants, products):
@@ -232,6 +232,9 @@ class Model(object):
                 if ex_reaction.equals(reaction):
                     if rule.id == ex_rule_id:
                         return None
+                    # Passes reaction from labeling rules
+                    elif rule._ReactionRule__attrs.get('lbl'):
+                        pass
                     else:
                         msg = 'A concrete reaction \n'
                         msg += '  %s\n' % reaction.str_simple()
@@ -240,6 +243,7 @@ class Model(object):
                         msg += 'and \n'
                         msg += '  %s.' % ex_result.reaction_rule.str_simple()
                         raise Error(msg)
+
 
         # Updates the attributes.
         self.__serial_reaction_results = serial
@@ -254,11 +258,12 @@ class Model(object):
         Generates the reactions by applying all reaction rules to given species 
         and generated species.
         '''
+
         result_list = []
         rules = self.reaction_rules.copy()
         sp_list = list(species_list)
         for rule in rules.itervalues():
-            reactions = rule.generate_reactions_orig(sp_list)
+            reactions = rule.generate_reactions(sp_list)
             if len(reactions):
                 result = ReactionResult(rule)
                 for r in reactions:
@@ -344,8 +349,5 @@ class Model(object):
             result_list.append(result)
 
         return result_list
-
-
-
 
 
