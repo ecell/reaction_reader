@@ -1,7 +1,6 @@
-from generac_func import *
 from Entity import *
-from Pair import *
 from PatternMatchingInfo import *
+from Pair import *
 from Binding import *
 
 class Species(object):
@@ -30,6 +29,7 @@ class Species(object):
 
         # List of patterns that do not match to this species.
         self.__unmatched_patterns = []
+
 
     @property
     def id(self):
@@ -102,14 +102,16 @@ class Species(object):
         '''Returns the information of pattern matching.'''
         return self.__pattern_matching_info
 
-    def add_entity(self, entity_type):
+#    def add_entity(self, entity_type):
+    def add_entity(self, entity_type, **attrs):
         '''
         Add entities of this molecular species.
 
         entity_type: The type of species for the new entity.
         '''
         self.__serial_entity += 1
-        entity = Entity(self.__serial_entity, entity_type, self)
+#        entity = Entity(self.__serial_entity, entity_type, self)
+        entity = Entity(self.__serial_entity, entity_type, self, **attrs)
         self.__entities[self.__serial_entity] = entity
         return entity
 
@@ -226,6 +228,7 @@ class Species(object):
                 self.__pattern_matching_info[pattern.id] = info
             else:
                 self.__unmatched_patterns.append(pattern)
+
         return matched
 
     def __matches_sub(self, pattern, info, use_cache):
@@ -346,6 +349,21 @@ class Species(object):
             return False
         if not sp.matches(self):
             return False
+
+        # for labeled/unlabeled species
+        for i, v in enumerate(self.entities):
+            for j, w in enumerate(self.entities[v].components):
+                a = self.entities[v].components[w]
+                try:  # for labeled/unlabeld species
+                    b = sp.entities[v].components[w]
+                    if hasattr(a, "label") != hasattr(b, "label"):
+                        return False
+                    elif a.label != b.label:
+                        return False
+                except:  # for normal species
+                    pass
+
+
         return True
 
     def copy(self, id=0):
@@ -365,6 +383,12 @@ class Species(object):
                 for (name, state) in comp.states.iteritems():
                     c.states[name] = comp.states[name]
                 c.binding_state = comp.binding_state
+                try: #
+                    c.label = comp.label
+                except:
+                    pass
+
+
             e.dummy = entity.dummy
         for binding in self.bindings.itervalues():
             e_1 = s.entities[binding.entity_1.id]
@@ -435,7 +459,6 @@ class Species(object):
         Checks and returns whether this species is appropriate as a 
         concrete species.
         '''
-
         # Checks whether all states are unambiguous.
         if not self.is_specific():
             return False
@@ -524,5 +547,16 @@ class Species(object):
             entity_set_list.append(s)
 
         return entity_set_list
+
+    def has_label(self):
+        '''
+        Returns True if any Entitiy of this species have label.
+        '''
+        for Ent in self.entities.itervalues():
+            for Com in Ent.components.itervalues():
+                if hasattr(Com, "label"):
+                    return True
+
+        return False
 
 
