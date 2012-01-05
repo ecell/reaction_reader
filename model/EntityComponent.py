@@ -1,4 +1,4 @@
-from generac_func import *
+from general_func import *
 
 class EntityComponent(object):
     '''An component in an entity object.'''
@@ -269,6 +269,8 @@ class EntityComponent(object):
         if self.binding is not None:
             retval += ', '
             retval += 'binding=\'%d\'' % self.binding.id
+        if hasattr(self, "label"):
+            retval += ', label="%s"' % self.label
         retval += ')'
         return retval
 
