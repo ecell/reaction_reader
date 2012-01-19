@@ -184,6 +184,8 @@ class AnyCallable(object):
 
     def __mod__(self, rhs):
 #        print "label: " + str(rhs)
+        global is_label_reaction
+        is_label_reaction = True
         if type(rhs) == int or type(rhs) == float: # %1
             addval = {'type': 'label', 'value': str(rhs)}
             if "children" in tmp_list[-1]:
@@ -223,6 +225,7 @@ class ReactionRules(object):
 
 #        seed_species = parser.parse_species_array(sp_str_list, m)
 
+        import pdb; pdb.set_trace()
         
         for id, v in enumerate(global_list):
 
@@ -303,6 +306,7 @@ class MoleculeTypes(object):
                     if j.has_key('children'):
                         state_name = 'state_'+i['name']+'_'+j['name']
                         state = [k['name'] for k in j['children']]
+			#import pdb; pdb.set_trace()
                         p_state = m.add_state_type(state_name, state)
                         tmpmole.add_component(j['name'], {j['name']: p_state})
                     else:
@@ -493,6 +497,8 @@ class Pybngl(object):
         globals['reaction_rules'] = ReactionRules()
         globals['molecule_inits'] = MoleculeInits()
         globals['molecule_types'] = MoleculeTypes()
+        
+
 
         try:
             exec file(args[0]) in globals
