@@ -9,7 +9,7 @@ class ReactionRule(object):
     '''
 
     def __init__(self, id, model, reactants, products, concrete, \
-        condition=None, **attrs):
+        condition=None, is_label=False, **attrs):
         '''
         Initializes this reaction rule.
 
@@ -86,7 +86,9 @@ class ReactionRule(object):
             self.__add_dummies(reactants, products)
 
             # Creates the correspondence list.
-            self.__create_correspondence()
+#            import pdb; pdb.set_trace()
+            if not is_label:
+                self.__create_correspondence()
 
     def __create_temporary_species(\
         self, entity_type_name, dummy):
@@ -189,6 +191,7 @@ class ReactionRule(object):
                     msg = ""
                     msg += 'This reaction rule is invalid: %s.' \
                         % self.str_simple()
+                    import pdb; pdb.set_trace()
                     raise Error(msg)
 
         correspondence_list = create_correspondence_list(\
@@ -551,7 +554,7 @@ class ReactionRule(object):
         for i in reactions:
             print type(i)
 
-	import pdb; pdb.set_trace()
+#	#import pdb; pdb.set_trace()
 
         return reactions
 
