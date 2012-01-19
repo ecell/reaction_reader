@@ -149,6 +149,8 @@ void ODESolver::initialize(Real variable_array[],
         [static_cast<RealMatrix::index>(a_variable_array_size)]);
 
     //******************
+    is_stiff_ = true;
+    the_stiffness_counter_ = 0;
 
     initialize_solver(a_variable_array_size);
 }
@@ -160,8 +162,8 @@ void ODESolver::initialize_solver(const Integer a_variable_array_size)
     //以下のコードをそのままにすると
     //常にstiffになってしまう。
     //解決策：******************に持っていく。
-    is_stiff_ = true;
-    the_stiffness_counter_ = 0;
+    // is_stiff_ = true;
+    // the_stiffness_counter_ = 0;
     //warning !!!!!
 
     const Integer a_size(a_variable_array_size);
