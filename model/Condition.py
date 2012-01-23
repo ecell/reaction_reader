@@ -1,5 +1,3 @@
-from Model import *
-
 class Condition(object):
     '''
     The base class of conditions.
@@ -243,5 +241,3 @@ class IncludingEntityCondition(Condition):
         if self.entity_type != other.entity_type:
             return False
         return True
-
-
