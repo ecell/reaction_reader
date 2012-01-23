@@ -4,23 +4,32 @@ $Header: /home/takeuchi/0613/pybngl.py,v 1.56 2011/12/12 05:35:52 takeuchi Exp $
 
 from __future__ import with_statement
 import sys
-from model.model import Model
-from model.model import Species
-from model.model import BINDING_SPECIFIED
-from model.model import BINDING_NONE
-from model.model import BINDING_ANY
-from model.model import BINDING_UNSPECIFIED
+from model.Model import *
+#from model.model import Model
+#from model.model import Species
+#from model.model import BINDING_SPECIFIED
+#from model.model import BINDING_NONE
+#from model.model import BINDING_ANY
+#from model.model import BINDING_UNSPECIFIED
+#from model.parser import Parser
+#from solver.ODESolver import ODESolver
+#from process.process import FunctionMaker
+#from Simulator import Simulator
+#from model.model import IncludingEntityCondition
+#from model.model import NotCondition
+#from model.model import AndCondition
+#from model.model import REACTANTS
+#from model.model import PRODUCTS
+#from model.model import Error
+#from optparse import OptionParser
+
+from model.Species import Species
 from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
-from model.model import IncludingEntityCondition
-from model.model import NotCondition
-from model.model import AndCondition
-from model.model import REACTANTS
-from model.model import PRODUCTS
-from model.model import Error
 from optparse import OptionParser
+from model.Error import Error
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -318,6 +327,10 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'], {j['name']: p_state})
                     else:
                         tmpmole.add_component(j['name'])
+
+                tmpmole.add_component('loc', {'loc': comp_state})
+                
+#                m.add_state_type('compartment', ['E', 'P', 'C'])
 
                 parser.add_entity_type(tmpmole)
 
@@ -650,7 +663,7 @@ class Pybngl(object):
 
 
         ##### ONLY FOR testToy.py #####
-        if args == ['test/testToy.py']:
+        if args == ['testToy.py']:
             m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
             m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
             output_series = sim.get_logged_data()
@@ -695,5 +708,8 @@ if __name__ == '__main__':
     m.disallow_implicit_disappearance = options.disap_flag
     end_time = options.end_time
     show_mes = options.show_mes
+
+    # initialize test(01/17)
+    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
 
     pybngl = Pybngl()
