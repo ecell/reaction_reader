@@ -72,5 +72,3 @@ class Component(object):
         retval += 'attrs=%s' % self.__attrs
         retval += ')'
         return retval
-
-
