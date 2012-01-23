@@ -1,6 +1,5 @@
 from EntityComponent import *
 
-
 class Entity(object):
     '''An entity of a species.'''
 
