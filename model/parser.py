@@ -172,11 +172,11 @@ class Parser(object):
         sp_list = []
         for sp_str in sp_str_list:
             sp = self.parse_species(sp_str)
-            print "# *** sp_str_list in parser.parer_species_array ***"
-            print '# ', str(sp_str_list)
-            print "# *** sp  in parser.parer_species_array ***"
-            print '# ', str(sp).partition("@")[0].replace('\n','')
-            print "# *** end of parser.parer_species_array ***"
+#            print "# *** sp_str_list in parser.parer_species_array ***"
+#            print '# ', str(sp_str_list)
+#            print "# *** sp  in parser.parer_species_array ***"
+#            print '# ', str(sp).partition("@")[0].replace('\n','')
+#            print "# *** end of parser.parer_species_array ***"
             if sp is None:
                 print sp_str
             if model != None:
