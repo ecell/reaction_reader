@@ -9,7 +9,6 @@ class StateType(object):
         states: List of the states for this state type.
         attrs: Map of attributes.
         '''
-        #import pdb; pdb.set_trace()
 
         # Checks the input values.
         assert len(states)
