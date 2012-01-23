@@ -12,5 +12,3 @@ class Error(Exception):
     def __str__(self):
         '''Returns the string representation of this object.'''
         return str(self.__value)
-
-
