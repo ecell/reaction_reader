@@ -1,6 +1,7 @@
 from Pair import *
 from general_func import *
 from Species import *
+from Error import *
 
 class ReactionRule(object):
     '''
