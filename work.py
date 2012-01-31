@@ -4,7 +4,7 @@ $Header: /home/takeuchi/0613/pybngl.py,v 1.56 2011/12/12 05:35:52 takeuchi Exp $
 
 from __future__ import with_statement
 import sys
-from model.Model import *
+from model.model import *
 #from model.model import Model
 #from model.model import Species
 #from model.model import BINDING_SPECIFIED
@@ -29,7 +29,6 @@ from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
 from optparse import OptionParser
-from model.Error import Error
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -328,7 +327,7 @@ class MoleculeTypes(object):
                     else:
                         tmpmole.add_component(j['name'])
 
-                tmpmole.add_component('loc', {'loc': comp_state})
+#                tmpmole.add_component('loc', {'loc': comp_state})
                 
 #                m.add_state_type('compartment', ['E', 'P', 'C'])
 
