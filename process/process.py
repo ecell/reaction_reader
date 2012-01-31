@@ -202,7 +202,7 @@ class FunctionMaker(object):
             elif k_name == 'MichaelisUniUni':
                 vals = rule['k']
                 process = MichaelisUniUniFluxProcess(vals[0], vals[1],
-                          vals[2], vals[3], volume, rule['reactants'], 
+                          vals[2], vals[3], vals[4], rule['reactants'], 
                           rule['products'], rule['e_list'])
             else:
                 msg = 'Unsupported process: %s' % k_name

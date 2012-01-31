@@ -27,8 +27,10 @@ def MassAction(a, b=None):
 def OriginalFunction(a):
     return ["OriginalFunction", a]
 
-def MichaelisUniUni(a, b, c, d):
-    return ["MichaelisUniUni", (a, b, c, d)]
+#def MichaelisUniUni(a, b, c, d, e):
+#    return ["MichaelisUniUni", (a, b, c, d, e)]
+def MichaelisUniUni(*args):
+    return ["MichaelisUniUni", (args)]
 
 
 def include_reactants(a=None, b=None):
