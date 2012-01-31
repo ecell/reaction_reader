@@ -1,19 +1,27 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.53 2011/11/22 08:28:00 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.56 2011/12/12 05:35:52 takeuchi Exp $
 '''
+
 from __future__ import with_statement
 import sys
 from model.Model import *
-#from model.Model import Model
-#from model.Model import BINDING_SPECIFIED
-#from model.Model import BINDING_NONE
-#from model.Model import BINDING_ANY
-#from model.Model import BINDING_UNSPECIFIED
-#from model.Model import IncludingEntityCondition
-#from model.Model import NotCondition
-#from model.Model import AndCondition
-#from model.Model import REACTANTS
-#from model.Model import PRODUCTS
+#from model.model import Model
+#from model.model import Species
+#from model.model import BINDING_SPECIFIED
+#from model.model import BINDING_NONE
+#from model.model import BINDING_ANY
+#from model.model import BINDING_UNSPECIFIED
+#from model.parser import Parser
+#from solver.ODESolver import ODESolver
+#from process.process import FunctionMaker
+#from Simulator import Simulator
+#from model.model import IncludingEntityCondition
+#from model.model import NotCondition
+#from model.model import AndCondition
+#from model.model import REACTANTS
+#from model.model import PRODUCTS
+#from model.model import Error
+#from optparse import OptionParser
 
 from model.Species import Species
 from model.parser import Parser
@@ -21,7 +29,7 @@ from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
 from optparse import OptionParser
-
+from model.Error import Error
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -184,10 +192,13 @@ class AnyCallable(object):
 
     def __mod__(self, rhs):
 #        print "label: " + str(rhs)
-        global is_label_reaction
-        is_label_reaction = True
+
+        global label_flag
+
         if type(rhs) == int or type(rhs) == float: # %1
             addval = {'type': 'label', 'value': str(rhs)}
+            label_flag = True
+
             if "children" in tmp_list[-1]:
                 tmp_list[-1]['children'].append(addval)
             else:
@@ -213,6 +224,7 @@ class ReactionRules(object):
     def __exit__(self, *arg):
 
         global seed_species
+        global label_flag
 
         if show_mes:
             print_tree(global_list)
@@ -225,7 +237,6 @@ class ReactionRules(object):
 
 #        seed_species = parser.parse_species_array(sp_str_list, m)
 
-        import pdb; pdb.set_trace()
         
         for id, v in enumerate(global_list):
 
@@ -234,6 +245,7 @@ class ReactionRules(object):
                 effector_list = [read_species(parser, i) for i in v['value']]
 
             # create reactants/products
+
             reactants, con_list = read_patterns(m, parser, v['children'][0])
             products, con_list = read_patterns(m, parser, v['children'][1])
 
@@ -278,13 +290,18 @@ class ReactionRules(object):
                         func_name_r = con_func[1][0]
                         speed_r = con_func[1][1]
 
-            rule = m.add_reaction_rule(reactants, products, condition, \
-                               k_name=func_name, k=speed, e_list=effector_list)
 
+            # Checks whether reactants/products have any labels.
+            lbflag = True in [r.has_label() for r in reactants+products]
+            
+
+            # Generates reaction rule.
+            rule = m.add_reaction_rule(reactants, products, condition, \
+                               k_name=func_name, k=speed, e_list=effector_list, lbl=lbflag)
             if v['type'] == 'neq':
 #                condition = swap_condition(con_list)
                 rule = m.add_reaction_rule(products, reactants, condition, \
-                           k_name=func_name_r, k=speed_r, e_list=effector_list)
+                           k_name=func_name_r, k=speed_r, e_list=effector_list, lbl=lbflag) # label_flag)
 
 
 class MoleculeTypes(object):
@@ -306,12 +323,14 @@ class MoleculeTypes(object):
                     if j.has_key('children'):
                         state_name = 'state_'+i['name']+'_'+j['name']
                         state = [k['name'] for k in j['children']]
-			#import pdb; pdb.set_trace()
                         p_state = m.add_state_type(state_name, state)
                         tmpmole.add_component(j['name'], {j['name']: p_state})
                     else:
                         tmpmole.add_component(j['name'])
 
+                # for location (01/17)
+#                tmpmole.add_component('loc', {'loc': comp_state})
+                
                 parser.add_entity_type(tmpmole)
 
         tmp_list = []
@@ -358,12 +377,13 @@ def read_entity(sp, p, entity, binding_components):
                                 binding_components[binding_id].append(tmp)
                                 binding_components[binding_id].append(en_comp)
 
+                    if j.get('type') == 'label': # labeling ID
+                        en_comp.label = j['value']
 
         except IndexError:
             quit()
         except KeyError:
             pass
-
 
 def read_species(p, species):
 
@@ -394,20 +414,24 @@ def read_patterns(m, p, species):
         for entity in species['children']:
             if 'name' in entity:
                 sp = read_species(p, entity)
-                sp.concrete = False
-                sp = m.register_species(sp)
-                s_list.append(sp)
+#                sp.concrete = False
+                sp2 = m.register_species(sp)
+                if (label_flag) and (not sp.equals(sp2)):
+                    s_list.append(sp)
+                else: s_list.append(sp2)
 
             elif entity.get('type') == 'bracket':
                 con_list.append(entity['value'])
 
     else:
         sp = read_species(p, species)
-        sp.concrete = False
-        sp = m.register_species(sp)
-        sp.concrete = False
-        s_list.append(sp)
+#        sp.concrete = False
+        sp2 = m.register_species(sp)
+#        sp.concrete = False
 
+        if (label_flag) and (not sp.equals(sp2)):
+            s_list.append(sp)     # add labeled species
+        else: s_list.append(sp2)  # add normal species
 
         for i in [i for i in species['children'] if 'type' in i]:
             if i.get('type') == 'bracket':
@@ -497,8 +521,6 @@ class Pybngl(object):
         globals['reaction_rules'] = ReactionRules()
         globals['molecule_inits'] = MoleculeInits()
         globals['molecule_types'] = MoleculeTypes()
-        
-
 
         try:
             exec file(args[0]) in globals
@@ -514,11 +536,17 @@ class Pybngl(object):
         fm = FunctionMaker()
         sim = Simulator()
 
+        volume = 1e-15
+
+#        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
+
         try:
             results = m.generate_reaction_network(seed_species, options.itr_num)
         except Error, inst:
             print inst
             exit()
+
+#        print results[0]
 
         # Outputs information to stdout
         if show_mes:
@@ -545,6 +573,9 @@ class Pybngl(object):
                     print '# ', cnt, r.str_simple()
                     cnt += 1
             print '#'
+            print '# << values >>'
+            print '# volume :', volume
+            print '#'
 
 
         # Outputs reactions to rulefile
@@ -567,55 +598,91 @@ class Pybngl(object):
             variables[i] = v
 
 
-        volume = 1
         functions = fm.make_functions(m, results, volume)
         the_solver = ODESolver()
         sim.initialize(the_solver, functions, variables)
 
 
-
-        if (end_time != -1):   # t_end is defined
-            while(sim.the_time + the_solver.get_step_interval() <end_time):
+        def sim_sub():
+            if (end_time != -1):   # t_end is defined
+                while(sim.the_time + the_solver.get_step_interval() <end_time):
+                    sim.step()
+                if sim.the_time < end_time:
+                    sim.step()
+                sim.the_time = end_time
+                the_solver.set_next_time(sim.the_time)
+                the_solver.set_step_interval(sim.the_time - the_solver.get_current_time())
                 sim.step()
-            sim.step()
-            sim.the_time = end_time
-            the_solver.set_next_time(sim.the_time)
-            the_solver.set_step_interval(sim.the_time - the_solver.get_current_time())
-            sim.step()
 
-        else:                 # t_end is not defined
-            sim.step(step_num)
+            else:                 # t_end is not defined
+                sim.step(step_num)
+
+        def sim_print():
+            output_series = sim.get_logged_data()
+            header = 'time, '
+            for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
+                if i > 0:
+                    header += ', '
+                sp = m.concrete_species[sp_id]
+                header += sp.str_simple()
+            print '# ', header
+            print '#'
+            for i in output_series:
+                print i[0],
+                for j in range(1, len(i)):
+                    print i[j] / N_A,
+                print ''
+
+            output_terminal = output_series[-1]
+            result = str(output_terminal[0])
+            result += ': '
+            for i, v in enumerate(output_terminal):
+                if i > 1:
+                    result += ', '
+                if i > 0:
+                    value = v / N_A
+                    result += str(value)
+
+            print '# ', header
+            print '# ', result
+
+            print '# ', len(output_series)
+
+        sim_sub()
+        sim_print()
+
+        ##### ONLY FOR testLabel.py #####
+        if args == ['testLabel.py']:
+            m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
+            m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
+            output_series = sim.get_logged_data()
+            variables = output_series[-1][1:].tolist()
+
+            volume = 1
+            functions = fm.make_functions(m, results, volume)
+            the_solver = ODESolver()
+            sim.initialize(the_solver, functions, variables)
+            sim_sub()
+            sim_print()
+        ##### ONLY FOR testLabel.py #####
 
 
+        ##### ONLY FOR testToy.py #####
+        if args == ['testToy.py']:
+            m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
+            m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
+            output_series = sim.get_logged_data()
+            variables = output_series[-1][1:].tolist()
 
-        output_series = sim.get_logged_data()
-        header = 'time, '
-        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
-            if i > 0:
-                header += ', '
-            sp = m.concrete_species[sp_id]
-            header += sp.str_simple()
-        print '# ', header
-        print '#'
-        for i in output_series:
-            for j in i:
-                print j,
-            print ''
+            volume = 1
+            functions = fm.make_functions(m, results, volume)
+            the_solver = ODESolver()
+            sim.initialize(the_solver, functions, variables)
+            sim_sub()
+            sim_print()
+        ##### ONLY FOR testLabel.py #####
 
-        output_terminal = output_series[-1]
-        result = str(output_terminal[0])
-        result += ': '
-        for i, v in enumerate(output_terminal):
-            if i > 1:
-                result += ', '
-            if i > 0:
-                value = v / N_A
-                result += str(value)
 
-        print '# ', header
-        print '# ', result
-
-        print '# ', len(output_series)
 
 
 if __name__ == '__main__':
@@ -627,7 +694,8 @@ if __name__ == '__main__':
 
     global_list = []
     tmp_list = []
-
+    label_flag = False
+    
     m = Model()
     parser = Parser()
 
@@ -645,5 +713,8 @@ if __name__ == '__main__':
     m.disallow_implicit_disappearance = options.disap_flag
     end_time = options.end_time
     show_mes = options.show_mes
+
+    # initialize test(01/17)
+    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
 
     pybngl = Pybngl()
