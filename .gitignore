@@ -8,3 +8,5 @@
 *#
 *.out
 .ropeproject
+solver/DAESolver.cpp
+solver/ODESolver.cpp
