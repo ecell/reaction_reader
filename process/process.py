@@ -2,31 +2,42 @@ import inspect as ins
 import sys
 
 class FluxProcess(object):
-    def conc(self, sp_list):
+    def conc(self, sp):
         '''
         returns values of species in sp_list which has species idx
         '''
         # return [va[i] for i in sp_list]
 
         va = ins.getargvalues(ins.stack()[2][0]).locals['variable_array']
-        retval = []
+        return va[sp['id']]
 
-        try:
-            for i in sp_list:
-                retval.append(va[i])
-        except IndexError:
-            print 'IndexError in FluxProcess.'
-            sys.exit()
-        else:
-            return retval
+    def invalid_func(self, message):
+        print message
+        sys.exit()
 
-class OriginalFunctionFluxProcess(FluxProcess):
-    def __init__(self, k_value, volume, reactants, species, effectors):
+#        retval = []
+#
+#        try:
+#            for i in sp_list:
+#                retval.append(va[i])
+#        except IndexError:
+#            print 'IndexError in FluxProcess.'
+#            sys.exit()
+#        else:
+#            return retval
+
+
+class MichaelisUniUniFluxProcess(FluxProcess):
+    def __init__(self, KmS, KmP, KcF, KcR, volume, reactant, product, effectors):
         self.volume = volume
-        self.k_value = k_value
-        self.reactants = reactants
+        self.KmS = KmS
+        self.KmP = KmP
+        self.KcF = KcF
+        self.KcR = KcR
+        self.reactant = reactant
         self.N_A = 6.0221367e+23
-        self.species = species
+        self.product = product
+        self.effector = effectors
 
         # Get Species' name
         # print [x.str_simple() for x in self.species.values()]
@@ -34,6 +45,9 @@ class OriginalFunctionFluxProcess(FluxProcess):
 
         # Get Reactors' name
         # print [i.str_simple() for i in effectors]
+
+        if (len(self.reactant) != 1) or (len(self.product) != 1):
+            self.invalid_func("number of reactant and product must be 1.")
 
     def __call__(self, variable_array, time):
         # Get Species' value
@@ -44,16 +58,23 @@ class OriginalFunctionFluxProcess(FluxProcess):
         #     print self.species[v].str_simple(), variable_array[i]
         
         # (2011/11/29) : example of conc()
-        sp_list = [x['id'] for x in self.reactants]
-        # print self.conc(sp_list)
+        #sp_list = [x['id'] for x in self.reactants]
 
-        velocity = self.k_value * self.volume * self.N_A
-        for r in self.reactants:
-            coefficient = r['coef']
-            value = variable_array[r['id']]
-            while coefficient > 0:
-                velocity *= value / (self.volume * self.N_A)
-                coefficient -= 1
+        def molar_conc(sp):
+            """${3:function documentation}"""
+            n = self.conc(sp)
+            conc_v = n / self.volume
+            mol_conc = conc_v / self.N_A
+
+            return mol_conc
+
+        #print self.conc(sp_list)
+        S = molar_conc(self.reactant[0])
+        P = molar_conc(self.product[0])
+
+        velocity = (self.KcF * S - self.KcR * P) / (self.KmS * self.KmP + self.KmP * S + self.KmS * P)
+
+        print "# velocity :", velocity
 
         return velocity
 
@@ -150,9 +171,16 @@ class FunctionMaker(object):
                     rule['products'].append(\
                         {'id': variable_id, 'coef': 1})
 
-                rule['e_list'] = r['e_list']
+                rule['e_list'] = []
+                for effector in r['e_list']:
+                    for i in m.concrete_species.iteritems():
+                        if effector.matches(i[1]):
+                            variable_id = variable_id_map[i[0]]
+                            rule['e_list'].append(\
+                                {'id': variable_id, 'coef': 1})
 
                 rule_list.append(rule)
+
 
         return rule_list
 
@@ -166,13 +194,16 @@ class FunctionMaker(object):
         # Process list
         processes = []
         for rule in rule_list:
+
             k_name = rule['k_name']
             if k_name == 'MassAction':
                 process = MassActionFluxProcess(rule['k'], volume,
                     rule['reactants'])
-            elif k_name == 'OriginalFunction':
-                process = OriginalFunctionFluxProcess(rule['k'], volume,
-                    rule['reactants'], m.concrete_species, rule['e_list'])
+            elif k_name == 'MichaelisUniUni':
+                vals = rule['k']
+                process = MichaelisUniUniFluxProcess(vals[0], vals[1],
+                          vals[2], vals[3], volume, rule['reactants'], 
+                          rule['products'], rule['e_list'])
             else:
                 msg = 'Unsupported process: %s' % k_name
                 raise Exception(msg)
