@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.56 2011/12/12 05:35:52 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.61 2012/02/01 07:11:59 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -329,7 +329,8 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'])
 
                 # for location (01/17)
-#                tmpmole.add_component('loc', {'loc': comp_state})
+                if loc_flag:
+                    tmpmole.add_component('loc', {'loc': comp_state})
                 
                 parser.add_entity_type(tmpmole)
 
@@ -536,7 +537,7 @@ class Pybngl(object):
         fm = FunctionMaker()
         sim = Simulator()
 
-        volume = 1e-15
+        volume = 1
 
 #        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
@@ -707,12 +708,14 @@ if __name__ == '__main__':
     OptParse.add_option('-d', dest='disap_flag', action='store_false', default=True, help='allow implicit disappearance')
     OptParse.add_option('-t', dest='end_time', type=float, default=-1, help='set step num')
     OptParse.add_option('-v', dest='show_mes', action='store_true', default=False, help='show verbose messages')
+    OptParse.add_option('-l', dest='loc_flag', action='store_true', default=False, help='use location description')
     
     (options, args) = OptParse.parse_args()
     step_num = options.step_num
     m.disallow_implicit_disappearance = options.disap_flag
     end_time = options.end_time
     show_mes = options.show_mes
+    loc_flag = options.loc_flag
 
     # initialize test(01/17)
     comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
