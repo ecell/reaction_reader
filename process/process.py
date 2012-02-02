@@ -1,6 +1,12 @@
 import inspect as ins
 import sys
 
+def MassAction(k):
+    return ["MassAction", k]
+
+def MichaelisUniUni(*args): # (KmS, KmP, KcF, KcR, volume)
+    return ["MichaelisUniUni", (args)]
+
 class FluxProcess(object):
     def conc(self, sp):
         '''
