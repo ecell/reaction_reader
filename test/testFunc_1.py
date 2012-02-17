@@ -83,3 +83,9 @@ with reaction_rules:
     # MichaelissUniUni(KmS, KmP, KcF, KcR, volume)
     S(a) > P(a) [C(a)] | MichaelisUniUni(100e-9, 1.0, 1.0, 0.0, 1e-15)
 
+    # reversible
+    #S2(a) <_> P2(a) [C2(a)] | ({'k':0.1,'km':0.2}, {'k':0.2,'km':0.3})
+    #S2(a) <_> P2(a) [C2(a)] | (dict(k=0.1,km=0.2), dict(k=0.2,km=0.3))
+    #S2(a) <_> P2(a) [C2(a)] | (params(k=0.1,km=0.2), params(k=0.2,km=0.3))
+    #S2(a) <_> P2(a) [C2(a)] | (_(k=0.1,km=0.2), _(k=0.2,km=0.3))
+    #S2(a) <_> P2(a) [C2(a)] | (MA(k=0.1,km=0.2), MA(k=0.2,km=0.3))
