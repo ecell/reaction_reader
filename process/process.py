@@ -1,3 +1,6 @@
+'''
+$Header: /home/takeuchi/0613/process/process.py,v 1.10 2012/02/10 01:18:12 takeuchi Exp $
+'''
 import inspect as ins
 import sys
 
@@ -21,27 +24,13 @@ class FluxProcess(object):
         print message
         sys.exit()
 
-#        retval = []
-#
-#        try:
-#            for i in sp_list:
-#                retval.append(va[i])
-#        except IndexError:
-#            print 'IndexError in FluxProcess.'
-#            sys.exit()
-#        else:
-#            return retval
+    N_A = 6.0221367e+23
 
 
 class MichaelisUniUniFluxProcess(FluxProcess):
-    def __init__(self, KmS, KmP, KcF, KcR, volume, reactant, product, effectors):
-        self.volume = volume
-        self.KmS = KmS
-        self.KmP = KmP
-        self.KcF = KcF
-        self.KcR = KcR
+    def __init__(self, arglist, reactant, product, effectors):
+        [self.KmS, self.KmP, self.KcF, self.KcR, self.volume] = arglist
         self.reactant = reactant
-        self.N_A = 6.0221367e+23
         self.product = product
         self.effector = effectors
 
@@ -78,9 +67,11 @@ class MichaelisUniUniFluxProcess(FluxProcess):
         S = molar_conc(self.reactant[0])
         P = molar_conc(self.product[0])
 
+        # use decorator
         velocity = (self.KcF * S - self.KcR * P) / (self.KmS * self.KmP + self.KmP * S + self.KmS * P)
+        velocity *= self.volume * self.N_A
 
-        print "# velocity :", velocity
+        #print "# velocity :", velocity
 
         return velocity
 
@@ -98,7 +89,6 @@ class MassActionFluxProcess(FluxProcess):
         self.volume = volume
         self.k_value = k_value
         self.reactants = reactants
-        self.N_A = 6.0221367e+23
 
     def __call__(self, variable_array, time):
         velocity = self.k_value * self.volume * self.N_A
@@ -190,7 +180,7 @@ class FunctionMaker(object):
 
         return rule_list
 
-    def make_functions(self, m, reaction_results, volume):
+    def make_functions(self, m, reaction_results):
         '''Make functions from model
         '''
 
@@ -200,16 +190,16 @@ class FunctionMaker(object):
         # Process list
         processes = []
         for rule in rule_list:
-
+            # todo!!: move user function definition
             k_name = rule['k_name']
+            # todo!!: (re)move "volume" paramter
             if k_name == 'MassAction':
+                volume = 1
                 process = MassActionFluxProcess(rule['k'], volume,
                     rule['reactants'])
             elif k_name == 'MichaelisUniUni':
-                vals = rule['k']
-                process = MichaelisUniUniFluxProcess(vals[0], vals[1],
-                          vals[2], vals[3], vals[4], rule['reactants'], 
-                          rule['products'], rule['e_list'])
+                process = MichaelisUniUniFluxProcess(rule['k'],
+                    rule['reactants'], rule['products'], rule['e_list'])
             else:
                 msg = 'Unsupported process: %s' % k_name
                 raise Exception(msg)

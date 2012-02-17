@@ -9,11 +9,11 @@ class Simulator:
         self.outputs_series = []
         self.solver = 0
 
-    def make_functions(self, model, reaction_results, volume):
-        '''Make functions from model
-        '''
-        function_maker = FunctionMaker()
-        return function_maker.make_functions(model, reaction_results, volume)
+#    def make_functions(self, model, reaction_results, volume):
+#        '''Make functions from model
+#        '''
+#        function_maker = FunctionMaker()
+#        return function_maker.make_functions(model, reaction_results, volume)
 
     def initialize(self, a_solver, functions, variables,
             variables_algebraic = []):

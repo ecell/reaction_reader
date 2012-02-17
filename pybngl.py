@@ -1,5 +1,5 @@
 '''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.61 2012/02/01 07:11:59 takeuchi Exp $
+$Header: /home/takeuchi/0613/pybngl.py,v 1.64 2012/02/10 00:54:22 takeuchi Exp $
 '''
 
 from __future__ import with_statement
@@ -503,12 +503,16 @@ class MoleculeInits(object):
 
         for i in tmp_list:
 
-            seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
-
             sp = read_species(parser, i)
             sp.concrete = True
+
+            if sp.str_simple() in [x.str_simple() for x in sp_list]:
+                raise ValueError
+
             sp = m.register_species(sp)
             sp_list.append(sp)
+
+            seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
 
         seed_species = sp_list
 
@@ -537,7 +541,7 @@ class Pybngl(object):
         fm = FunctionMaker()
         sim = Simulator()
 
-        volume = 1
+#        volume = 1
 
 #        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
@@ -574,9 +578,9 @@ class Pybngl(object):
                     print '# ', cnt, r.str_simple()
                     cnt += 1
             print '#'
-            print '# << values >>'
-            print '# volume :', volume
-            print '#'
+#            print '# << values >>'
+#            print '# volume :', volume
+#            print '#'
 
 
         # Outputs reactions to rulefile
@@ -599,7 +603,8 @@ class Pybngl(object):
             variables[i] = v
 
 
-        functions = fm.make_functions(m, results, volume)
+#        functions = fm.make_functions(m, results, volume)
+        functions = fm.make_functions(m, results)
         the_solver = ODESolver()
         sim.initialize(the_solver, functions, variables)
 
@@ -634,20 +639,21 @@ class Pybngl(object):
                     print i[j] / N_A,
                 print ''
 
-            output_terminal = output_series[-1]
-            result = str(output_terminal[0])
-            result += ': '
-            for i, v in enumerate(output_terminal):
-                if i > 1:
-                    result += ', '
-                if i > 0:
-                    value = v / N_A
-                    result += str(value)
+            if step_num > 0: # step_num = 0 raises Error by output_series[-1]
+                output_terminal = output_series[-1]
+                result = str(output_terminal[0])
+                result += ': '
+                for i, v in enumerate(output_terminal):
+                    if i > 1:
+                        result += ', '
+                    if i > 0:
+                        value = v / N_A
+                        result += str(value)
 
-            print '# ', header
-            print '# ', result
+                print '# ', header
+                print '# ', result
 
-            print '# ', len(output_series)
+                print '# ', len(output_series)
 
         sim_sub()
         sim_print()
@@ -659,8 +665,9 @@ class Pybngl(object):
             output_series = sim.get_logged_data()
             variables = output_series[-1][1:].tolist()
 
-            volume = 1
-            functions = fm.make_functions(m, results, volume)
+#            volume = 1
+#            functions = fm.make_functions(m, results, volume)
+            functions = fm.make_functions(m, results)
             the_solver = ODESolver()
             sim.initialize(the_solver, functions, variables)
             sim_sub()
@@ -675,8 +682,9 @@ class Pybngl(object):
             output_series = sim.get_logged_data()
             variables = output_series[-1][1:].tolist()
 
-            volume = 1
-            functions = fm.make_functions(m, results, volume)
+#            volume = 1
+#            functions = fm.make_functions(m, results, volume)
+            functions = fm.make_functions(m, results)
             the_solver = ODESolver()
             sim.initialize(the_solver, functions, variables)
             sim_sub()
@@ -718,6 +726,7 @@ if __name__ == '__main__':
     loc_flag = options.loc_flag
 
     # initialize test(01/17)
-    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
+#    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
+    comp_state = m.add_state_type('compartment', ['all', 'cyto', 'mem'])
 
     pybngl = Pybngl()
