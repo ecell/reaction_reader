@@ -131,4 +131,5 @@ with reaction_rules:
     #G6P(C1%1,C2%2,C3%3,C4%4,C5%5,C6%6) > P6GL(C1%1,C2%2,C3%3,C4%4,C5%5,C6%6) | 0.29
 
     I(foo) > I(foo) + GLU(C1(MW12),C2(MW12),C3(MW12),C4(MW12),C5(MW12),C6(MW12)) | 1
-    I(foo) > I(foo) + GLU(C1(MW13),C2(MW12),C3(MW12),C4(MW12),C5(MW12),C6(MW12)) | 0
+    #I(foo) > I(foo) + GLU(C1(MW13),C2(MW12),C3(MW12),C4(MW12),C5(MW12),C6(MW12)) | 0
+    I(foo) > I(foo) + GLU(C1(MW13),C2(MW13),C3(MW13),C4(MW13),C5(MW13),C6(MW13)) | 0
