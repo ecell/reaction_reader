@@ -1,1 +1,74 @@
-:
+-------------------
+pybngl.py の使い方
+-------------------
+
+実行方法
+
+  - $ python pybngl.py [options] [simfile]
+    -- options : オプション。下記項目参照。
+    -- simfile : シミュレーション記述ファイル。
+
+
+オプション ([] 内はデフォルト値、順序は問わない)
+
+  -r FILENAME : ルール展開結果を FILENAME に出力
+  -s STEP_NUM : シミュレーション を STEP_NUM ステップ行う [120]
+  -i ITR_NUM  : ルール展開を ITR_NUM 回繰り返す [10]
+  -d          : 冗長なルール記述を許す
+  -t END_TIME : 時刻が END_TIME(秒) になるまでシミュレーションを行う [-1]
+  -v          : ルール展開結果を表示する
+  -l          : loc 記述を有効にする (loc 記述がない場合は用いない)
+
+  終了時刻に関するオプション(-s, -t) が同時に指定されている場合、-t を優先する
+
+
+実行例
+
+  - $ python pybngl.py -s 10 -v test/testToy.py
+    -- test/testToy.py に記述されたシミュレーションを実行
+    -- (-s 10) : ODESolver のステップ回数は 10 回
+    -- (-v)    : ルール展開結果を表示
+
+  - $ python pybngl.py -s 0 -i 20 -v test/testLabel.py
+    -- test/testLabel.py に記述されたシミュレーションを実行
+    -- (-s 0)  : ODESolver のステップ回数は 0 回 (ルール展開のみを行う)
+    -- (-i 20) : ルール展開を 20 回行う (超時間かかる)
+    -- (-v)    : ルール展開結果を表示
+
+  - $ python pybngl.py -l test/testLoc.py
+    -- test/testLoc.py に記述されたシミュレーションを実行
+    -- (-l)    : loc 記述を有効にする(testLoc.py は loc 記述を使用する)
+
+
+-------------------
+テストファイル説明
+-------------------
+
+  - test/testConc.py
+    -- ユーザー作成関数を用いたシミュレーション
+
+  - test/testEGFR_ERK_spatiocyte5_3v.py
+    -- 実際の実験を模したシミュレーション？
+
+  - test/testEgfr.py
+    -- 実際の実験を模したシミュレーション？
+
+  - test/testFunc.py
+    -- ユーザー作成関数を用いたシミュレーション
+    -- 関数作成/使用方法はファイル先頭に記載
+
+  - test/testLabel.py
+    -- ラベル記述(%)を用いたシミュレーション
+    -- ルールの展開に超時間がかかる
+
+  - test/testLoc.py
+    -- loc 記述を用いたシミュレーション
+    -- 実行時に "-l" オプションが必要
+
+  - test/testToy.py
+    -- ラベル記述(%)を用いたシミュレーション
+
+  - working/testDuplicatedLabel.py
+    -- キラリティを含むシミュレーション
+    -- 未対応
+
