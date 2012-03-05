@@ -5,10 +5,9 @@ from func import *
 with molecule_types:
     egf(r)
     Grb2(SH2,SH3)
-    Shc(PTB, Y317(Y))
+    Shc(PTB, Y317(Y, pY))
     Sos(dom)
-    egfr(l,r,Y1068(Y),Y1148(Y))
-    Grb2(SH2,SH3[1]).Sos(dom[1])
+    egfr(l,r,Y1068(Y, pY),Y1148(Y, pY))
 
 with molecule_inits:
     egf(r) [1.2e6]
@@ -64,5 +63,4 @@ with reaction_rules:
     Shc(PTB,Y317(pY)) + Grb2(SH2,SH3[2]) <_> Shc(PTB,Y317(pY)[1]).Grb2(SH2[1],SH3[2]) | (1.167e-05, .1)
     Shc(PTB,Y317(pY)) > Shc(PTB,Y317(Y)) | .005
     Grb2(SH2,SH3) + Sos(dom) <_> Grb2(SH2,SH3[1]).Sos(dom[1]) | (5.556e-08, .0015)
-    Shc(PTB,Y317(pY)[2]).Grb2(SH2[2],SH3) + Sos(dom) <_> \
-    Shc(PTB,Y317(pY)[2]).Grb2(SH2[2],SH3[3]).Sos(dom[3]) | (1.667e-05, .064)
+    Shc(PTB,Y317(pY)[2]).Grb2(SH2[2],SH3) + Sos(dom) <_> Shc(PTB,Y317(pY)[2]).Grb2(SH2[2],SH3[3]).Sos(dom[3]) | (1.667e-05, .064)
