@@ -17,9 +17,9 @@ with molecule_types:
     C(a)
 
 with molecule_inits:
-    S(a) [60]
+    S(a) [60 / 6.02e+23]
     P(a) [0]
-    C(a) [60]
+    C(a) [60 / 6.02e+23]
 
 with reaction_rules:
     # MichaelissUniUni(KmS, KmP, KcF, KcR, volume)
