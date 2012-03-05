@@ -4,6 +4,7 @@ $Header: /home/takeuchi/0613/pybngl.py,v 1.64 2012/02/10 00:54:22 takeuchi Exp $
 
 from __future__ import with_statement
 import sys
+import pdb
 from model.Model import *
 #from model.model import Model
 #from model.model import Species
@@ -636,7 +637,7 @@ class Pybngl(object):
             for i in output_series:
                 print i[0],
                 for j in range(1, len(i)):
-                    print i[j] / N_A,
+                    print i[j],
                 print ''
 
             if step_num > 0: # step_num = 0 raises Error by output_series[-1]
@@ -727,6 +728,8 @@ if __name__ == '__main__':
 
     # initialize test(01/17)
 #    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
-    comp_state = m.add_state_type('compartment', ['all', 'cyto', 'mem'])
+#    comp_state = m.add_state_type('compartment', ['all', 'cyto', 'mem'])
+    state_list =  ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM', 'all', 'cyto', 'mem']
+    comp_state = m.add_state_type('compartment', state_list)
 
     pybngl = Pybngl()
