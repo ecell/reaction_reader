@@ -222,8 +222,7 @@ class MyDict(dict):
         return retval
 
 class ReactionRules(object):
-    def __init__(self, seed_species, verbose=False):
-        self.seed_species = seed_species
+    def __init__(self, verbose=False):
         self.verbose = verbose
 
     def is_verbose(self):
@@ -233,7 +232,6 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *arg):
-        # global seed_species
         global label_flag
 
         if self.is_verbose():
@@ -245,9 +243,6 @@ class ReactionRules(object):
         func_name = func_name_r = 'MassAction'
         effector_list = []
 
-#        seed_species = parser.parse_species_array(sp_str_list, m)
-
-        
         for id, v in enumerate(global_list):
 
             # create effector list
@@ -312,7 +307,6 @@ class ReactionRules(object):
 #                condition = swap_condition(con_list)
                 rule = m.add_reaction_rule(products, reactants, condition, \
                            k_name=func_name_r, k=speed_r, e_list=effector_list, lbl=lbflag) # label_flag)
-
 
 class MoleculeTypes(object):
     def __init__(self, loc=None):
@@ -416,7 +410,6 @@ def read_species(p, species):
 
     return sp
 
-
 def read_patterns(m, p, species):
     s_list = []
     con_list = []
@@ -450,7 +443,6 @@ def read_patterns(m, p, species):
 
     return s_list, con_list
 
-
 def swap_condition(con_list):
     def swap_side(con):
         if con.__class__.__name__ == 'NotCondition':
@@ -471,7 +463,6 @@ def swap_condition(con_list):
         new_condition = AndCondition([swap_side(i) for i in con_list])
 
     return new_condition
-
 
 def print_tree(a, n=0):
     def pr_str(n, j, v=''):
@@ -497,11 +488,9 @@ def print_tree(a, n=0):
             else:
                 print pr_str(n*bool(idx), j, i[j])
 
-
 class MoleculeInits(object):
-    def __init__(self, seed_values, seed_species):
-        self.seed_values = seed_values
-        self.seed_species = seed_species
+    def __init__(self):
+        self.seed_species = {}
 
     def __enter__(self):
         pass
@@ -509,25 +498,22 @@ class MoleculeInits(object):
     def __exit__(self, *arg):
         global tmp_list
 
-        sp_list = []
-
+        self.seed_species = {}
         for i in tmp_list:
-
             sp = read_species(parser, i)
             sp.concrete = True
 
-            if sp.str_simple() in [x.str_simple() for x in sp_list]:
+            species_str_list = [
+                x.str_simple() for x in self.seed_species.keys()]
+            if sp.str_simple() in species_str_list:
                 raise ValueError
 
             sp = m.register_species(sp)
-            sp_list.append(sp)
 
-            self.seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
-
-        self.seed_species = sp_list
+            self.seed_species[sp] = \
+                float(i['children'].pop(-1)['value']) * N_A
 
         tmp_list = []
-
 
 class Pybngl(object):
     def __init__(self, verbose=False, loc=None):
@@ -539,29 +525,26 @@ class Pybngl(object):
 
     def execute_simulation(self, filename, num_of_steps, duration=-1, 
                            maxiter=10, rulefilename=None):
-        seed_values, seed_species = [], []
         gvars = MyDict()
         gvars['reaction_rules'] = ReactionRules(
-            seed_species, verbose=self.is_verbose())
-        gvars['molecule_inits'] = MoleculeInits(
-            seed_values, seed_species)
+            verbose=self.is_verbose())
+        gvars['molecule_inits'] = MoleculeInits()
         gvars['molecule_types'] = MoleculeTypes(
             loc=self.loc)
 
         exec file(filename) in gvars
         
+        seed_species = gvars['molecule_inits'].seed_species
+
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
-
-        fm = FunctionMaker()
-        sim = Simulator()
 
 #        volume = 1
 
 #        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
         try:
-            results = m.generate_reaction_network(seed_species, maxiter)
+            results = m.generate_reaction_network(seed_species.keys(), maxiter)
         except Error, inst:
             print inst
             exit()
@@ -597,7 +580,6 @@ class Pybngl(object):
 #            print '# volume :', volume
 #            print '#'
 
-
         # Outputs reactions to rulefile
         if rulefilename!= None:
             f = open(rulefilename, 'w')
@@ -614,8 +596,11 @@ class Pybngl(object):
         variables = []
         for i in range(sp_num):
             variables.append(0.0)
-        for i, v in enumerate(seed_values):
+        for i, v in enumerate(seed_species.values()):
             variables[i] = v
+
+        fm = FunctionMaker()
+        sim = Simulator()
 
 #        functions = fm.make_functions(m, results, volume)
         functions = fm.make_functions(m, results)
@@ -676,8 +661,10 @@ class Pybngl(object):
         sim_sub()
         sim_print()
 
+        import os.path
+
         ##### ONLY FOR testLabel.py #####
-        if filename == 'testLabel.py':
+        if os.path.split(filename) == 'testLabel.py':
             m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
             m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
             output_series = sim.get_logged_data()
@@ -694,7 +681,7 @@ class Pybngl(object):
 
 
         ##### ONLY FOR testToy.py #####
-        if filename == 'testToy.py':
+        if os.path.split(filename) == 'testToy.py':
             m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
             m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
             output_series = sim.get_logged_data()
