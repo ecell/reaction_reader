@@ -218,15 +218,20 @@ class MyDict(dict):
         return retval
 
 class ReactionRules(object):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
+    def is_verbose(self):
+        return self.verbose
+
     def __enter__(self):
         pass
 
     def __exit__(self, *arg):
-
         global seed_species
         global label_flag
 
-        if show_mes:
+        if self.is_verbose():
             print_tree(global_list)
 
         con_list = []
@@ -305,6 +310,9 @@ class ReactionRules(object):
 
 
 class MoleculeTypes(object):
+    def __init__(self, loc=False):
+        self.loc = loc
+
     def __enter__(self):
         pass
 
@@ -329,7 +337,7 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'])
 
                 # for location (01/17)
-                if loc_flag:
+                if self.loc:
                     tmpmole.add_component('loc', {'loc': comp_state})
                 
                 parser.add_entity_type(tmpmole)
@@ -521,14 +529,18 @@ class MoleculeInits(object):
 
 class Pybngl(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, verbose=False, loc=False):
+        self.verbose = verbose
+        self.loc = loc
 
-    def execute_simulation(self, filename):
+    def is_verbose(self):
+        return self.verbose
+
+    def execute_simulation(self, filename, num_of_steps, duration=-1):
         globals = MyDict()
-        globals['reaction_rules'] = ReactionRules()
+        globals['reaction_rules'] = ReactionRules(verbose=self.is_verbose())
         globals['molecule_inits'] = MoleculeInits()
-        globals['molecule_types'] = MoleculeTypes()
+        globals['molecule_types'] = MoleculeTypes(loc=self.loc)
 
         exec file(filename) in globals
         
@@ -551,7 +563,7 @@ class Pybngl(object):
 #        print results[0]
 
         # Outputs information to stdout
-        if show_mes:
+        if self.is_verbose():
             print '# << reaction rules >>'
             cnt = 1
             for rule_id in sorted(m.reaction_rules.iterkeys()):
@@ -599,26 +611,29 @@ class Pybngl(object):
         for i, v in enumerate(seed_values):
             variables[i] = v
 
-
 #        functions = fm.make_functions(m, results, volume)
         functions = fm.make_functions(m, results)
         the_solver = ODESolver()
         sim.initialize(the_solver, functions, variables)
 
-
         def sim_sub():
-            if (end_time != -1):   # t_end is defined
-                while(sim.the_time + the_solver.get_step_interval() <end_time):
+            if duration > 0:
+                # duration is defined
+                while (sim.the_time + the_solver.get_step_interval() 
+                       < duration):
                     sim.step()
-                if sim.the_time < end_time:
+
+                if sim.the_time < duration:
                     sim.step()
-                sim.the_time = end_time
+                sim.the_time = duration
                 the_solver.set_next_time(sim.the_time)
-                the_solver.set_step_interval(sim.the_time - the_solver.get_current_time())
+                the_solver.set_step_interval(
+                    sim.the_time - the_solver.get_current_time())
                 sim.step()
 
-            else:                 # t_end is not defined
-                sim.step(step_num)
+            else:
+                # duration is not defined
+                sim.step(num_of_steps)
 
         def sim_print():
             output_series = sim.get_logged_data()
@@ -636,7 +651,8 @@ class Pybngl(object):
                     print i[j],
                 print ''
 
-            if step_num > 0: # step_num = 0 raises Error by output_series[-1]
+            if num_of_steps > 0: 
+                # num_of_steps == 0 raises an error by output_series[-1]
                 output_terminal = output_series[-1]
                 result = str(output_terminal[0])
                 result += ': '
@@ -649,7 +665,6 @@ class Pybngl(object):
 
                 print '# ', header
                 print '# ', result
-
                 print '# ', len(output_series)
 
         sim_sub()
@@ -734,11 +749,7 @@ if __name__ == '__main__':
         optparser.print_help()
         exit(1)
 
-    step_num = options.step_num
     m.disallow_implicit_disappearance = options.disap_flag
-    end_time = options.end_time
-    show_mes = options.show_mes
-    loc_flag = options.loc_flag
 
     # initialize test(01/17)
 #    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
@@ -746,5 +757,6 @@ if __name__ == '__main__':
     state_list =  ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM', 'all', 'cyto', 'mem']
     comp_state = m.add_state_type('compartment', state_list)
 
-    pybngl = Pybngl()
-    pybngl.execute_simulation(args[0])
+    pybngl = Pybngl(verbose=options.show_mes, loc=options.loc_flag)
+    pybngl.execute_simulation(
+        args[0], num_of_steps=options.step_num, duration=options.end_time)
