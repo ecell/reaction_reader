@@ -523,8 +523,7 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def execute_simulation(self, filename, num_of_steps, duration=-1, 
-                           maxiter=10, rulefilename=None):
+    def parse_model(self, filename, maxiter=10, rulefilename=None):
         gvars = MyDict()
         gvars['reaction_rules'] = ReactionRules(
             verbose=self.is_verbose())
@@ -544,12 +543,12 @@ class Pybngl(object):
 #        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
         try:
-            results = m.generate_reaction_network(seed_species.keys(), maxiter)
+            reaction_results = m.generate_reaction_network(seed_species.keys(), maxiter)
         except Error, inst:
             print inst
             exit()
 
-#        print results[0]
+#        print reaction_results[0]
 
         # Outputs information to stdout
         if self.is_verbose():
@@ -571,7 +570,7 @@ class Pybngl(object):
 
             print '# << reactions >>'
             cnt = 1
-            for result in results:
+            for result in reaction_results:
                 for r in result.reactions:
                     print '# ', cnt, r.str_simple()
                     cnt += 1
@@ -581,14 +580,21 @@ class Pybngl(object):
 #            print '#'
 
         # Outputs reactions to rulefile
-        if rulefilename!= None:
+        if rulefilename is not None:
             f = open(rulefilename, 'w')
             cnt = 1
-            for result in results:
+            for result in reaction_results:
                 for r in result.reactions:
                     f.write(str(cnt)+' '+str(r.str_simple())+'\n')
                     cnt += 1
             f.close()
+
+        return reaction_results, seed_species
+
+    def execute_simulation(self, filename, num_of_steps, duration=-1, 
+                           maxiter=10, rulefilename=None):
+        reaction_results, seed_species  = self.parse_model(
+            filename, maxiter=maxiter, rulefilename=rulefilename)
 
         sp_num = len(m.concrete_species)
 
@@ -602,8 +608,8 @@ class Pybngl(object):
         fm = FunctionMaker()
         sim = Simulator()
 
-#        functions = fm.make_functions(m, results, volume)
-        functions = fm.make_functions(m, results)
+#        functions = fm.make_functions(m, reaction_results, volume)
+        functions = fm.make_functions(m, reaction_results)
         the_solver = ODESolver()
         sim.initialize(the_solver, functions, variables)
 
@@ -671,8 +677,8 @@ class Pybngl(object):
             variables = output_series[-1][1:].tolist()
 
 #            volume = 1
-#            functions = fm.make_functions(m, results, volume)
-            functions = fm.make_functions(m, results)
+#            functions = fm.make_functions(m, reaction_results, volume)
+            functions = fm.make_functions(m, reaction_results)
             the_solver = ODESolver()
             sim.initialize(the_solver, functions, variables)
             sim_sub()
@@ -688,8 +694,8 @@ class Pybngl(object):
             variables = output_series[-1][1:].tolist()
 
 #            volume = 1
-#            functions = fm.make_functions(m, results, volume)
-            functions = fm.make_functions(m, results)
+#            functions = fm.make_functions(m, reaction_results, volume)
+            functions = fm.make_functions(m, reaction_results)
             the_solver = ODESolver()
             sim.initialize(the_solver, functions, variables)
             sim_sub()
