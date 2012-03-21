@@ -31,6 +31,7 @@ from process.process import FunctionMaker
 from Simulator import Simulator
 from model.Error import Error
 
+
 class AnyCallable(object):
     def __init__(self, key, outer=None):
         global tmp_list
@@ -346,7 +347,6 @@ class MoleculeTypes(object):
 
 
 def read_entity(sp, p, entity, binding_components):
-
     if 'type' in entity:
         return
 
@@ -395,7 +395,6 @@ def read_entity(sp, p, entity, binding_components):
             pass
 
 def read_species(p, species):
-
     sp = Species()
 
     bind_comp = {}
@@ -415,7 +414,6 @@ def read_species(p, species):
 
 
 def read_patterns(m, p, species):
-
     s_list = []
     con_list = []
 
@@ -450,7 +448,6 @@ def read_patterns(m, p, species):
 
 
 def swap_condition(con_list):
-
     def swap_side(con):
         if con.__class__.__name__ == 'NotCondition':
             return NotCondition(swap_side(con.condition))
@@ -473,7 +470,6 @@ def swap_condition(con_list):
 
 
 def print_tree(a, n=0):
-
     def pr_str(n, j, v=''):
         return ' '*n + j + ' : ' + str(v)
 
@@ -528,7 +524,6 @@ class MoleculeInits(object):
 
 
 class Pybngl(object):
-
     def __init__(self, verbose=False, loc=False):
         self.verbose = verbose
         self.loc = loc
@@ -536,7 +531,8 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def execute_simulation(self, filename, num_of_steps, duration=-1):
+    def execute_simulation(self, filename, num_of_steps, duration=-1, 
+                           maxiter=10, rulefilename=None):
         globals = MyDict()
         globals['reaction_rules'] = ReactionRules(verbose=self.is_verbose())
         globals['molecule_inits'] = MoleculeInits()
@@ -555,7 +551,7 @@ class Pybngl(object):
 #        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
         try:
-            results = m.generate_reaction_network(seed_species, options.itr_num)
+            results = m.generate_reaction_network(seed_species, maxiter)
         except Error, inst:
             print inst
             exit()
@@ -593,8 +589,8 @@ class Pybngl(object):
 
 
         # Outputs reactions to rulefile
-        if options.rulefile != None:
-            f = open(options.rulefile, 'w')
+        if rulefilename!= None:
+            f = open(rulefilename, 'w')
             cnt = 1
             for result in results:
                 for r in result.reactions:
@@ -704,8 +700,6 @@ class Pybngl(object):
         ##### ONLY FOR testLabel.py #####
 
 
-
-
 if __name__ == '__main__':
     import optparse
 
@@ -759,4 +753,5 @@ if __name__ == '__main__':
 
     pybngl = Pybngl(verbose=options.show_mes, loc=options.loc_flag)
     pybngl.execute_simulation(
-        args[0], num_of_steps=options.step_num, duration=options.end_time)
+        args[0], num_of_steps=options.step_num, duration=options.end_time, 
+        maxiter=options.itr_num, rulefilename=options.rulefile)
