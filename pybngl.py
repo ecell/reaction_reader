@@ -596,7 +596,7 @@ class Pybngl(object):
                 for r in result.reactions:
                     f.write(str(cnt)+' '+str(r.str_simple())+'\n')
                     cnt += 1
-            f.close
+            f.close()
 
         sp_num = len(m.concrete_species)
 
