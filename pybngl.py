@@ -522,15 +522,16 @@ class MoleculeInits(object):
 class Pybngl(object):
 
     def __init__(self):
+        pass
+
+    def execute_simulation(self, filename):
         globals = MyDict()
         globals['reaction_rules'] = ReactionRules()
         globals['molecule_inits'] = MoleculeInits()
         globals['molecule_types'] = MoleculeTypes()
 
-        exec file(args[0]) in globals
-        self.Simulation()
+        exec file(filename) in globals
         
-    def Simulation(self):
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
 
@@ -655,7 +656,7 @@ class Pybngl(object):
         sim_print()
 
         ##### ONLY FOR testLabel.py #####
-        if args == ['testLabel.py']:
+        if filename == 'testLabel.py':
             m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
             m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
             output_series = sim.get_logged_data()
@@ -672,7 +673,7 @@ class Pybngl(object):
 
 
         ##### ONLY FOR testToy.py #####
-        if args == ['testToy.py']:
+        if filename == 'testToy.py':
             m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
             m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
             output_series = sim.get_logged_data()
@@ -746,3 +747,4 @@ if __name__ == '__main__':
     comp_state = m.add_state_type('compartment', state_list)
 
     pybngl = Pybngl()
+    pybngl.execute_simulation(args[0])
