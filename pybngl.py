@@ -540,15 +540,15 @@ class Pybngl(object):
     def execute_simulation(self, filename, num_of_steps, duration=-1, 
                            maxiter=10, rulefilename=None):
         seed_values, seed_species = [], []
-        globals = MyDict()
-        globals['reaction_rules'] = ReactionRules(
+        gvars = MyDict()
+        gvars['reaction_rules'] = ReactionRules(
             seed_species, verbose=self.is_verbose())
-        globals['molecule_inits'] = MoleculeInits(
+        gvars['molecule_inits'] = MoleculeInits(
             seed_values, seed_species)
-        globals['molecule_types'] = MoleculeTypes(
+        gvars['molecule_types'] = MoleculeTypes(
             loc=self.loc)
 
-        exec file(filename) in globals
+        exec file(filename) in gvars
         
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
