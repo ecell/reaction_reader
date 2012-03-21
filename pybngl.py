@@ -29,7 +29,6 @@ from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from Simulator import Simulator
-from optparse import OptionParser
 from model.Error import Error
 
 class AnyCallable(object):
@@ -528,12 +527,8 @@ class Pybngl(object):
         globals['molecule_inits'] = MoleculeInits()
         globals['molecule_types'] = MoleculeTypes()
 
-        try:
-            exec file(args[0]) in globals
-            self.Simulation()
-        except IndexError:
-            OptParse.print_help()
-            exit(1)
+        exec file(args[0]) in globals
+        self.Simulation()
         
     def Simulation(self):
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
@@ -696,6 +691,29 @@ class Pybngl(object):
 
 
 if __name__ == '__main__':
+    import optparse
+
+
+    def create_option_parser():
+        usage = "python pybngl.py [options] SIMULATION_FILE"
+        optparser = optparse.OptionParser(usage=usage)
+        optparser.add_option('-r', dest='rulefile', metavar='RULE_FILE', 
+                            help='write rules to RULE_FILE')
+        optparser.add_option('-s', dest='step_num', type=int, default=120, 
+                            help='set step num')
+        optparser.add_option('-i', dest='itr_num', type=int, default=10, 
+                            help='set rule iteration num')
+        optparser.add_option('-d', dest='disap_flag', action='store_false', 
+                            default=True, help='allow implicit disappearance')
+        optparser.add_option('-t', dest='end_time', type=float, default=-1, 
+                            help='set step num')
+        optparser.add_option('-v', dest='show_mes', action='store_true', 
+                            default=False, help='show verbose messages')
+        optparser.add_option('-l', dest='loc_flag', action='store_true', 
+                            default=False, help='use location description')
+    
+        return optparser
+
 
     N_A = 6.0221367e+23
 
@@ -709,17 +727,12 @@ if __name__ == '__main__':
     m = Model()
     parser = Parser()
 
-    usage = "python pybngl.py [options] SIMULATION_FILE"
-    OptParse = OptionParser(usage=usage)
-    OptParse.add_option('-r', dest='rulefile', metavar='RULE_FILE', help='write rules to RULE_FILE')
-    OptParse.add_option('-s', dest='step_num', type=int, default=120, help='set step num')
-    OptParse.add_option('-i', dest='itr_num', type=int, default=10, help='set rule iteration num')
-    OptParse.add_option('-d', dest='disap_flag', action='store_false', default=True, help='allow implicit disappearance')
-    OptParse.add_option('-t', dest='end_time', type=float, default=-1, help='set step num')
-    OptParse.add_option('-v', dest='show_mes', action='store_true', default=False, help='show verbose messages')
-    OptParse.add_option('-l', dest='loc_flag', action='store_true', default=False, help='use location description')
-    
-    (options, args) = OptParse.parse_args()
+    optparser = create_option_parser()
+    (options, args) = optparser.parse_args()
+    if len(args) == 0:
+        optparser.print_help()
+        exit(1)
+
     step_num = options.step_num
     m.disallow_implicit_disappearance = options.disap_flag
     end_time = options.end_time
