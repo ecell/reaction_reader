@@ -31,6 +31,9 @@ from process.process import FunctionMaker
 from Simulator import Simulator
 from model.Error import Error
 
+# Avogadro's number
+N_A = 6.0221367e+23
+
 
 class AnyCallable(object):
     def __init__(self, key, outer=None):
@@ -219,7 +222,8 @@ class MyDict(dict):
         return retval
 
 class ReactionRules(object):
-    def __init__(self, verbose=False):
+    def __init__(self, seed_species, verbose=False):
+        self.seed_species = seed_species
         self.verbose = verbose
 
     def is_verbose(self):
@@ -229,7 +233,7 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *arg):
-        global seed_species
+        # global seed_species
         global label_flag
 
         if self.is_verbose():
@@ -311,7 +315,7 @@ class ReactionRules(object):
 
 
 class MoleculeTypes(object):
-    def __init__(self, loc=False):
+    def __init__(self, loc=None):
         self.loc = loc
 
     def __enter__(self):
@@ -338,8 +342,8 @@ class MoleculeTypes(object):
                         tmpmole.add_component(j['name'])
 
                 # for location (01/17)
-                if self.loc:
-                    tmpmole.add_component('loc', {'loc': comp_state})
+                if self.loc is not None:
+                    tmpmole.add_component('loc', {'loc': self.loc})
                 
                 parser.add_entity_type(tmpmole)
 
@@ -495,13 +499,15 @@ def print_tree(a, n=0):
 
 
 class MoleculeInits(object):
+    def __init__(self, seed_values, seed_species):
+        self.seed_values = seed_values
+        self.seed_species = seed_species
+
     def __enter__(self):
         pass
 
     def __exit__(self, *arg):
         global tmp_list
-        global seed_values
-        global seed_species
 
         sp_list = []
 
@@ -516,15 +522,15 @@ class MoleculeInits(object):
             sp = m.register_species(sp)
             sp_list.append(sp)
 
-            seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
+            self.seed_values.append(float(i['children'].pop(-1)['value'])*N_A)
 
-        seed_species = sp_list
+        self.seed_species = sp_list
 
         tmp_list = []
 
 
 class Pybngl(object):
-    def __init__(self, verbose=False, loc=False):
+    def __init__(self, verbose=False, loc=None):
         self.verbose = verbose
         self.loc = loc
 
@@ -533,10 +539,14 @@ class Pybngl(object):
 
     def execute_simulation(self, filename, num_of_steps, duration=-1, 
                            maxiter=10, rulefilename=None):
+        seed_values, seed_species = [], []
         globals = MyDict()
-        globals['reaction_rules'] = ReactionRules(verbose=self.is_verbose())
-        globals['molecule_inits'] = MoleculeInits()
-        globals['molecule_types'] = MoleculeTypes(loc=self.loc)
+        globals['reaction_rules'] = ReactionRules(
+            seed_species, verbose=self.is_verbose())
+        globals['molecule_inits'] = MoleculeInits(
+            seed_values, seed_species)
+        globals['molecule_types'] = MoleculeTypes(
+            loc=self.loc)
 
         exec file(filename) in globals
         
@@ -725,14 +735,10 @@ if __name__ == '__main__':
         return optparser
 
 
-    N_A = 6.0221367e+23
-
-    seed_values = []
-    seed_species = []
-
     global_list = []
     tmp_list = []
     label_flag = False
+
     
     m = Model()
     parser = Parser()
@@ -745,13 +751,15 @@ if __name__ == '__main__':
 
     m.disallow_implicit_disappearance = options.disap_flag
 
-    # initialize test(01/17)
-#    comp_state = m.add_state_type('compartment', ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM'])
-#    comp_state = m.add_state_type('compartment', ['all', 'cyto', 'mem'])
-    state_list =  ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM', 'all', 'cyto', 'mem']
-    comp_state = m.add_state_type('compartment', state_list)
+    comp_state = None
+    if options.loc_flag:
+        # state_list = ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM']
+        # state_list = ['all', 'cyto', 'mem']
+        state_list =  ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM', 
+                       'all', 'cyto', 'mem']
+        comp_state = m.add_state_type('compartment', state_list)
 
-    pybngl = Pybngl(verbose=options.show_mes, loc=options.loc_flag)
+    pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
     pybngl.execute_simulation(
         args[0], num_of_steps=options.step_num, duration=options.end_time, 
         maxiter=options.itr_num, rulefilename=options.rulefile)
