@@ -222,8 +222,8 @@ class MyDict(dict):
         return retval
 
 class ReactionRules(object):
-    def __init__(self, m, verbose=False):
-        self.model = m
+    def __init__(self, m, p, verbose=False):
+        self.model, self.parser = m, p
         self.verbose = verbose
 
     def is_verbose(self):
@@ -248,14 +248,14 @@ class ReactionRules(object):
 
             # create effector list
             if v.get('value') != None:
-                effector_list = [read_species(parser, i) for i in v['value']]
+                effector_list = [read_species(self.parser, i) 
+                                 for i in v['value']]
 
             # create reactants/products
-
             reactants, con_list = read_patterns(
-                self.model, parser, v['children'][0])
+                self.model, self.parser, v['children'][0])
             products, con_list = read_patterns(
-                self.model, parser, v['children'][1])
+                self.model, self.parser, v['children'][1])
 
 #            for con_idx, con_func in enumerate(con_list):
 #                if type(con_func) == float:   # [SPEED_FUNCTION]
@@ -314,8 +314,8 @@ class ReactionRules(object):
                     k=speed_r, e_list=effector_list, lbl=lbflag) # label_flag)
 
 class MoleculeTypes(object):
-    def __init__(self, m, loc=None):
-        self.model = m
+    def __init__(self, m, p, loc=None):
+        self.model, self.parser = m, p
         self.loc = loc
 
     def __enter__(self):
@@ -345,7 +345,7 @@ class MoleculeTypes(object):
                 if self.loc is not None:
                     tmpmole.add_component('loc', {'loc': self.loc})
                 
-                parser.add_entity_type(tmpmole)
+                self.parser.add_entity_type(tmpmole)
 
         tmp_list = []
 
@@ -495,8 +495,8 @@ def print_tree(a, n=0):
                 print pr_str(n*bool(idx), j, i[j])
 
 class MoleculeInits(object):
-    def __init__(self, m):
-        self.model = m
+    def __init__(self, m, p):
+        self.model, self.parser = m, p
         self.seed_species = {}
 
     def __enter__(self):
@@ -507,7 +507,7 @@ class MoleculeInits(object):
 
         self.seed_species = {}
         for i in tmp_list:
-            sp = read_species(parser, i)
+            sp = read_species(self.parser, i)
             sp.concrete = True
 
             species_str_list = [
@@ -530,14 +530,18 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, m=None, maxiter=10, rulefilename=None):
+    def parse_model(self, filename, m=None, p=None, 
+                    maxiter=10, rulefilename=None):
         if m is None:
             m = Model()
+        if p is None:
+            p = Parser()
 
         gvars = MyDict()
-        gvars['reaction_rules'] = ReactionRules(m, verbose=self.is_verbose())
-        gvars['molecule_inits'] = MoleculeInits(m)
-        gvars['molecule_types'] = MoleculeTypes(m, loc=self.loc)
+        gvars['reaction_rules'] = ReactionRules(
+            m, p, verbose=self.is_verbose())
+        gvars['molecule_inits'] = MoleculeInits(m, p)
+        gvars['molecule_types'] = MoleculeTypes(m, p, loc=self.loc)
 
         exec file(filename) in gvars
         
@@ -738,8 +742,7 @@ if __name__ == '__main__':
     tmp_list = []
     label_flag = False
 
-    m = Model()
-    parser = Parser()
+    m, p = Model(), Parser()
 
     optparser = create_option_parser()
     (options, args) = optparser.parse_args()
@@ -760,7 +763,7 @@ if __name__ == '__main__':
     filename = args[0]
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
     m, reaction_results, seed_species = pybngl.parse_model(
-        filename, m, maxiter=options.itr_num, rulefilename=options.rulefile)
+        filename, m, p, maxiter=options.itr_num, rulefilename=options.rulefile)
     pybngl.execute_simulation(
         m, reaction_results, seed_species, 
         num_of_steps=options.step_num, duration=options.end_time)
