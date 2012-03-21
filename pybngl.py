@@ -222,7 +222,8 @@ class MyDict(dict):
         return retval
 
 class ReactionRules(object):
-    def __init__(self, verbose=False):
+    def __init__(self, m, verbose=False):
+        self.model = m
         self.verbose = verbose
 
     def is_verbose(self):
@@ -251,8 +252,10 @@ class ReactionRules(object):
 
             # create reactants/products
 
-            reactants, con_list = read_patterns(m, parser, v['children'][0])
-            products, con_list = read_patterns(m, parser, v['children'][1])
+            reactants, con_list = read_patterns(
+                self.model, parser, v['children'][0])
+            products, con_list = read_patterns(
+                self.model, parser, v['children'][1])
 
 #            for con_idx, con_func in enumerate(con_list):
 #                if type(con_func) == float:   # [SPEED_FUNCTION]
@@ -301,15 +304,18 @@ class ReactionRules(object):
             
 
             # Generates reaction rule.
-            rule = m.add_reaction_rule(reactants, products, condition, \
-                               k_name=func_name, k=speed, e_list=effector_list, lbl=lbflag)
+            rule = self.model.add_reaction_rule(
+                reactants, products, condition, 
+                k_name=func_name, k=speed, e_list=effector_list, lbl=lbflag)
             if v['type'] == 'neq':
-#                condition = swap_condition(con_list)
-                rule = m.add_reaction_rule(products, reactants, condition, \
-                           k_name=func_name_r, k=speed_r, e_list=effector_list, lbl=lbflag) # label_flag)
+                # condition = swap_condition(con_list)
+                rule = self.model.add_reaction_rule(
+                    products, reactants, condition, k_name=func_name_r, 
+                    k=speed_r, e_list=effector_list, lbl=lbflag) # label_flag)
 
 class MoleculeTypes(object):
-    def __init__(self, loc=None):
+    def __init__(self, m, loc=None):
+        self.model = m
         self.loc = loc
 
     def __enter__(self):
@@ -323,14 +329,14 @@ class MoleculeTypes(object):
         for i in tmp_list:
 
             if i['name'] not in mole_entity_list and i['name'] != '.':
-                tmpmole = m.add_entity_type(i['name'])
+                tmpmole = self.model.add_entity_type(i['name'])
                 mole_entity_list.append(i['name'])
 
                 for j in i['children']:
                     if j.has_key('children'):
                         state_name = 'state_'+i['name']+'_'+j['name']
                         state = [k['name'] for k in j['children']]
-                        p_state = m.add_state_type(state_name, state)
+                        p_state = self.model.add_state_type(state_name, state)
                         tmpmole.add_component(j['name'], {j['name']: p_state})
                     else:
                         tmpmole.add_component(j['name'])
@@ -489,7 +495,8 @@ def print_tree(a, n=0):
                 print pr_str(n*bool(idx), j, i[j])
 
 class MoleculeInits(object):
-    def __init__(self):
+    def __init__(self, m):
+        self.model = m
         self.seed_species = {}
 
     def __enter__(self):
@@ -508,7 +515,7 @@ class MoleculeInits(object):
             if sp.str_simple() in species_str_list:
                 raise ValueError
 
-            sp = m.register_species(sp)
+            sp = self.model.register_species(sp)
 
             self.seed_species[sp] = \
                 float(i['children'].pop(-1)['value']) * N_A
@@ -523,13 +530,14 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, maxiter=10, rulefilename=None):
+    def parse_model(self, filename, m=None, maxiter=10, rulefilename=None):
+        if m is None:
+            m = Model()
+
         gvars = MyDict()
-        gvars['reaction_rules'] = ReactionRules(
-            verbose=self.is_verbose())
-        gvars['molecule_inits'] = MoleculeInits()
-        gvars['molecule_types'] = MoleculeTypes(
-            loc=self.loc)
+        gvars['reaction_rules'] = ReactionRules(m, verbose=self.is_verbose())
+        gvars['molecule_inits'] = MoleculeInits(m)
+        gvars['molecule_types'] = MoleculeTypes(m, loc=self.loc)
 
         exec file(filename) in gvars
         
@@ -543,7 +551,8 @@ class Pybngl(object):
 #        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
         try:
-            reaction_results = m.generate_reaction_network(seed_species.keys(), maxiter)
+            reaction_results = m.generate_reaction_network(
+                seed_species.keys(), maxiter)
         except Error, inst:
             print inst
             exit()
@@ -589,13 +598,10 @@ class Pybngl(object):
                     cnt += 1
             f.close()
 
-        return reaction_results, seed_species
+        return m, reaction_results, seed_species
 
-    def execute_simulation(self, filename, num_of_steps, duration=-1, 
-                           maxiter=10, rulefilename=None):
-        reaction_results, seed_species  = self.parse_model(
-            filename, maxiter=maxiter, rulefilename=rulefilename)
-
+    def execute_simulation(self, m, reaction_results, seed_species, 
+                           num_of_steps=0, duration=-1):
         sp_num = len(m.concrete_species)
 
         # Initial values for species.
@@ -732,7 +738,6 @@ if __name__ == '__main__':
     tmp_list = []
     label_flag = False
 
-    
     m = Model()
     parser = Parser()
 
@@ -752,7 +757,10 @@ if __name__ == '__main__':
                        'all', 'cyto', 'mem']
         comp_state = m.add_state_type('compartment', state_list)
 
+    filename = args[0]
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
+    m, reaction_results, seed_species = pybngl.parse_model(
+        filename, m, maxiter=options.itr_num, rulefilename=options.rulefile)
     pybngl.execute_simulation(
-        args[0], num_of_steps=options.step_num, duration=options.end_time, 
-        maxiter=options.itr_num, rulefilename=options.rulefile)
+        m, reaction_results, seed_species, 
+        num_of_steps=options.step_num, duration=options.end_time)
