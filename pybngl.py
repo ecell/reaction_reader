@@ -35,6 +35,7 @@ N_A = 6.0221367e+23
 
 class AnyCallable(object):
     with_label = False
+    global_list = []
 
     @classmethod
     def get_with_label(cls):
@@ -43,6 +44,10 @@ class AnyCallable(object):
     @classmethod
     def set_with_label(cls, value):
         cls.with_label = value
+
+    @classmethod
+    def cls_global_list(cls):
+        return cls.global_list
 
     def __init__(self, key, outer=None):
         # print "start:", key
@@ -117,7 +122,6 @@ class AnyCallable(object):
         return self
 
     def operator(self, rhs):
-        global global_list
         global tmp_list
 
         # print rhs
@@ -137,7 +141,7 @@ class AnyCallable(object):
         if eff_dict:
             tmp_dict.update(eff_dict)
 
-        global_list.append(tmp_dict)
+        self.cls_global_list().append(tmp_dict)
 
         tmp_list = []
 
@@ -241,6 +245,7 @@ class ReactionRules(object):
 
     def __exit__(self, *arg):
         with_label = self.newcls.get_with_label()
+        global_list = self.newcls.cls_global_list()
 
         if self.is_verbose():
             print_tree(global_list)
@@ -737,7 +742,6 @@ if __name__ == '__main__':
         return output_series
 
 
-    global_list = []
     tmp_list = []
 
     m, p = Model(), Parser()
@@ -765,6 +769,6 @@ if __name__ == '__main__':
     simulator, functions = pybngl.generate_simulator(
         m, reaction_results, seed_species)
 
-    execute_simulation(simulator, functions, m, 
-                       num_of_steps=options.step_num,
-                       duration=options.end_time)
+    output_series = execute_simulation(
+        simulator, functions, m, num_of_steps=options.step_num,
+        duration=options.end_time)
