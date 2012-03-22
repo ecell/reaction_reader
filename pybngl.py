@@ -145,7 +145,7 @@ class AnyCallable(object):
 
         self.get_global_list().append(tmp_dict)
 
-        # tmp_list = [] and self.tmp_list = [] doesn't work
+        # tmp_list = [] and self.tmp_list = [] don't work
         self.set_tmp_list([])
 
     def __gt__(self, rhs):
@@ -233,20 +233,13 @@ class MyDict(dict):
         return retval
 
 class ReactionRules(object):
-    def __init__(self, m, p, newcls, verbose=False):
+    def __init__(self, m, p, newcls):
         self.model, self.parser, self.newcls = m, p, newcls
-        self.verbose = verbose
-
-    def is_verbose(self):
-        return self.verbose
 
     def __enter__(self):
         pass
 
     def __exit__(self, *arg):
-        if self.is_verbose():
-            print_tree(self.newcls.global_list)
-
         con_list = []
         speed = speed_r = 0
         condition = None
@@ -478,29 +471,30 @@ def swap_condition(con_list):
 
     return new_condition
 
-def print_tree(a, n=0):
+def print_tree(a, n=0, fout=sys.stdout):
     def pr_str(n, j, v=''):
-        return ' '*n + j + ' : ' + str(v)
+        return ' ' * n + j + ' : ' + str(v)
 
-    for idx, i in enumerate(a): # rules
-        for j in i:             # j = ['type'|'name'|'children'|'value']
+    for idx, i in enumerate(a):
+        # for each rule
+        # key in ('type', 'name', 'children', 'value')
+        for key, value in i.items():
+            if value == []:
+                fout.write('\n')
+            elif key in ('children', 'value'):
+                fout.write('%s ' % pr_str(n, key))
 
-            if i[j] == []:
-                print ''
-
-            elif j == 'children' or j == 'value':
-                print pr_str(n, j),
-                if type(i[j]) == list:
-                    if type(i[j][0]) == dict: # for species
-                        print_tree(i[j], n+12)
+                if type(value) == list:
+                    if type(value[0]) == dict:
+                        # for each species
+                        print_tree(value, n + 12, fout)
                     else:
-                        print i[j]  # for function (['MassAction', 0.3])
-
+                        # for each function like (['MassAction', 0.3])
+                        fout.write('%s\n' % str(value))
                 else:
-                    print i[j]
-
+                    fout.write('%s\n' % str(value))
             else:
-                print pr_str(n*bool(idx), j, i[j])
+                fout.write('%s\n' % pr_str(n if idx > 0 else 0, key, value))
 
 class MoleculeInits(object):
     def __init__(self, m, p, newcls):
@@ -529,8 +523,9 @@ class MoleculeInits(object):
         self.newcls.tmp_list = []
 
 class Pybngl(object):
-    def __init__(self, verbose=False, loc=None):
+    def __init__(self, verbose=False, loc=None, fout=sys.stdout):
         self.verbose = verbose
+        self.fout = fout
         self.loc = loc
 
     def is_verbose(self):
@@ -543,7 +538,7 @@ class Pybngl(object):
 
         namespace = MyDict()
         namespace['reaction_rules'] = ReactionRules(
-            m, p, namespace.newcls, verbose=self.is_verbose())
+            m, p, namespace.newcls)
         namespace['molecule_inits'] = MoleculeInits(
             m, p, namespace.newcls)
         namespace['molecule_types'] = MoleculeTypes(
@@ -566,32 +561,35 @@ class Pybngl(object):
 
         # Outputs information to stdout
         if self.is_verbose():
-            print '# << reaction rules >>'
+            print_tree(namespace.newcls.global_list, fout=self.fout)
+
+            self.fout.write('# << reaction rules >>\n')
             cnt = 1
             for rule_id in sorted(m.reaction_rules.iterkeys()):
                 rule = m.reaction_rules[rule_id]
-                print '# ', cnt, rule.str_simple()
+                self.fout.write('# %d %s\n' % (cnt, rule.str_simple()))
                 cnt += 1
-            print '#'
+            self.fout.write('#\n')
 
-            print '# << species >>'
+            self.fout.write('# << species >>\n')
             cnt = 1
             for sp_id in sorted(m.concrete_species.iterkeys()):
                 sp = m.concrete_species[sp_id]
-                print '# ', cnt, sp.str_simple()
+                self.fout.write('# %d %s\n' % (cnt, sp.str_simple()))
                 cnt += 1
-            print '#'
+            self.fout.write('#\n')
 
-            print '# << reactions >>'
+            self.fout.write('# << reactions >>\n')
             cnt = 1
             for result in reaction_results:
                 for r in result.reactions:
-                    print '# ', cnt, r.str_simple()
+                    self.fout.write('# %d %s\n' % (cnt, r.str_simple()))
                     cnt += 1
-            print '#'
-            # print '# << values >>'
-            # print '# volume :', volume
-            # print '#'
+            self.fout.write('#\n')
+
+            # self.fout.write('# << values >>\n')
+            # self.fout.write('# volume : %g\n' % volume)
+            # self.fout.write('#\n')
 
         # Outputs reactions to rulefile
         if rulefilename is not None:
