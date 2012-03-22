@@ -47,11 +47,11 @@ class AnyCallable(object):
         cls.with_label = value
 
     @classmethod
-    def cls_global_list(cls):
+    def get_global_list(cls):
         return cls.global_list
 
     @classmethod
-    def cls_tmp_list(cls):
+    def get_tmp_list(cls):
         return cls.tmp_list
 
     @classmethod
@@ -61,7 +61,7 @@ class AnyCallable(object):
     def __init__(self, key, outer=None):
         # print "start:", key
 
-        self.cls_tmp_list().append({'name': key})
+        self.get_tmp_list().append({'name': key})
 
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
@@ -69,7 +69,7 @@ class AnyCallable(object):
     def __call__(self, *arg, **kwarg):
         # print "end:", self._key
 
-        tmp_list = self.cls_tmp_list()
+        tmp_list = self.get_tmp_list()
         matched_indices = []
 
         for i, a_dict in enumerate(tmp_list):
@@ -100,12 +100,12 @@ class AnyCallable(object):
         try:
             return super(AnyCallable, self).__getattr__(key)
         except:
-            self.cls_tmp_list().append({'name': '.'})
+            self.get_tmp_list().append({'name': '.'})
             return type(self)(key, self)
 
     def __getitem__(self, key):
         # print "parameter: " + str(key)
-        tmp_list = self.cls_tmp_list()
+        tmp_list = self.get_tmp_list()
 
         if type(key) == int or type(key) == float: # [1]
             addval = {'type': 'bracket', 'value': str(key)}
@@ -126,7 +126,7 @@ class AnyCallable(object):
         return self
 
     def operator(self, rhs):
-        tmp_list = self.cls_tmp_list()
+        tmp_list = self.get_tmp_list()
 
         eff_dict = None
 
@@ -143,7 +143,7 @@ class AnyCallable(object):
         if eff_dict:
             tmp_dict.update(eff_dict)
 
-        self.cls_global_list().append(tmp_dict)
+        self.get_global_list().append(tmp_dict)
 
         # tmp_list = [] and self.tmp_list = [] doesn't work
         self.set_tmp_list([])
@@ -152,15 +152,15 @@ class AnyCallable(object):
         self.operator('gt')
 
     def __lt__(self, rhs):
-        term = self.cls_tmp_list().pop(-1)
-        self.cls_tmp_list()[0]['children'].append(term)
+        term = self.get_tmp_list().pop(-1)
+        self.get_tmp_list()[0]['children'].append(term)
         return True
 
     def __ne__(self, rhs):
         self.operator('neq')
 
     def __add__(self,rhs):
-        tmp_list = self.cls_tmp_list()
+        tmp_list = self.get_tmp_list()
 
         if tmp_list[-2].get('type') == 'add':      # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
@@ -200,10 +200,10 @@ class AnyCallable(object):
 
     def __or__(self, rhs):
         addval = {'type': 'bracket', 'value':rhs}
-        if len(self.cls_tmp_list()) >= 3: # 7/20 pattern 3) L.R>L+R[]
-            self.cls_tmp_list().append(addval)
+        if len(self.get_tmp_list()) >= 3: # 7/20 pattern 3) L.R>L+R[]
+            self.get_tmp_list().append(addval)
         else:
-            self.cls_tmp_list()[1]['children'].append(addval)
+            self.get_tmp_list()[1]['children'].append(addval)
 
     def __mod__(self, rhs):
         # print "label: " + str(rhs)
@@ -212,10 +212,10 @@ class AnyCallable(object):
             addval = {'type': 'label', 'value': str(rhs)}
             self.set_with_label(True)
 
-            if "children" in self.cls_tmp_list()[-1]:
-                self.cls_tmp_list()[-1]['children'].append(addval)
+            if "children" in self.get_tmp_list()[-1]:
+                self.get_tmp_list()[-1]['children'].append(addval)
             else:
-                self.cls_tmp_list()[-1]['children'] = [addval]
+                self.get_tmp_list()[-1]['children'] = [addval]
 
 class MyDict(dict):
     def __init__(self):
