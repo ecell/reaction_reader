@@ -36,19 +36,29 @@ N_A = 6.0221367e+23
 
 
 class AnyCallable(object):
-    def __init__(self, key, outer=None):
-        global tmp_list
+    with_label = False
 
+    @classmethod
+    def get_with_label(cls):
+        return cls.with_label
+
+    @classmethod
+    def set_with_label(cls, value):
+        cls.with_label = value
+
+    def __init__(self, key, outer=None):
+        # print "start:", key
+
+        global tmp_list
         tmp_list.append({'name': key})
 
-#        print "start: " + key
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
 
     def __call__(self, *arg, **kwarg):
-        global tmp_list
+        # print "end:", self._key
 
-#        print "end:" + self._key
+        global tmp_list
 
         matched_indices = []
 
@@ -77,19 +87,17 @@ class AnyCallable(object):
         pass
 
     def __getattr__(self, key):
-
-        global tmp_list
-
         try:
             return super(AnyCallable, self).__getattr__(key)
         except:
+            global tmp_list
             tmp_list.append({'name': '.'})
-            return AnyCallable(key, self)
+            return type(self)(key, self)
 
     def __getitem__(self, key):
-        global tmp_list
+        # print "parameter: " + str(key)
 
-#        print "parameter: " + str(key)
+        global tmp_list
 
         if type(key) == int or type(key) == float: # [1]
             addval = {'type': 'bracket', 'value': str(key)}
@@ -114,7 +122,7 @@ class AnyCallable(object):
         global global_list
         global tmp_list
 
-#        print rhs
+        # print rhs
 
         eff_dict = None
 
@@ -139,7 +147,8 @@ class AnyCallable(object):
         self.operator('gt')
 
     def __lt__(self, rhs):
-#        print "lt"
+        # print "lt"
+
         tmp_list[0]['children'].append(tmp_list.pop(-1))
         return True
 
@@ -186,7 +195,7 @@ class AnyCallable(object):
         return self
 
     def __or__(self, rhs):
-#        print rhs
+        # print rhs
 
         addval = {'type': 'bracket', 'value':rhs}
         if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
@@ -195,13 +204,11 @@ class AnyCallable(object):
             tmp_list[1]['children'].append(addval)
 
     def __mod__(self, rhs):
-#        print "label: " + str(rhs)
-
-        global label_flag
+        # print "label: " + str(rhs)
 
         if type(rhs) == int or type(rhs) == float: # %1
             addval = {'type': 'label', 'value': str(rhs)}
-            label_flag = True
+            self.set_with_label(True)
 
             if "children" in tmp_list[-1]:
                 tmp_list[-1]['children'].append(addval)
@@ -212,18 +219,20 @@ class MyDict(dict):
     def __init__(self):
         super(MyDict, self).__init__()
 
+        self.newcls = type('MyAnyCallable', (AnyCallable, ), {})
+
     def __setitem__(self, key, val):
         super(MyDict, self).__setitem__(key, val)
 
     def __getitem__(self, key):
         retval = self.get(key)
         if retval is None:
-            retval = AnyCallable(key)
+            retval = self.newcls(key)
         return retval
 
 class ReactionRules(object):
-    def __init__(self, m, p, verbose=False):
-        self.model, self.parser = m, p
+    def __init__(self, m, p, newcls, verbose=False):
+        self.model, self.parser, self.newcls = m, p, newcls
         self.verbose = verbose
 
     def is_verbose(self):
@@ -233,7 +242,7 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *arg):
-        global label_flag
+        with_label = self.newcls.get_with_label()
 
         if self.is_verbose():
             print_tree(global_list)
@@ -253,9 +262,9 @@ class ReactionRules(object):
 
             # create reactants/products
             reactants, con_list = read_patterns(
-                self.model, self.parser, v['children'][0])
+                self.model, self.parser, v['children'][0], with_label)
             products, con_list = read_patterns(
-                self.model, self.parser, v['children'][1])
+                self.model, self.parser, v['children'][1], with_label)
 
 #            for con_idx, con_func in enumerate(con_list):
 #                if type(con_func) == float:   # [SPEED_FUNCTION]
@@ -298,20 +307,19 @@ class ReactionRules(object):
                         func_name_r = con_func[1][0]
                         speed_r = con_func[1][1]
 
-
             # Checks whether reactants/products have any labels.
-            lbflag = True in [r.has_label() for r in reactants+products]
-            
+            # lbflag = True in [r.has_label() for r in reactants + products]
 
             # Generates reaction rule.
             rule = self.model.add_reaction_rule(
                 reactants, products, condition, 
-                k_name=func_name, k=speed, e_list=effector_list, lbl=lbflag)
+                k_name=func_name, k=speed, e_list=effector_list, 
+                lbl=with_label)
             if v['type'] == 'neq':
                 # condition = swap_condition(con_list)
                 rule = self.model.add_reaction_rule(
                     products, reactants, condition, k_name=func_name_r, 
-                    k=speed_r, e_list=effector_list, lbl=lbflag) # label_flag)
+                    k=speed_r, e_list=effector_list, lbl=with_label)
 
 class MoleculeTypes(object):
     def __init__(self, m, p, loc=None):
@@ -416,7 +424,7 @@ def read_species(p, species):
 
     return sp
 
-def read_patterns(m, p, species):
+def read_patterns(m, p, species, label_flag=True):
     s_list = []
     con_list = []
 
@@ -532,20 +540,17 @@ class Pybngl(object):
 
     def parse_model(self, filename, m=None, p=None, 
                     maxiter=10, rulefilename=None):
-        if m is None:
-            m = Model()
-        if p is None:
-            p = Parser()
+        if m is None: m = Model()
+        if p is None: p = Parser()
 
-        gvars = MyDict()
-        gvars['reaction_rules'] = ReactionRules(
-            m, p, verbose=self.is_verbose())
-        gvars['molecule_inits'] = MoleculeInits(m, p)
-        gvars['molecule_types'] = MoleculeTypes(m, p, loc=self.loc)
+        namespace = MyDict()
+        namespace['reaction_rules'] = ReactionRules(
+            m, p, namespace.newcls, verbose=self.is_verbose())
+        namespace['molecule_inits'] = MoleculeInits(m, p)
+        namespace['molecule_types'] = MoleculeTypes(m, p, loc=self.loc)
 
-        exec file(filename) in gvars
-        
-        seed_species = gvars['molecule_inits'].seed_species
+        exec file(filename) in namespace
+        seed_species = namespace['molecule_inits'].seed_species
 
 #        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
 #        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
@@ -604,117 +609,33 @@ class Pybngl(object):
 
         return m, reaction_results, seed_species
 
-    def execute_simulation(self, m, reaction_results, seed_species, 
-                           num_of_steps=0, duration=-1):
-        sp_num = len(m.concrete_species)
+    def generate_simulator(self, m, reaction_results, seed_species):
+        num_of_species = len(m.concrete_species)
 
         # Initial values for species.
         variables = []
-        for i in range(sp_num):
+        for i in range(num_of_species):
             variables.append(0.0)
         for i, v in enumerate(seed_species.values()):
             variables[i] = v
 
-        fm = FunctionMaker()
-        sim = Simulator()
+        fmaker = FunctionMaker()
+        simulator = Simulator()
 
-#        functions = fm.make_functions(m, reaction_results, volume)
-        functions = fm.make_functions(m, reaction_results)
-        the_solver = ODESolver()
-        sim.initialize(the_solver, functions, variables)
+        # functions = fmaker.make_functions(m, reaction_results, volume)
+        functions = fmaker.make_functions(m, reaction_results)
+        simulator.initialize(ODESolver(), functions, variables)
 
-        def sim_sub():
-            if duration > 0:
-                # duration is defined
-                while (sim.the_time + the_solver.get_step_interval() 
-                       < duration):
-                    sim.step()
+        print 'try to step once.'
+        simulator.step()
+        print 'ok.'
 
-                if sim.the_time < duration:
-                    sim.step()
-                sim.the_time = duration
-                the_solver.set_next_time(sim.the_time)
-                the_solver.set_step_interval(
-                    sim.the_time - the_solver.get_current_time())
-                sim.step()
-
-            else:
-                # duration is not defined
-                sim.step(num_of_steps)
-
-        def sim_print():
-            output_series = sim.get_logged_data()
-            header = 'time, '
-            for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
-                if i > 0:
-                    header += ', '
-                sp = m.concrete_species[sp_id]
-                header += sp.str_simple()
-            print '# ', header
-            print '#'
-            for i in output_series:
-                print i[0],
-                for j in range(1, len(i)):
-                    print i[j],
-                print ''
-
-            if num_of_steps > 0: 
-                # num_of_steps == 0 raises an error by output_series[-1]
-                output_terminal = output_series[-1]
-                result = str(output_terminal[0])
-                result += ': '
-                for i, v in enumerate(output_terminal):
-                    if i > 1:
-                        result += ', '
-                    if i > 0:
-                        value = v / N_A
-                        result += str(value)
-
-                print '# ', header
-                print '# ', result
-                print '# ', len(output_series)
-
-        sim_sub()
-        sim_print()
-
-        import os.path
-
-        ##### ONLY FOR testLabel.py #####
-        if os.path.split(filename) == 'testLabel.py':
-            m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
-            m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
-            output_series = sim.get_logged_data()
-            variables = output_series[-1][1:].tolist()
-
-#            volume = 1
-#            functions = fm.make_functions(m, reaction_results, volume)
-            functions = fm.make_functions(m, reaction_results)
-            the_solver = ODESolver()
-            sim.initialize(the_solver, functions, variables)
-            sim_sub()
-            sim_print()
-        ##### ONLY FOR testLabel.py #####
-
-
-        ##### ONLY FOR testToy.py #####
-        if os.path.split(filename) == 'testToy.py':
-            m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
-            m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
-            output_series = sim.get_logged_data()
-            variables = output_series[-1][1:].tolist()
-
-#            volume = 1
-#            functions = fm.make_functions(m, reaction_results, volume)
-            functions = fm.make_functions(m, reaction_results)
-            the_solver = ODESolver()
-            sim.initialize(the_solver, functions, variables)
-            sim_sub()
-            sim_print()
-        ##### ONLY FOR testLabel.py #####
+        return (simulator, functions)
 
 
 if __name__ == '__main__':
     import optparse
+    import sys
 
 
     def create_option_parser():
@@ -737,10 +658,97 @@ if __name__ == '__main__':
     
         return optparser
 
+    def execute_simulation(simulator, functions, m, 
+                           num_of_steps=0, duration=-1, fout=sys.stdout):
+        # run simulation
+        if duration > 0:
+            # duration is defined
+            while (simulator.the_time 
+                   + simulator.solver.get_step_interval() < duration):
+                simulator.step()
+                
+            if simulator.the_time < duration:
+                simulator.step()
+            simulator.the_time = duration
+            simulator.solver.set_next_time(simulator.the_time)
+            simulator.solver.set_step_interval(
+                simulator.the_time - simulator.solver.get_current_time())
+            simulator.step()
+        else:
+            # duration is not defined
+            simulator.step(num_of_steps)
+
+        output_series = simulator.get_logged_data()
+        
+        # print results
+        header = 'time, '
+        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
+            if i > 0:
+                header += ', '
+            sp = m.concrete_species[sp_id]
+            header += sp.str_simple()
+        fout.write('#  %s\n' % header)
+        fout.write('#\n')
+        for i in output_series:
+            fout.write('%s ' % i[0])
+            for j in range(1, len(i)):
+                fout.write('%s ' % i[j])
+            fout.write('\n')
+
+        if num_of_steps > 0: 
+            # num_of_steps == 0 raises an error by output_series[-1]
+            output_terminal = output_series[-1]
+            result = str(output_terminal[0])
+            result += ': '
+            for i, v in enumerate(output_terminal):
+                if i > 1:
+                    result += ', '
+                if i > 0:
+                    value = v / N_A
+                    result += str(value)
+
+            fout.write('#  %s\n' % header)
+            fout.write('#  %s\n' % result)
+            fout.write('#  %d\n' % len(output_series))
+
+#         import os.path
+
+#         ##### ONLY FOR testLabel.py #####
+#         if os.path.split(filename) == 'testLabel.py':
+#             m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
+#             m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
+#             output_series = simulator.get_logged_data()
+#             variables = output_series[-1][1:].tolist()
+
+# #            volume = 1
+# #            functions = fmaker.make_functions(m, reaction_results, volume)
+#             functions = fmaker.make_functions(m, reaction_results)
+#             simulator.initialize(ODESolver(), functions, variables)
+#             sim_sub()
+#             sim_print()
+#         ##### ONLY FOR testLabel.py #####
+
+
+#         ##### ONLY FOR testToy.py #####
+#         if os.path.split(filename) == 'testToy.py':
+#             m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
+#             m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
+#             output_series = simulator.get_logged_data()
+#             variables = output_series[-1][1:].tolist()
+
+# #            volume = 1
+# #            functions = fmaker.make_functions(m, reaction_results, volume)
+#             functions = fmaker.make_functions(m, reaction_results)
+#             simulator.initialize(ODESolver(), functions, variables)
+#             sim_sub()
+#             sim_print()
+#         ##### ONLY FOR testLabel.py #####
+
+        return output_series
+
 
     global_list = []
     tmp_list = []
-    label_flag = False
 
     m, p = Model(), Parser()
 
@@ -764,6 +772,9 @@ if __name__ == '__main__':
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
     m, reaction_results, seed_species = pybngl.parse_model(
         filename, m, p, maxiter=options.itr_num, rulefilename=options.rulefile)
-    pybngl.execute_simulation(
-        m, reaction_results, seed_species, 
-        num_of_steps=options.step_num, duration=options.end_time)
+    simulator, functions = pybngl.generate_simulator(
+        m, reaction_results, seed_species)
+
+    execute_simulation(simulator, functions, m, 
+                       num_of_steps=options.step_num,
+                       duration=options.end_time)
