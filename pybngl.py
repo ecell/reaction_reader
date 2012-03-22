@@ -3,8 +3,6 @@ $Header: /home/takeuchi/0613/pybngl.py,v 1.64 2012/02/10 00:54:22 takeuchi Exp $
 '''
 
 from __future__ import with_statement
-import sys
-import pdb
 from model.Model import *
 #from model.model import Model
 #from model.model import Species
@@ -626,10 +624,6 @@ class Pybngl(object):
         functions = fmaker.make_functions(m, reaction_results)
         simulator.initialize(ODESolver(), functions, variables)
 
-        print 'try to step once.'
-        simulator.step()
-        print 'ok.'
-
         return (simulator, functions)
 
 
@@ -655,7 +649,6 @@ if __name__ == '__main__':
                             default=False, help='show verbose messages')
         optparser.add_option('-l', dest='loc_flag', action='store_true', 
                             default=False, help='use location description')
-    
         return optparser
 
     def execute_simulation(simulator, functions, m, 
@@ -681,68 +674,65 @@ if __name__ == '__main__':
         output_series = simulator.get_logged_data()
         
         # print results
-        header = 'time, '
-        for i, sp_id in enumerate(sorted(m.concrete_species.iterkeys())):
-            if i > 0:
-                header += ', '
-            sp = m.concrete_species[sp_id]
-            header += sp.str_simple()
-        fout.write('#  %s\n' % header)
+        species_name_list = [
+            m.concrete_species[species_id].str_simple()
+            for species_id in sorted(m.concrete_species.iterkeys())]
+        header = 'time\t%s' % ('\t'.join(species_name_list))
+        fout.write('#%s\n' % header)
         fout.write('#\n')
-        for i in output_series:
-            fout.write('%s ' % i[0])
-            for j in range(1, len(i)):
-                fout.write('%s ' % i[j])
-            fout.write('\n')
 
-        if num_of_steps > 0: 
-            # num_of_steps == 0 raises an error by output_series[-1]
-            output_terminal = output_series[-1]
-            result = str(output_terminal[0])
-            result += ': '
-            for i, v in enumerate(output_terminal):
-                if i > 1:
-                    result += ', '
-                if i > 0:
-                    value = v / N_A
-                    result += str(value)
+        for values in output_series:
+            values /= N_A
+            fout.write('%s\n' % (
+                    '\t'.join(['%s' % value for value in values])))
 
-            fout.write('#  %s\n' % header)
-            fout.write('#  %s\n' % result)
-            fout.write('#  %d\n' % len(output_series))
+        # if num_of_steps > 0: 
+        #     # num_of_steps == 0 raises an error by output_series[-1]
+        #     output_terminal = output_series[-1]
+        #     result = str(output_terminal[0])
+        #     result += ': '
+        #     for i, v in enumerate(output_terminal):
+        #         if i > 1:
+        #             result += ', '
+        #         if i > 0:
+        #             value = v / N_A
+        #             result += str(value)
 
-#         import os.path
+        #     fout.write('#  %s\n' % header)
+        #     fout.write('#  %s\n' % result)
+        #     fout.write('#  %d\n' % len(output_series))
 
-#         ##### ONLY FOR testLabel.py #####
-#         if os.path.split(filename) == 'testLabel.py':
-#             m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
-#             m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
-#             output_series = simulator.get_logged_data()
-#             variables = output_series[-1][1:].tolist()
+        # import os.path
+        # ##### ONLY FOR testLabel.py #####
+        # if os.path.split(filename) == 'testLabel.py':
+        #     m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
+        #     m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
+        #     output_series = simulator.get_logged_data()
+        #     variables = output_series[-1][1:].tolist()
 
-# #            volume = 1
-# #            functions = fmaker.make_functions(m, reaction_results, volume)
-#             functions = fmaker.make_functions(m, reaction_results)
-#             simulator.initialize(ODESolver(), functions, variables)
-#             sim_sub()
-#             sim_print()
-#         ##### ONLY FOR testLabel.py #####
+        #     # volume = 1
+        #     # functions = fmaker.make_functions(m, reaction_results, volume)
+        #     functions = fmaker.make_functions(m, reaction_results)
+        #     simulator.initialize(ODESolver(), functions, variables)
+        #     sim_sub()
+        #     sim_print()
+        # ##### ONLY FOR testLabel.py #####
 
 
-#         ##### ONLY FOR testToy.py #####
-#         if os.path.split(filename) == 'testToy.py':
-#             m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
-#             m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
-#             output_series = simulator.get_logged_data()
-#             variables = output_series[-1][1:].tolist()
+        # ##### ONLY FOR testToy.py #####
+        # if os.path.split(filename) == 'testToy.py':
+        #     m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
+        #     m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
+        #     output_series = simulator.get_logged_data()
+        #     variables = output_series[-1][1:].tolist()
 
-# #            volume = 1
-# #            functions = fmaker.make_functions(m, reaction_results, volume)
-#             functions = fmaker.make_functions(m, reaction_results)
-#             simulator.initialize(ODESolver(), functions, variables)
-#             sim_sub()
-#             sim_print()
-#         ##### ONLY FOR testLabel.py #####
+        #     # volume = 1
+        #     # functions = fmaker.make_functions(m, reaction_results, volume)
+        #     functions = fmaker.make_functions(m, reaction_results)
+        #     simulator.initialize(ODESolver(), functions, variables)
+        #     sim_sub()
+        #     sim_print()
+        # ##### ONLY FOR testLabel.py #####
 
         return output_series
 
