@@ -1,22 +1,22 @@
 import numpy
-from process.process import FunctionMaker
+
 
 class Simulator:
     def __init__(self):
-        self.the_time = 0.0
+        self.__next_time = 0.0
         self.dimension = 0
         self.dimension_algebraic = 0
         self.outputs_series = []
-        self.solver = 0
+        self.solver = None
 
-#    def make_functions(self, model, reaction_results, volume):
-#        '''Make functions from model
-#        '''
-#        function_maker = FunctionMaker()
-#        return function_maker.make_functions(model, reaction_results, volume)
+    # def make_functions(self, model, reaction_results, volume):
+    #     '''Make functions from model
+    #     '''
+    #     from process.process import FunctionMaker
+    #     function_maker = FunctionMaker()
+    #     return function_maker.make_functions(model, reaction_results, volume)
 
-    def initialize(self, a_solver, functions, variables,
-            variables_algebraic = []):
+    def initialize(self, solver, functions, variables, variables_algebraic=[]):
         '''Initialize solver
 
         1. Set variables.
@@ -25,15 +25,16 @@ class Simulator:
         4. Set functions.
         '''
         if len(functions) != len(variables) + len(variables_algebraic):
-            print 'The number of functions and the number of variables must be equal.'
+            print 'The number of functions and the number of variables', \
+                  'must be equal.'
             return -1
 
-        self.solver = a_solver
+        self.solver = solver
 
         self.dimension = len(variables)
         variable_array = numpy.array(variables)
         if variables_algebraic != []:
-            # using DAESolver
+            # For DAESolver
             self.dimension_algebraic = len(variables_algebraic)
             self.dimension += self.dimension_algebraic
             variable_algebraic_array = numpy.array(variables_algebraic)
@@ -42,18 +43,15 @@ class Simulator:
             self.dimension_algebraic = 0
             self.solver.initialize(variable_array)
 
-        self.the_time = self.solver.get_current_time()
+        # The first event must be scheduled at the current time (dt=0)
+        self.__next_time = self.solver.get_current_time()
         self.outputs_series = []
 
         # Register Functions
         for function in functions:
-            self.__register_function(function)
+            self.solver.register_function(function)
 
         return 0
-
-    def __register_function(self, function):
-        '''Set a first order ordinal diferential equation.'''
-        self.solver.register_function(function)
 
     def log_data(self):
         '''Log the local time and the variables.'''
@@ -82,37 +80,43 @@ class Simulator:
 
     def get_current_time(self):
         '''Get the current time.'''
-        if self.solver != 0:
+        if self.solver is not None:
             return self.solver.get_current_time()
         else:
-            return 0
+            return 0.0
 
-    def get_variable(self, index):
+    def get_variable(self, idx):
         '''Get a variable value.'''
-        return self.solver.get_variable(index)
+        return self.solver.get_variable(idx)
 
-    def _step(self):
-        self.solver.integrate(self.the_time)
+    def __step(self):
+        self.solver.integrate(self.__next_time)
         state_event = self.solver.step()
-        self.the_time = self.solver.reschedule()
+        self.__next_time = self.solver.reschedule()
         self.log_data()
         return state_event
 
-    def step(self, n = 1):
+    def step(self, n=1):
         '''Solve n step.'''
         try:
             for i in range(n):
-                if self._step() != 0:
+                if self.__step() != 0:
                     break
         except:
             pass
 
-    def run(self, an_end_time = -1.0):
+    def run(self, duration):
         '''Run the solver'''
+        if duration < 0: return
+
+        stop_time = self.get_current_time() + duration
         try:
-            while self.the_time < an_end_time:
-                if self._step() != 0:
+            while self.__next_time <= stop_time:
+                if self.__step() != 0:
                     break
+            if self.get_current_time() < stop_time:
+                self.__next_time = stop_time
+                self.__step()
         except:
             pass
 
@@ -130,4 +134,3 @@ class Simulator:
         '''
         for status_event in status_event_list:
             self.solver.register_status_event(status_event)
-

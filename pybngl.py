@@ -652,17 +652,7 @@ if __name__ == '__main__':
         # run simulation
         if duration > 0:
             # duration is defined
-            while (simulator.the_time 
-                   + simulator.solver.get_step_interval() < duration):
-                simulator.step()
-                
-            if simulator.the_time < duration:
-                simulator.step()
-            simulator.the_time = duration
-            simulator.solver.set_next_time(simulator.the_time)
-            simulator.solver.set_step_interval(
-                simulator.the_time - simulator.solver.get_current_time())
-            simulator.step()
+            simulator.run(duration)
         else:
             # duration is not defined
             simulator.step(num_of_steps)
@@ -677,10 +667,10 @@ if __name__ == '__main__':
         fout.write('#%s\n' % header)
         fout.write('#\n')
 
-        for values in output_series:
-            values /= N_A
-            fout.write('%s\n' % (
-                    '\t'.join(['%s' % value for value in values])))
+        for output in output_series:
+            t, values = output[0], output[1: ] / N_A
+            fout.write('%s\t%s\n' % (
+                t, '\t'.join(['%s' % value for value in values])))
 
         # if num_of_steps > 0: 
         #     # num_of_steps == 0 raises an error by output_series[-1]
