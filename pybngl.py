@@ -36,6 +36,7 @@ N_A = 6.0221367e+23
 class AnyCallable(object):
     with_label = False
     global_list = []
+    tmp_list = []
 
     @classmethod
     def get_with_label(cls):
@@ -49,11 +50,18 @@ class AnyCallable(object):
     def cls_global_list(cls):
         return cls.global_list
 
+    @classmethod
+    def cls_tmp_list(cls):
+        return cls.tmp_list
+
+    @classmethod
+    def set_tmp_list(cls, value):
+        cls.tmp_list = value
+
     def __init__(self, key, outer=None):
         # print "start:", key
 
-        global tmp_list
-        tmp_list.append({'name': key})
+        self.cls_tmp_list().append({'name': key})
 
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
@@ -61,8 +69,7 @@ class AnyCallable(object):
     def __call__(self, *arg, **kwarg):
         # print "end:", self._key
 
-        global tmp_list
-
+        tmp_list = self.cls_tmp_list()
         matched_indices = []
 
         for i, a_dict in enumerate(tmp_list):
@@ -93,14 +100,12 @@ class AnyCallable(object):
         try:
             return super(AnyCallable, self).__getattr__(key)
         except:
-            global tmp_list
-            tmp_list.append({'name': '.'})
+            self.cls_tmp_list().append({'name': '.'})
             return type(self)(key, self)
 
     def __getitem__(self, key):
         # print "parameter: " + str(key)
-
-        global tmp_list
+        tmp_list = self.cls_tmp_list()
 
         if type(key) == int or type(key) == float: # [1]
             addval = {'type': 'bracket', 'value': str(key)}
@@ -108,7 +113,6 @@ class AnyCallable(object):
                 tmp_list[-1]['children'].append(addval)
             else:
                 tmp_list[-1]['children'] = [addval]
-
         else: # [michaelis_menten]
             effect_list = tmp_list[2:]
             del tmp_list[2:]
@@ -122,9 +126,7 @@ class AnyCallable(object):
         return self
 
     def operator(self, rhs):
-        global tmp_list
-
-        # print rhs
+        tmp_list = self.cls_tmp_list()
 
         eff_dict = None
 
@@ -143,22 +145,22 @@ class AnyCallable(object):
 
         self.cls_global_list().append(tmp_dict)
 
-        tmp_list = []
+        # tmp_list = [] and self.tmp_list = [] doesn't work
+        self.set_tmp_list([])
 
     def __gt__(self, rhs):
         self.operator('gt')
 
     def __lt__(self, rhs):
-        # print "lt"
-
-        tmp_list[0]['children'].append(tmp_list.pop(-1))
+        term = self.cls_tmp_list().pop(-1)
+        self.cls_tmp_list()[0]['children'].append(term)
         return True
 
     def __ne__(self, rhs):
         self.operator('neq')
 
     def __add__(self,rhs):
-        global tmp_list
+        tmp_list = self.cls_tmp_list()
 
         if tmp_list[-2].get('type') == 'add':      # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
@@ -197,25 +199,23 @@ class AnyCallable(object):
         return self
 
     def __or__(self, rhs):
-        # print rhs
-
         addval = {'type': 'bracket', 'value':rhs}
-        if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
-            tmp_list.append(addval)
+        if len(self.cls_tmp_list()) >= 3: # 7/20 pattern 3) L.R>L+R[]
+            self.cls_tmp_list().append(addval)
         else:
-            tmp_list[1]['children'].append(addval)
+            self.cls_tmp_list()[1]['children'].append(addval)
 
     def __mod__(self, rhs):
         # print "label: " + str(rhs)
 
-        if type(rhs) == int or type(rhs) == float: # %1
+        if type(rhs) in (int, float):
             addval = {'type': 'label', 'value': str(rhs)}
             self.set_with_label(True)
 
-            if "children" in tmp_list[-1]:
-                tmp_list[-1]['children'].append(addval)
+            if "children" in self.cls_tmp_list()[-1]:
+                self.cls_tmp_list()[-1]['children'].append(addval)
             else:
-                tmp_list[-1]['children'] = [addval]
+                self.cls_tmp_list()[-1]['children'] = [addval]
 
 class MyDict(dict):
     def __init__(self):
@@ -244,11 +244,8 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *arg):
-        with_label = self.newcls.get_with_label()
-        global_list = self.newcls.cls_global_list()
-
         if self.is_verbose():
-            print_tree(global_list)
+            print_tree(self.newcls.global_list)
 
         con_list = []
         speed = speed_r = 0
@@ -256,7 +253,7 @@ class ReactionRules(object):
         func_name = func_name_r = 'MassAction'
         effector_list = []
 
-        for id, v in enumerate(global_list):
+        for id, v in enumerate(self.newcls.global_list):
 
             # create effector list
             if v.get('value') != None:
@@ -265,25 +262,27 @@ class ReactionRules(object):
 
             # create reactants/products
             reactants, con_list = read_patterns(
-                self.model, self.parser, v['children'][0], with_label)
+                self.model, self.parser, v['children'][0], 
+                self.newcls.with_label)
             products, con_list = read_patterns(
-                self.model, self.parser, v['children'][1], with_label)
+                self.model, self.parser, v['children'][1], 
+                self.newcls.with_label)
 
-#            for con_idx, con_func in enumerate(con_list):
-#                if type(con_func) == float:   # [SPEED_FUNCTION]
-#                    speed = speed_r = con_func
-#                    con_list.pop(con_idx)
-#                elif type(con_func) == tuple: # [MassAction2(.1, .2)]
-#                    speed = con_func[0]
-#                    speed_r = con_func[int(bool(con_func[1]))]
-#                    con_list.pop(con_idx)
+            # for con_idx, con_func in enumerate(con_list):
+            #     if type(con_func) == float:   # [SPEED_FUNCTION]
+            #         speed = speed_r = con_func
+            #         con_list.pop(con_idx)
+            #     elif type(con_func) == tuple: # [MassAction2(.1, .2)]
+            #         speed = con_func[0]
+            #         speed_r = con_func[int(bool(con_func[1]))]
+            #         con_list.pop(con_idx)
 
-#            if len(con_list) >= 2:            # [CONDITION_FUNCTION]
-#                condition = AndCondition(con_list)
-#            elif con_list != []:
-#                condition = con_list[0]
-#            else:
-#                condition = None
+            # if len(con_list) >= 2:            # [CONDITION_FUNCTION]
+            #     condition = AndCondition(con_list)
+            # elif con_list != []:
+            #     condition = con_list[0]
+            # else:
+            #     condition = None
 
             # set speed function
             for con_idx, con_func in enumerate(con_list):
@@ -317,28 +316,27 @@ class ReactionRules(object):
             rule = self.model.add_reaction_rule(
                 reactants, products, condition, 
                 k_name=func_name, k=speed, e_list=effector_list, 
-                lbl=with_label)
+                lbl=self.newcls.with_label)
             if v['type'] == 'neq':
                 # condition = swap_condition(con_list)
                 rule = self.model.add_reaction_rule(
                     products, reactants, condition, k_name=func_name_r, 
-                    k=speed_r, e_list=effector_list, lbl=with_label)
+                    k=speed_r, e_list=effector_list, 
+                    lbl=self.newcls.with_label)
 
 class MoleculeTypes(object):
-    def __init__(self, m, p, loc=None):
-        self.model, self.parser = m, p
+    def __init__(self, m, p, newcls, loc=None):
+        self.model, self.parser, self.newcls = m, p, newcls
         self.loc = loc
 
     def __enter__(self):
         pass
 
     def __exit__(self, *arg):
-        global tmp_list
+        # string. check for double registration such as A and A.B.
+        mole_entity_list = []
 
-        mole_entity_list = [] # string. check for double registration such as A and A.B.
-
-        for i in tmp_list:
-
+        for i in self.newcls.tmp_list:
             if i['name'] not in mole_entity_list and i['name'] != '.':
                 tmpmole = self.model.add_entity_type(i['name'])
                 mole_entity_list.append(i['name'])
@@ -358,8 +356,7 @@ class MoleculeTypes(object):
                 
                 self.parser.add_entity_type(tmpmole)
 
-        tmp_list = []
-
+        self.newcls.tmp_list = []
 
 def read_entity(sp, p, entity, binding_components):
     if 'type' in entity:
@@ -435,7 +432,7 @@ def read_patterns(m, p, species, label_flag=True):
         for entity in species['children']:
             if 'name' in entity:
                 sp = read_species(p, entity)
-#                sp.concrete = False
+                # sp.concrete = False
                 sp2 = m.register_species(sp)
                 if (label_flag) and (not sp.equals(sp2)):
                     s_list.append(sp)
@@ -446,9 +443,9 @@ def read_patterns(m, p, species, label_flag=True):
 
     else:
         sp = read_species(p, species)
-#        sp.concrete = False
+        # sp.concrete = False
         sp2 = m.register_species(sp)
-#        sp.concrete = False
+        # sp.concrete = False
 
         if (label_flag) and (not sp.equals(sp2)):
             s_list.append(sp)     # add labeled species
@@ -506,18 +503,16 @@ def print_tree(a, n=0):
                 print pr_str(n*bool(idx), j, i[j])
 
 class MoleculeInits(object):
-    def __init__(self, m, p):
-        self.model, self.parser = m, p
+    def __init__(self, m, p, newcls):
+        self.model, self.parser, self.newcls = m, p, newcls
         self.seed_species = {}
 
     def __enter__(self):
         pass
 
     def __exit__(self, *arg):
-        global tmp_list
-
         self.seed_species = {}
-        for i in tmp_list:
+        for i in self.newcls.tmp_list:
             sp = read_species(self.parser, i)
             sp.concrete = True
 
@@ -531,7 +526,7 @@ class MoleculeInits(object):
             self.seed_species[sp] = \
                 float(i['children'].pop(-1)['value']) * N_A
 
-        tmp_list = []
+        self.newcls.tmp_list = []
 
 class Pybngl(object):
     def __init__(self, verbose=False, loc=None):
@@ -549,18 +544,18 @@ class Pybngl(object):
         namespace = MyDict()
         namespace['reaction_rules'] = ReactionRules(
             m, p, namespace.newcls, verbose=self.is_verbose())
-        namespace['molecule_inits'] = MoleculeInits(m, p)
-        namespace['molecule_types'] = MoleculeTypes(m, p, loc=self.loc)
+        namespace['molecule_inits'] = MoleculeInits(
+            m, p, namespace.newcls)
+        namespace['molecule_types'] = MoleculeTypes(
+            m, p, namespace.newcls, loc=self.loc)
 
         exec file(filename) in namespace
         seed_species = namespace['molecule_inits'].seed_species
 
-#        sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
-#        seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
-
-#        volume = 1
-
-#        for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
+        # sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
+        # seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
+        # volume = 1
+        # for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
 
         try:
             reaction_results = m.generate_reaction_network(
@@ -568,8 +563,6 @@ class Pybngl(object):
         except Error, inst:
             print inst
             exit()
-
-#        print reaction_results[0]
 
         # Outputs information to stdout
         if self.is_verbose():
@@ -596,19 +589,19 @@ class Pybngl(object):
                     print '# ', cnt, r.str_simple()
                     cnt += 1
             print '#'
-#            print '# << values >>'
-#            print '# volume :', volume
-#            print '#'
+            # print '# << values >>'
+            # print '# volume :', volume
+            # print '#'
 
         # Outputs reactions to rulefile
         if rulefilename is not None:
-            f = open(rulefilename, 'w')
+            fout = open(rulefilename, 'w')
             cnt = 1
             for result in reaction_results:
                 for r in result.reactions:
-                    f.write(str(cnt)+' '+str(r.str_simple())+'\n')
+                    fout.write('%d %s\n' % (cnt, r.str_simple()))
                     cnt += 1
-            f.close()
+            fout.close()
 
         return m, reaction_results, seed_species
 
@@ -741,8 +734,6 @@ if __name__ == '__main__':
 
         return output_series
 
-
-    tmp_list = []
 
     m, p = Model(), Parser()
 
