@@ -26,8 +26,11 @@ from model.Species import Species
 from model.parser import Parser
 from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
-from Simulator import Simulator
 from model.Error import Error
+
+import World
+import Simulator
+
 
 # Avogadro's number
 N_A = 6.0221367e+23
@@ -531,8 +534,7 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, m=None, p=None, 
-                    maxiter=10, rulefilename=None):
+    def parse_model(self, filename, m=None, p=None):
         if m is None: m = Model()
         if p is None: p = Parser()
 
@@ -545,19 +547,15 @@ class Pybngl(object):
             m, p, namespace.newcls, loc=self.loc)
 
         exec file(filename) in namespace
+
+        # compartment_world = world.CompartmentWorld()
+
         seed_species = namespace['molecule_inits'].seed_species
 
         # sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
         # seed_values = [10000 * N_A, 5000 * N_A, 2000 * N_A]
         # volume = 1
         # for i, v in enumerate(m.reaction_rules): print m.reaction_rules[v]
-
-        try:
-            reaction_results = m.generate_reaction_network(
-                seed_species.keys(), maxiter)
-        except Error, inst:
-            print inst
-            exit()
 
         # Outputs information to stdout
         if self.is_verbose():
@@ -579,6 +577,23 @@ class Pybngl(object):
                 cnt += 1
             self.fout.write('#\n')
 
+            # self.fout.write('# << values >>\n')
+            # self.fout.write('# volume : %g\n' % volume)
+            # self.fout.write('#\n')
+
+        return m, seed_species
+
+    def generate_reaction_network(
+        self, m, seed_species, rulefilename=None, maxiter=10):
+        try:
+            reaction_results = m.generate_reaction_network(
+                seed_species.keys(), maxiter)
+        except Error, inst:
+            print inst
+            exit()
+
+        # Outputs information to stdout
+        if self.is_verbose():
             self.fout.write('# << reactions >>\n')
             cnt = 1
             for result in reaction_results:
@@ -586,10 +601,6 @@ class Pybngl(object):
                     self.fout.write('# %d %s\n' % (cnt, r.str_simple()))
                     cnt += 1
             self.fout.write('#\n')
-
-            # self.fout.write('# << values >>\n')
-            # self.fout.write('# volume : %g\n' % volume)
-            # self.fout.write('#\n')
 
         # Outputs reactions to rulefile
         if rulefilename is not None:
@@ -599,28 +610,9 @@ class Pybngl(object):
                 for r in result.reactions:
                     fout.write('%d %s\n' % (cnt, r.str_simple()))
                     cnt += 1
-            fout.close()
+            fout.close()        
 
-        return m, reaction_results, seed_species
-
-    def generate_simulator(self, m, reaction_results, seed_species):
-        num_of_species = len(m.concrete_species)
-
-        # Initial values for species.
-        variables = []
-        for i in range(num_of_species):
-            variables.append(0.0)
-        for i, v in enumerate(seed_species.values()):
-            variables[i] = v
-
-        fmaker = FunctionMaker()
-        simulator = Simulator()
-
-        # functions = fmaker.make_functions(m, reaction_results, volume)
-        functions = fmaker.make_functions(m, reaction_results)
-        simulator.initialize(ODESolver(), functions, variables)
-
-        return (simulator, functions)
+        return reaction_results
 
 
 if __name__ == '__main__':
@@ -647,7 +639,15 @@ if __name__ == '__main__':
                             default=False, help='use location description')
         return optparser
 
-    def execute_simulation(simulator, functions, m, 
+    def create_world(m, seed_species):
+        w = World.World()
+        w.add_species(m.concrete_species.keys())
+        for species, value in seed_species.items():
+            w.set_value(species.id, value)
+        w.model = m
+        return w
+
+    def execute_simulation(simulator,
                            num_of_steps=0, duration=-1, fout=sys.stdout):
         # run simulation
         if duration > 0:
@@ -661,8 +661,8 @@ if __name__ == '__main__':
         
         # print results
         species_name_list = [
-            m.concrete_species[species_id].str_simple()
-            for species_id in sorted(m.concrete_species.iterkeys())]
+            simulator.model.concrete_species[species_id].str_simple()
+            for species_id in simulator.world.get_species()]
         header = 'time\t%s' % ('\t'.join(species_name_list))
         fout.write('#%s\n' % header)
         fout.write('#\n')
@@ -743,11 +743,15 @@ if __name__ == '__main__':
 
     filename = args[0]
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
-    m, reaction_results, seed_species = pybngl.parse_model(
-        filename, m, p, maxiter=options.itr_num, rulefilename=options.rulefile)
-    simulator, functions = pybngl.generate_simulator(
-        m, reaction_results, seed_species)
+    m, seed_species = pybngl.parse_model(
+        filename, m, p)
+    reaction_results = pybngl.generate_reaction_network(
+        m, seed_species, maxiter=options.itr_num, 
+        rulefilename=options.rulefile)
+
+    w = create_world(m, seed_species)
+    simulator = Simulator.ODESimulator(m, w, reaction_results)
 
     output_series = execute_simulation(
-        simulator, functions, m, num_of_steps=options.step_num,
+        simulator, num_of_steps=options.step_num,
         duration=options.end_time)
