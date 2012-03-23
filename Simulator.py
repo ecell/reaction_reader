@@ -1,12 +1,16 @@
 import numpy
 
+import solver.ODESolver
+import process.process
 
-class Simulator:
+
+class Simulator(object):
     def __init__(self):
         self.__next_time = 0.0
-        self.dimension = 0
-        self.dimension_algebraic = 0
+        self.__dimension = 0
+        self.__dimension_algebraic = 0
         self.outputs_series = []
+
         self.solver = None
 
     # def make_functions(self, model, reaction_results, volume):
@@ -31,16 +35,16 @@ class Simulator:
 
         self.solver = solver
 
-        self.dimension = len(variables)
+        self.__dimension = len(variables)
         variable_array = numpy.array(variables)
         if variables_algebraic != []:
             # For DAESolver
-            self.dimension_algebraic = len(variables_algebraic)
-            self.dimension += self.dimension_algebraic
+            self.__dimension_algebraic = len(variables_algebraic)
+            self.__dimension += self.__dimension_algebraic
             variable_algebraic_array = numpy.array(variables_algebraic)
             self.solver.initialize(variable_array, variable_algebraic_array)
         else:
-            self.dimension_algebraic = 0
+            self.__dimension_algebraic = 0
             self.solver.initialize(variable_array)
 
         # The first event must be scheduled at the current time (dt=0)
@@ -56,12 +60,12 @@ class Simulator:
     def log_data(self):
         '''Log the local time and the variables.'''
         outputs = numpy.array([self.solver.get_current_time()])
-        variable_array = numpy.empty(self.dimension)
+        variable_array = numpy.empty(self.__dimension)
 
-        if self.dimension_algebraic > 0:
+        if self.__dimension_algebraic > 0:
             variable_differential_array = numpy.empty(
-                self.dimension - self.dimension_algebraic)
-            variable_algebraic_array = numpy.empty(self.dimension_algebraic)
+                self.__dimension - self.__dimension_algebraic)
+            variable_algebraic_array = numpy.empty(self.__dimension_algebraic)
             self.solver.get_variable_differential_array(
                 variable_differential_array)
             self.solver.get_variable_algebraic_array(
@@ -134,3 +138,25 @@ class Simulator:
         '''
         for status_event in status_event_list:
             self.solver.register_status_event(status_event)
+
+class ODESimulator(Simulator):
+    def __init__(self, m, w, reaction_network=None, maxiter=10):
+        super(ODESimulator, self).__init__()
+
+        # self.world is not udpated during the simulation
+        # now this is just for the initialization
+        self.model, self.world = m, w
+
+        if reaction_network is None:
+            self.reaction_network = self.model.generate_reaction_network(
+                self.world.get_species(), maxiter)
+        else:
+            self.reaction_network = reaction_network
+
+        fmaker = process.process.FunctionMaker()
+        # self.functions = fmaker.make_functions(
+        #     self.model, reaction_network, self.world.volume)
+        self.functions = fmaker.make_functions(
+            self.model, self.reaction_network)
+        self.initialize(solver.ODESolver.ODESolver(), 
+                        self.functions, self.world.asarray())
