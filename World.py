@@ -49,8 +49,15 @@ class CompartmentSpace(object):
 
     volume = property(get_volume, set_volume)
 
-    def asarray(self):
+    def get_data(self):
         return self.values.copy()
+
+    def set_data(self, value):
+        if len(value) == len(self.species_list):
+            if type(value) is numpy.ndarray:
+                self.values = value.copy()
+
+    data = property(get_data, set_data)
 
 class World(object):
     def __init__(self, volume=1.0):
@@ -83,8 +90,13 @@ class World(object):
     def add_structure(self, structure):
         pass
 
-    def asarray(self):
-        return self.__space.asarray()
+    def get_data(self):
+        return self.__space.data
+
+    def set_data(self, value):
+        self.__space.data = value
+
+    data = property(get_data, set_data)
 
 
 if __name__ == '__main__':
