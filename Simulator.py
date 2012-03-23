@@ -159,4 +159,4 @@ class ODESimulator(Simulator):
         self.functions = fmaker.make_functions(
             self.model, self.reaction_network)
         self.initialize(solver.ODESolver.ODESolver(), 
-                        self.functions, self.world.asarray())
+                        self.functions, self.world.data)

@@ -548,8 +548,6 @@ class Pybngl(object):
 
         exec file(filename) in namespace
 
-        # compartment_world = world.CompartmentWorld()
-
         seed_species = namespace['molecule_inits'].seed_species
 
         # sp_str_list = ['L(r)', 'R(l,d,Y~U)', 'A(SH2,Y~U)']
