@@ -4,7 +4,8 @@ $Header: /home/takeuchi/0613/process/process.py,v 1.10 2012/02/10 01:18:12 takeu
 import inspect
 import sys
 
-N_A = 6.0221367e+23
+# Avogadro's number
+# N_A = 6.0221367e+23
 
 
 def MassAction(k):
@@ -15,19 +16,18 @@ def MichaelisUniUni(*args):
     return ["MichaelisUniUni", args]
 
 class FluxProcess(object):
-    def conc(self, sp):
-        '''returns values of species in sp_list which has species idx
-        '''
-        # return [va[i] for i in sp_list]
+    # def conc(self, sp):
+    #     '''returns values of species in sp_list which has species idx
+    #     '''
+    #     # return [va[i] for i in sp_list]
+    #     # (args, varargs, varkw, locals) = inspect.getargvalues(frame)
+    #     va = inspect.getargvalues(
+    #         inspect.stack()[2][0]).locals['variable_array']
+    #     return va[sp['id']]
 
-        # (args, varargs, varkw, locals) = inspect.getargvalues(frame)
-        va = inspect.getargvalues(
-            inspect.stack()[2][0]).locals['variable_array']
-        return va[sp['id']]
-
-    def exit_with_error(self, message=None):
-        if message is not None:
-            sys.stdout.write('%s\n' % message)
+    def exit_with_message(self, msng=None):
+        if msg is not None:
+            sys.stdout.write('%s\n' % msg)
         sys.exit()
 
 class MassActionFluxProcess(FluxProcess):
@@ -39,12 +39,12 @@ class MassActionFluxProcess(FluxProcess):
         self.k_value, self.volume = args
 
     def __call__(self, variable_array, time):
-        velocity = self.k_value * self.volume * N_A
+        velocity = self.k_value * self.volume
         for r in self.reactants:
             coefficient = r['coef']
-            value = variable_array[r['id']]
+            value = variable_array[r['id']] / self.volume
             while coefficient > 0:
-                velocity *= value / (self.volume * N_A)
+                velocity *= value
                 coefficient -= 1
         return velocity
 
@@ -70,38 +70,27 @@ class MichaelisUniUniFluxProcess(FluxProcess):
         # print [i.str_simple() for i in effectors]
 
         if len(self.reactants) != 1 or len(self.products) != 1:
-            self.exit_with_error(
+            self.exit_with_message(
                 "the numbers of reactants and products must be 1.")
 
     def __call__(self, variable_array, time):
-        # Get Species' value
-        # print variable_array
-
-        # Print Species' name and value
         # for i, v in enumerate(self.species):
         #     print self.species[v].str_simple(), variable_array[i]
-        
-        # (2011/11/29) : example of conc()
-        # sp_list = [x['id'] for x in self.reactants]
+        # def molar_conc(sp):
+        #     """${3:function documentation}"""
+        #     n = self.conc(sp)
+        #     conc_v = n / self.volume
+        #     mol_conc = conc_v / N_A
+        #     return mol_conc
 
-        def molar_conc(sp):
-            """${3:function documentation}"""
-            n = self.conc(sp)
-            conc_v = n / self.volume
-            mol_conc = conc_v / N_A
+        S = variable_array[self.reactants[0]['id']] / self.volume
+        P = variable_array[self.products[0]['id']] / self.volume
+        E = variable_array[self.effectors[0]['id']] / self.volume
 
-            return mol_conc
-
-        # print self.conc(sp_list)
-        S = molar_conc(self.reactants[0])
-        P = molar_conc(self.products[0])
-
-        # use decorator
-        velocity = (self.KcF * S - self.KcR * P) / (self.KmS * self.KmP + self.KmP * S + self.KmS * P)
-        velocity *= self.volume * N_A
-
-        #print "# velocity :", velocity
-
+        # velocity = self.KcF * E * S / (self.KmS + S)
+        velocity = self.KcF * S - self.KcR * P
+        velocity /= self.KmS * self.KmP + self.KmP * S + self.KmS * P
+        velocity *= self.volume
         return velocity
 
     def __str__(self):
@@ -138,7 +127,8 @@ class Function(object):
 
 class FunctionMaker(object):
     def __create_rule_list(self, m, reaction_results):
-        '''Create rule list from network rules of model.'''
+        '''Create rule list from network rules of model.
+        '''
         sid_list = m.concrete_species.keys()
 
         vid_map = {}
