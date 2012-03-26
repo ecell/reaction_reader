@@ -160,3 +160,9 @@ class ODESimulator(Simulator):
             self.model, self.reaction_network)
         self.initialize(solver.ODESolver.ODESolver(), 
                         self.functions, self.world.data)
+
+    def get_species(self):
+        # this method returns a list of species objects,
+        # but not of species IDs.
+        return [self.model.concrete_species[sid]
+                for sid in self.world.get_species()]
