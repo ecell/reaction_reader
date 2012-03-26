@@ -32,10 +32,6 @@ import World
 import Simulator
 
 
-# Avogadro's number
-N_A = 6.0221367e+23
-
-
 class AnyCallable(object):
     with_label = False
     global_list = []
@@ -534,8 +530,7 @@ class MoleculeInits(object):
 
             sp = self.model.register_species(sp)
 
-            self.seed_species[sp] = \
-                float(i['children'].pop(-1)['value']) * N_A
+            self.seed_species[sp] = float(i['children'].pop(-1)['value'])
 
         self.newcls.tmp_list = []
 
@@ -678,7 +673,7 @@ if __name__ == '__main__':
         fout.write('#\n')
 
         for output in output_series:
-            t, values = output[0], output[1: ] / N_A
+            t, values = output[0], output[1: ]
             fout.write('%s\t%s\n' % (
                 t, '\t'.join(['%s' % value for value in values])))
 
