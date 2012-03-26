@@ -1,38 +1,66 @@
 '''
 $Header: /home/takeuchi/0613/process/process.py,v 1.10 2012/02/10 01:18:12 takeuchi Exp $
 '''
-import inspect as ins
+import inspect
 import sys
+
+N_A = 6.0221367e+23
+
 
 def MassAction(k):
     return ["MassAction", k]
 
-def MichaelisUniUni(*args): # (KmS, KmP, KcF, KcR, volume)
-    return ["MichaelisUniUni", (args)]
+def MichaelisUniUni(*args):
+    # args is required to be (KmS, KmP, KcF, KcR, volume)
+    return ["MichaelisUniUni", args]
 
 class FluxProcess(object):
     def conc(self, sp):
-        '''
-        returns values of species in sp_list which has species idx
+        '''returns values of species in sp_list which has species idx
         '''
         # return [va[i] for i in sp_list]
 
-        va = ins.getargvalues(ins.stack()[2][0]).locals['variable_array']
+        # (args, varargs, varkw, locals) = inspect.getargvalues(frame)
+        va = inspect.getargvalues(
+            inspect.stack()[2][0]).locals['variable_array']
         return va[sp['id']]
 
-    def invalid_func(self, message):
-        print message
+    def exit_with_error(self, message=None):
+        if message is not None:
+            sys.stdout.write('%s\n' % message)
         sys.exit()
 
-    N_A = 6.0221367e+23
+class MassActionFluxProcess(FluxProcess):
+    def __init__(self, reactants, products, effectors, args):
+        # self.reactants, self.products, self.effectors = (
+        #     reactants, products, effectors)
+        self.reactants = reactants
 
+        self.k_value, self.volume = args
+
+    def __call__(self, variable_array, time):
+        velocity = self.k_value * self.volume * N_A
+        for r in self.reactants:
+            coefficient = r['coef']
+            value = variable_array[r['id']]
+            while coefficient > 0:
+                velocity *= value / (self.volume * N_A)
+                coefficient -= 1
+        return velocity
+
+    def __str__(self):
+        retval = 'MassActionFluxProcess('
+        retval += 'k=%f, volume=%f, ' % (self.k_value, self.volume)
+        retval += 'reactants=%s' % self.reactants
+        retval += ')'
+        return retval
 
 class MichaelisUniUniFluxProcess(FluxProcess):
-    def __init__(self, arglist, reactant, product, effectors):
-        [self.KmS, self.KmP, self.KcF, self.KcR, self.volume] = arglist
-        self.reactant = reactant
-        self.product = product
-        self.effector = effectors
+    def __init__(self, reactants, products, effectors, args):
+        self.reactants, self.products, self.effectors = (
+            reactants, products, effectors)
+
+        self.KmS, self.KmP, self.KcF, self.KcR, self.volume = args
 
         # Get Species' name
         # print [x.str_simple() for x in self.species.values()]
@@ -41,8 +69,9 @@ class MichaelisUniUniFluxProcess(FluxProcess):
         # Get Reactors' name
         # print [i.str_simple() for i in effectors]
 
-        if (len(self.reactant) != 1) or (len(self.product) != 1):
-            self.invalid_func("number of reactant and product must be 1.")
+        if len(self.reactants) != 1 or len(self.products) != 1:
+            self.exit_with_error(
+                "the numbers of reactants and products must be 1.")
 
     def __call__(self, variable_array, time):
         # Get Species' value
@@ -53,57 +82,35 @@ class MichaelisUniUniFluxProcess(FluxProcess):
         #     print self.species[v].str_simple(), variable_array[i]
         
         # (2011/11/29) : example of conc()
-        #sp_list = [x['id'] for x in self.reactants]
+        # sp_list = [x['id'] for x in self.reactants]
 
         def molar_conc(sp):
             """${3:function documentation}"""
             n = self.conc(sp)
             conc_v = n / self.volume
-            mol_conc = conc_v / self.N_A
+            mol_conc = conc_v / N_A
 
             return mol_conc
 
-        #print self.conc(sp_list)
-        S = molar_conc(self.reactant[0])
-        P = molar_conc(self.product[0])
+        # print self.conc(sp_list)
+        S = molar_conc(self.reactants[0])
+        P = molar_conc(self.products[0])
 
         # use decorator
         velocity = (self.KcF * S - self.KcR * P) / (self.KmS * self.KmP + self.KmP * S + self.KmS * P)
-        velocity *= self.volume * self.N_A
+        velocity *= self.volume * N_A
 
         #print "# velocity :", velocity
 
         return velocity
 
     def __str__(self):
-        retval = 'OriginalFunction('
-        retval += 'k=%f, ' % self.k_value
-        retval += 'reactants=%s' % self.reactants
-        retval += 'species=%s' % self.species
+        retval = 'MichaelisUniUniFluxProcess('
+        retval += 'KmS=%f, KmP=%f, KcF=%f, KcR=%f, volume=%f, ' % (
+            self.KmS, self.KmP, self.KcF, self.KcR, self.volume)
+        retval += 'reactants=%s, ' % self.reactants
+        retval += 'products=%s, ' % self.products
         retval += 'effectors=%s' % self.effectos
-        retval += ')'
-        return retval
-
-class MassActionFluxProcess(FluxProcess):
-    def __init__(self, k_value, volume, reactants):
-        self.volume = volume
-        self.k_value = k_value
-        self.reactants = reactants
-
-    def __call__(self, variable_array, time):
-        velocity = self.k_value * self.volume * self.N_A
-        for r in self.reactants:
-            coefficient = r['coef']
-            value = variable_array[r['id']]
-            while coefficient > 0:
-                velocity *= value / (self.volume * self.N_A)
-                coefficient -= 1
-        return velocity
-
-    def __str__(self):
-        retval = 'MassAction('
-        retval += 'k=%f, ' % self.k_value
-        retval += 'reactants=%s' % self.reactants
         retval += ')'
         return retval
 
@@ -124,25 +131,19 @@ class Function(object):
         return sum(self.__process(variable_array, time)) + 0.0
 
     def __str__(self):
-        retval = '['
-        for i, p in enumerate(self.process_list):
-            if i > 0:
-                retval += ', '
-            retval += '{'
-            retval += 'coef:%s' % p['coef']
-            retval += ', '
-            retval += 'func:%s' % p['func']
-            retval += '}'
-        retval += ']'
+        retval = '[%s]' % (', '.join([
+            '{coef: %s, func: %s}' % (elem['coef'], elem['func'])
+            for elem in self.process_list]))
         return retval
 
 class FunctionMaker(object):
     def __create_rule_list(self, m, reaction_results):
         '''Create rule list from network rules of model.'''
-        variable_id_map = {}
-        for i, sp_id in enumerate(m.concrete_species.iterkeys()):
-            sp = m.species[sp_id]
-            variable_id_map[sp_id] = i
+        sid_list = m.concrete_species.keys()
+
+        vid_map = {}
+        for vid, sid in enumerate(sid_list):
+            vid_map[sid] = vid
 
         rule_list = []
         for result in reaction_results:
@@ -157,70 +158,68 @@ class FunctionMaker(object):
 
                 rule['reactants'] = []
                 for reactant in reaction.reactants:
-                    variable_id = variable_id_map[reactant.id]
-                    rule['reactants'].append(\
-                        {'id': variable_id, 'coef': 1})
+                    rule['reactants'].append(
+                        {'id': vid_map[reactant.id], 'coef': 1})
 
                 rule['products'] = []
                 for product in reaction.products:
-                    variable_id = variable_id_map[product.id]
-                    rule['products'].append(\
-                        {'id': variable_id, 'coef': 1})
+                    rule['products'].append(
+                        {'id': vid_map[product.id], 'coef': 1})
 
-                rule['e_list'] = []
-                for effector in r['e_list']:
-                    for i in m.concrete_species.iteritems():
-                        if effector.matches(i[1]):
-                            variable_id = variable_id_map[i[0]]
-                            rule['e_list'].append(\
-                                {'id': variable_id, 'coef': 1})
-
+                # e_list -> effectors
+                rule['effectors'] = []
+                for effector in r['effectors']:
+                    for sid in sid_list:
+                        species = m.concrete_species[sid]
+                        if effector.matches(species):
+                            rule['effectors'].append(
+                                {'id':  vid_map[sid], 'coef': 1})
+                            
                 rule_list.append(rule)
-
 
         return rule_list
 
     def make_functions(self, m, reaction_results):
         '''Make functions from model
         '''
+        sid_list = m.concrete_species.keys()
+
+        # Function list
+        functions = []
+        for i in range(len(sid_list)):
+            function = Function()
+            functions.append(function)
 
         # Creates rule list.
         rule_list = self.__create_rule_list(m, reaction_results)
 
         # Process list
-        processes = []
         for rule in rule_list:
             # todo!!: move user function definition
             k_name = rule['k_name']
             # todo!!: (re)move "volume" paramter
             if k_name == 'MassAction':
                 volume = 1
-                process = MassActionFluxProcess(rule['k'], volume,
-                    rule['reactants'])
+                args = (rule['k'], volume)
+                process = MassActionFluxProcess(
+                    rule['reactants'], [], [],
+                    args)
+                # process = MassActionFluxProcess(
+                #     rule['reactants'], rule['products'], rule['effectors'],
+                #     args)
             elif k_name == 'MichaelisUniUni':
-                process = MichaelisUniUniFluxProcess(rule['k'],
-                    rule['reactants'], rule['products'], rule['e_list'])
+                process = MichaelisUniUniFluxProcess(
+                    rule['reactants'], rule['products'], rule['effectors'],
+                    rule['k'])
             else:
                 msg = 'Unsupported process: %s' % k_name
                 raise Exception(msg)
-            processes.append(process)
 
-        # Function list
-        functions = []
-        for i in range(len(m.concrete_species)):
-            function = Function()
-            functions.append(function)
-
-        # Add Processes
-        process_id = 0
-        for rule in rule_list:
             for reactant in rule['reactants']:
                 functions[reactant['id']].add_process(
-                    -reactant['coef'], processes[process_id])
+                    -reactant['coef'], process)
             for product in rule['products']:
                 functions[product['id']].add_process(
-                    product['coef'], processes[process_id])
-            process_id += 1
+                    +product['coef'], process)
 
         return functions
-

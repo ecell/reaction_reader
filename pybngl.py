@@ -69,7 +69,7 @@ class AnyCallable(object):
         super(AnyCallable, self).__setattr__('_key', key)
         super(AnyCallable, self).__setattr__('_outer', outer)
 
-    def __call__(self, *arg, **kwarg):
+    def __call__(self, *args, **kwargs):
         # print "end:", self._key
 
         tmp_list = self.get_tmp_list()
@@ -88,7 +88,8 @@ class AnyCallable(object):
             if tmp_list[-3].get('name') is '.':
                 tmp_list[-3]['children'].append(tmp_list.pop(-1))
                 tmp_list.pop(-1)
-            elif 'children' in tmp_list[-2]:     # > A.B [C]
+            elif 'children' in tmp_list[-2]:
+                # > A.B [C]
                 pass
             else:
                 dot_list = [tmp_list.pop(-3), tmp_list.pop(-1)]
@@ -110,13 +111,15 @@ class AnyCallable(object):
         # print "parameter: " + str(key)
         tmp_list = self.get_tmp_list()
 
-        if type(key) == int or type(key) == float: # [1]
+        if type(key) == int or type(key) == float:
+            # [1]
             addval = {'type': 'bracket', 'value': str(key)}
             if "children" in tmp_list[-1]:
                 tmp_list[-1]['children'].append(addval)
             else:
                 tmp_list[-1]['children'] = [addval]
-        else: # [michaelis_menten]
+        else:
+            # [michaelis_menten]
             effect_list = tmp_list[2:]
             del tmp_list[2:]
             addval = {'xxx': 'effector', 'value': effect_list}
@@ -165,35 +168,34 @@ class AnyCallable(object):
     def __add__(self,rhs):
         tmp_list = self.get_tmp_list()
 
-        if tmp_list[-2].get('type') == 'add':      # A+B+C(reactants)
+        if tmp_list[-2].get('type') == 'add':
+            # A+B+C(reactants)
             tmp_list[-2]['children'].append(tmp_list.pop(-1))
-
-        elif len(tmp_list) == 2:                   # A+B(reactants)
+        elif len(tmp_list) == 2:
+            # A+B(reactants)
             add_list = [tmp_list.pop(-2), tmp_list.pop(-1)]
             add_dict = {'type': 'add', 'children': add_list}
             tmp_list.append(add_dict)
-
-
         elif tmp_list[1]['children'][-1].get('type') == 'effector':
             eff_dict = tmp_list[1]['children'].pop(-1)
 
-            if tmp_list[1].get('type') == 'add':   # A+B+C [D](products)
+            if tmp_list[1].get('type') == 'add':
+                # A+B+C [D](products)
                 tmp_list[1]['children'].append(eff_dict['value'].pop(0))
                 tmp_list[1]['children'].append(eff_dict)
-
-            else:                                  # A+B [D](products)
+            else:
+                # A+B [D](products)
                 add_list = [tmp_list.pop(-1), eff_dict['value'].pop(0)]
                 add_list.append(eff_dict)
                 add_dict = {'type': 'add', 'children': add_list}
                 tmp_list.append(add_dict)
-
-
-        elif tmp_list[1].get('type') == 'add':     # A+B+C(products)
+        elif tmp_list[1].get('type') == 'add':
+            # A+B+C(products)
             for i in range(2, len(tmp_list)):
                 tmp_list[1]['children'].append(tmp_list[i])
             del tmp_list[2:]
-
-        else:                                      # A+B(products)
+        else:
+            # A+B(products)
             add_list = tmp_list[1:]
             del tmp_list[1:]
             add_dict = {'type':'add', 'children': add_list}
@@ -242,19 +244,22 @@ class ReactionRules(object):
     def __enter__(self):
         pass
 
-    def __exit__(self, *arg):
-        con_list = []
+    def __exit__(self, *args):
         speed = speed_r = 0
         condition = None
         func_name = func_name_r = 'MassAction'
-        effector_list = []
+        effectors = []
 
         for id, v in enumerate(self.newcls.global_list):
+            # the followings should be here, shouldn't they?
+            # speed = speed_r = 0
+            # condition = None
+            # func_name = func_name_r = 'MassAction'
+            # effectors = []
 
             # create effector list
             if v.get('value') != None:
-                effector_list = [read_species(self.parser, i) 
-                                 for i in v['value']]
+                effectors = [read_species(self.parser, i) for i in v['value']]
 
             # create reactants/products
             reactants, con_list = read_patterns(
@@ -279,29 +284,29 @@ class ReactionRules(object):
             #     condition = con_list[0]
             # else:
             #     condition = None
-
             # set speed function
+
             for con_idx, con_func in enumerate(con_list):
-
-                if type(con_func) in [int, float]:        # | 0.1
+                if type(con_func) in [int, float]:
+                    # | 0.1
                     speed = con_func
-
-                elif type (con_func) == list:             # | MassAction(0.1)
+                elif type(con_func) == list:
+                    # | MassAction(0.1)
                     func_name = con_func[0]
                     speed = con_func[1]
-                    
                 elif type(con_func) == tuple:
-                    if type(con_func[0]) in [int, float]: # | 0.1 of (0.1, 0.2)
+                    if type(con_func[0]) in [int, float]:
+                        # | 0.1 of (0.1, 0.2)
                         speed = con_func[0]
-
-                    if type(con_func[1]) in [int, float]: # | 0.2 of (0.1, 0.2)
+                    if type(con_func[1]) in [int, float]:
+                        # | 0.2 of (0.1, 0.2)
                         speed_r = con_func[1]
-
-                    if type(con_func[0]) == list: # | MA(1) of (MA(1), MA(0.2))
+                    if type(con_func[0]) == list:
+                        # | MA(1) of (MA(1), MA(0.2))
                         func_name = con_func[0][0]
                         speed = con_func[0][1]
-
-                    if type(con_func[1]) == list: # | MA(2) of (MA(1), MA(0.2))
+                    if type(con_func[1]) == list:
+                        # | MA(2) of (MA(1), MA(0.2))
                         func_name_r = con_func[1][0]
                         speed_r = con_func[1][1]
 
@@ -309,16 +314,17 @@ class ReactionRules(object):
             # lbflag = True in [r.has_label() for r in reactants + products]
 
             # Generates reaction rule.
+            attrs = dict(k_name=func_name, k=speed, effectors=effectors, 
+                         lbl=self.newcls.with_label)
             rule = self.model.add_reaction_rule(
-                reactants, products, condition, 
-                k_name=func_name, k=speed, e_list=effector_list, 
-                lbl=self.newcls.with_label)
+                reactants, products, condition, **attrs)
             if v['type'] == 'neq':
                 # condition = swap_condition(con_list)
+                attrs = dict(k_name=func_name_r, k=speed_r,
+                             effectors=effectors,
+                             lbl=self.newcls.with_label)
                 rule = self.model.add_reaction_rule(
-                    products, reactants, condition, k_name=func_name_r, 
-                    k=speed_r, e_list=effector_list, 
-                    lbl=self.newcls.with_label)
+                    products, reactants, condition, **attrs)
 
 class MoleculeTypes(object):
     def __init__(self, m, p, newcls, loc=None):
@@ -328,7 +334,7 @@ class MoleculeTypes(object):
     def __enter__(self):
         pass
 
-    def __exit__(self, *arg):
+    def __exit__(self, *args):
         # string. check for double registration such as A and A.B.
         mole_entity_list = []
 
@@ -372,10 +378,12 @@ def read_entity(sp, p, entity, binding_components):
             if 'children' in i:
                 for j in i['children']:
 
-                    if 'name' in j:  # states input
+                    if 'name' in j:
+                        # states input
                         en_comp.set_state(en_comp.states.keys()[0], j['name'])
 
-                    if j.get('type') is 'bracket': # binding input
+                    if j.get('type') is 'bracket':
+                        # binding input
                         binding_type = j['value']
                         if binding_type == '+':
                             en_comp.binding_state = BINDING_ANY
@@ -394,7 +402,8 @@ def read_entity(sp, p, entity, binding_components):
                                 binding_components[binding_id].append(tmp)
                                 binding_components[binding_id].append(en_comp)
 
-                    if j.get('type') == 'label': # labeling ID
+                    if j.get('type') == 'label':
+                        # labeling ID
                         en_comp.label = j['value']
 
         except IndexError:
@@ -407,7 +416,8 @@ def read_species(p, species):
 
     bind_comp = {}
 
-    if species['name'] == '.':  #   A.B
+    if species['name'] == '.':
+        # A.B
         for entity in species['children']:
             read_entity(sp, p, entity, bind_comp)
         for comps in bind_comp.itervalues():
@@ -415,7 +425,8 @@ def read_species(p, species):
                 pass
             else:
                 sp.add_binding(comps[0], comps[1])
-    else:                       #   A
+    else:
+        # A
         read_entity(sp, p, species, bind_comp)
 
     return sp
@@ -444,8 +455,11 @@ def read_patterns(m, p, species, label_flag=True):
         # sp.concrete = False
 
         if (label_flag) and (not sp.equals(sp2)):
-            s_list.append(sp)     # add labeled species
-        else: s_list.append(sp2)  # add normal species
+            # add labeled species
+            s_list.append(sp)
+        else:
+            # add normal species
+            s_list.append(sp2)
 
         for i in [i for i in species['children'] if 'type' in i]:
             if i.get('type') == 'bracket':
@@ -507,7 +521,7 @@ class MoleculeInits(object):
     def __enter__(self):
         pass
 
-    def __exit__(self, *arg):
+    def __exit__(self, *args):
         self.seed_species = {}
         for i in self.newcls.tmp_list:
             sp = read_species(self.parser, i)
@@ -645,8 +659,8 @@ if __name__ == '__main__':
         w.model = m
         return w
 
-    def execute_simulation(simulator,
-                           num_of_steps=0, duration=-1, fout=sys.stdout):
+    def execute_simulation(
+        simulator, num_of_steps=0, duration=-1, fout=sys.stdout):
         # run simulation
         if duration > 0:
             # duration is defined
@@ -658,10 +672,8 @@ if __name__ == '__main__':
         output_series = simulator.get_logged_data()
         
         # print results
-        species_name_list = [
-            simulator.model.concrete_species[species_id].str_simple()
-            for species_id in simulator.world.get_species()]
-        header = 'time\t%s' % ('\t'.join(species_name_list))
+        header = 'time\t%s' % ('\t'.join([
+            species.str_simple() for species in simulator.get_species()]))
         fout.write('#%s\n' % header)
         fout.write('#\n')
 
@@ -669,22 +681,6 @@ if __name__ == '__main__':
             t, values = output[0], output[1: ] / N_A
             fout.write('%s\t%s\n' % (
                 t, '\t'.join(['%s' % value for value in values])))
-
-        # if num_of_steps > 0: 
-        #     # num_of_steps == 0 raises an error by output_series[-1]
-        #     output_terminal = output_series[-1]
-        #     result = str(output_terminal[0])
-        #     result += ': '
-        #     for i, v in enumerate(output_terminal):
-        #         if i > 1:
-        #             result += ', '
-        #         if i > 0:
-        #             value = v / N_A
-        #             result += str(value)
-
-        #     fout.write('#  %s\n' % header)
-        #     fout.write('#  %s\n' % result)
-        #     fout.write('#  %d\n' % len(output_series))
 
         # import os.path
         # ##### ONLY FOR testLabel.py #####
@@ -741,8 +737,7 @@ if __name__ == '__main__':
 
     filename = args[0]
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
-    m, seed_species = pybngl.parse_model(
-        filename, m, p)
+    m, seed_species = pybngl.parse_model(filename, m, p)
     reaction_results = pybngl.generate_reaction_network(
         m, seed_species, maxiter=options.itr_num, 
         rulefilename=options.rulefile)
