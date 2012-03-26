@@ -28,6 +28,8 @@ from solver.ODESolver import ODESolver
 from process.process import FunctionMaker
 from model.Error import Error
 
+import types
+
 import World
 import Simulator
 
@@ -282,6 +284,8 @@ class ReactionRules(object):
             #     condition = None
             # set speed function
 
+            func_def = func_def_r = None
+
             for con_idx, con_func in enumerate(con_list):
                 if type(con_func) in [int, float]:
                     # | 0.1
@@ -305,20 +309,26 @@ class ReactionRules(object):
                         # | MA(2) of (MA(1), MA(0.2))
                         func_name_r = con_func[1][0]
                         speed_r = con_func[1][1]
+                    if type(con_func[0]) is types.FunctionType:
+                        func_def = con_func[0]
+                    if type(con_func[1]) is types.FunctionType:
+                        func_def_r = con_func[1]
+                elif type(con_func) is types.FunctionType:
+                    func_def = con_func
 
             # Checks whether reactants/products have any labels.
             # lbflag = True in [r.has_label() for r in reactants + products]
 
             # Generates reaction rule.
             attrs = dict(k_name=func_name, k=speed, effectors=effectors, 
-                         lbl=self.newcls.with_label)
+                         lbl=self.newcls.with_label, func_def=func_def)
             rule = self.model.add_reaction_rule(
                 reactants, products, condition, **attrs)
             if v['type'] == 'neq':
                 # condition = swap_condition(con_list)
                 attrs = dict(k_name=func_name_r, k=speed_r,
                              effectors=effectors,
-                             lbl=self.newcls.with_label)
+                             lbl=self.newcls.with_label, func_def=func_def_r)
                 rule = self.model.add_reaction_rule(
                     products, reactants, condition, **attrs)
 

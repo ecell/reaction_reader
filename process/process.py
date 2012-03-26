@@ -145,6 +145,7 @@ class FunctionMaker(object):
                 rule['k'] = r['k']
                 rule['k_name'] = r['k_name']
                 rule['desc'] = reaction.str_simple()
+                rule['func_def'] = r['func_def']
 
                 rule['reactants'] = []
                 for reactant in reaction.reactants:
@@ -185,25 +186,29 @@ class FunctionMaker(object):
 
         # Process list
         for rule in rule_list:
-            # todo!!: move user function definition
-            k_name = rule['k_name']
-            # todo!!: (re)move "volume" paramter
-            if k_name == 'MassAction':
-                volume = 1
-                args = (rule['k'], volume)
-                process = MassActionFluxProcess(
-                    rule['reactants'], [], [],
-                    args)
-                # process = MassActionFluxProcess(
-                #     rule['reactants'], rule['products'], rule['effectors'],
-                #     args)
-            elif k_name == 'MichaelisUniUni':
-                process = MichaelisUniUniFluxProcess(
-                    rule['reactants'], rule['products'], rule['effectors'],
-                    rule['k'])
+            if rule['func_def'] is None:
+                # todo!!: move user function definition
+                k_name = rule['k_name']
+                # todo!!: (re)move "volume" paramter
+                if k_name == 'MassAction':
+                    volume = 1
+                    args = (rule['k'], volume)
+                    process = MassActionFluxProcess(
+                        rule['reactants'], [], [],
+                        args)
+                    # process = MassActionFluxProcess(
+                    #     rule['reactants'], rule['products'],
+                    #     rule['effectors'], args)
+                elif k_name == 'MichaelisUniUni':
+                    process = MichaelisUniUniFluxProcess(
+                        rule['reactants'], rule['products'], rule['effectors'],
+                        rule['k'])
+                else:
+                    msg = 'Unsupported process: %s' % k_name
+                    raise Exception(msg)
             else:
-                msg = 'Unsupported process: %s' % k_name
-                raise Exception(msg)
+                process = rule['func_def'](
+                    rule['reactants'], rule['products'], rule['effectors'])
 
             for reactant in rule['reactants']:
                 functions[reactant['id']].add_process(
