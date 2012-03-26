@@ -26,6 +26,16 @@ def mass_action(x, t, reactants, products, effectors, *args, **kwargs):
             coef -= 1
     return veloc
 
+@process
+def michaelis_menten(x, t, reactants, products, effectors, *args, **kwargs):
+    k, Km, volume = args
+    sid, eid = reactants[0]['id'], effectors[0]['id']
+    S, E = x[sid] / volume, x[eid] / volume
+
+    veloc = k * E * S / (Km + S)
+    veloc *= volume
+    return veloc
+
 
 with molecule_types:
     K1(phos(Y,pY))
