@@ -200,6 +200,25 @@ public:
         return the_next_time_;
     }
 
+    const Real get_min_step_interval()
+    {
+        return the_min_step_interval_;
+    }
+
+    void set_min_step_interval(Real value)
+    {
+        the_min_step_interval_ = std::max(value, 0.0);
+    }
+
+    const Real get_max_step_interval()
+    {
+        return the_max_step_interval_;
+    }
+
+    void set_max_step_interval(Real value)
+    {
+        the_max_step_interval_ = std::max(value, 0.0);
+    }
 
     Real get_tolerable_step_interval()
     {
