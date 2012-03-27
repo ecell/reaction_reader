@@ -253,7 +253,7 @@ class ReactionRules(object):
             # the followings should be here, shouldn't they?
             # args = args_r = 0
             # condition = None
-            # func_name = func_name_r = 'MassAction'
+            # func_name_f = func_name_r = 'MassAction'
             # effectors = []
 
             # create effector list
@@ -288,25 +288,25 @@ class ReactionRules(object):
             func_def_f = func_def_r = None
 
             for con_idx, con_func in enumerate(con_list):
-                if type(con_func) in [int, float]:
+                if type(con_func) in (int, float):
                     # | 0.1
                     args_f = (con_func, )
-                elif type(con_func) == list:
+                elif type(con_func) is list:
                     # | MassAction(0.1)
                     func_name_f = con_func[0]
                     args_f = con_func[1]
-                elif type(con_func) == tuple:
-                    if type(con_func[0]) in [int, float]:
+                elif type(con_func) is tuple:
+                    if type(con_func[0]) in (int, float):
                         # | 0.1 of (0.1, 0.2)
                         args_f = (con_func[0], )
-                    if type(con_func[1]) in [int, float]:
+                    if type(con_func[1]) in (int, float):
                         # | 0.2 of (0.1, 0.2)
                         args_r = (con_func[1], )
-                    if type(con_func[0]) == list:
+                    if type(con_func[0]) is list:
                         # | MA(1) of (MA(1), MA(0.2))
                         func_name_f = con_func[0][0]
                         args_f = con_func[0][1]
-                    if type(con_func[1]) == list:
+                    if type(con_func[1]) is list:
                         # | MA(2) of (MA(1), MA(0.2))
                         func_name_r = con_func[1][0]
                         args_r = con_func[1][1]
@@ -634,6 +634,14 @@ class Pybngl(object):
 
         return reaction_results
 
+def create_world(m, seed_species):
+    w = World.World()
+    w.add_species(m.concrete_species.keys())
+    for species, value in seed_species.items():
+        w.set_value(species.id, value)
+    w.model = m
+    return w
+
 
 if __name__ == '__main__':
     import optparse
@@ -659,14 +667,6 @@ if __name__ == '__main__':
                             default=False, help='use location description')
         return optparser
 
-    def create_world(m, seed_species):
-        w = World.World()
-        w.add_species(m.concrete_species.keys())
-        for species, value in seed_species.items():
-            w.set_value(species.id, value)
-        w.model = m
-        return w
-
     def execute_simulation(
         simulator, num_of_steps=0, duration=-1, fout=sys.stdout):
         # run simulation
@@ -691,8 +691,8 @@ if __name__ == '__main__':
                 t, '\t'.join(['%s' % value for value in values])))
 
         # import os.path
-        # ##### ONLY FOR testLabel.py #####
-        # if os.path.split(filename) == 'testLabel.py':
+        # ##### ONLY FOR label.py #####
+        # if os.path.split(filename) == 'label.py':
         #     m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
         #     m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
         #     output_series = simulator.get_logged_data()
@@ -704,11 +704,11 @@ if __name__ == '__main__':
         #     simulator.initialize(ODESolver(), functions, variables)
         #     sim_sub()
         #     sim_print()
-        # ##### ONLY FOR testLabel.py #####
+        # ##### ONLY FOR label.py #####
 
 
-        # ##### ONLY FOR testToy.py #####
-        # if os.path.split(filename) == 'testToy.py':
+        # ##### ONLY FOR toy.py #####
+        # if os.path.split(filename) == 'toy.py':
         #     m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
         #     m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
         #     output_series = simulator.get_logged_data()
@@ -720,7 +720,7 @@ if __name__ == '__main__':
         #     simulator.initialize(ODESolver(), functions, variables)
         #     sim_sub()
         #     sim_print()
-        # ##### ONLY FOR testLabel.py #####
+        # ##### ONLY FOR toy.py #####
 
         return output_series
 
