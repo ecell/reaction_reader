@@ -19,56 +19,53 @@ Options (inside [] is default value, allow arbitrary order)
   -v          : print out generated reactions to stdout
   -l          : allow loc[cation] notation (You have to use this option, if you use location info in model.)
 
-  終了時刻に関するオプション(-s, -t) が同時に指定されている場合、-t を優先する
+ When both option "-s" and "-t" are defined, pybngl.py use "-t" option only.
 
 
-実行例
+Examples
 
   - $ python pybngl.py -s 10 -v test/testToy.py
-    -- test/testToy.py に記述されたシミュレーションを実行
-    -- (-s 10) : ODESolver のステップ回数は 10 回
-    -- (-v)    : ルール展開結果を表示
+    -- run a simulation with the model written in test/testToy.py
+    -- (-s 10) : Number of the ODE step is 10
+    -- (-v)    : print out generated reactions to stdout
 
   - $ python pybngl.py -s 0 -i 20 -v test/testLabel.py
-    -- test/testLabel.py に記述されたシミュレーションを実行
-    -- (-s 0)  : ODESolver のステップ回数は 0 回 (ルール展開のみを行う)
-    -- (-i 20) : ルール展開を 20 回行う (超時間かかる)
-    -- (-v)    : ルール展開結果を表示
+    -- run a simulation with the model written in test/testLabel.py
+    -- (-s 0)  : Number of the ODE step is 0 (generate reactions without simulation)
+    -- (-i 20) : loop reaction generation 20 times (it takes long long time...)
+    -- (-v)    : print out generated reactions to stdout
 
   - $ python pybngl.py -l test/testLoc.py
-    -- test/testLoc.py に記述されたシミュレーションを実行
-    -- (-l)    : loc 記述を有効にする(testLoc.py は loc 記述を使用する)
+    -- run a simulation with the model written in test/testLoc.py
+    -- (-l)    : allow loc notation(testLoc.py use loc natation)
 
 
 -------------------
-テストファイル説明
+Model samples
 -------------------
 
   - test/testConc.py
-    -- ユーザー作成関数を用いたシミュレーション
-
-  - test/testEGFR_ERK_spatiocyte5_3v.py
-    -- 実際の実験を模したシミュレーション？
+    -- a model with user defined function
 
   - test/testEgfr.py
-    -- 実際の実験を模したシミュレーション？
+    -- a model with EGF receptor signaling pathway
 
   - test/testFunc.py
-    -- ユーザー作成関数を用いたシミュレーション
-    -- 関数作成/使用方法はファイル先頭に記載
+    -- a model with user defined function
+    -- definition and usage of functions are written in head of the file
 
   - test/testLabel.py
-    -- ラベル記述(%)を用いたシミュレーション
-    -- ルールの展開に超時間がかかる
+    -- a model with label(%) notation
+    -- It takes a long time to generate reactions
 
   - test/testLoc.py
-    -- loc 記述を用いたシミュレーション
-    -- 実行時に "-l" オプションが必要
+    -- a model with loc notation
+    -- needs "-l" option in use
 
   - test/testToy.py
-    -- ラベル記述(%)を用いたシミュレーション
+    -- a model with label(%) notation
 
   - working/testDuplicatedLabel.py
-    -- キラリティを含むシミュレーション
-    -- 未対応
+    -- a model with optical isomer notatio(_)
+    -- currently not supported
 
