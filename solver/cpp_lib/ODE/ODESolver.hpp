@@ -216,6 +216,66 @@ public:
         return the_value_[an_index];
     }
 
+    void initialize_tolerances()
+    {
+        rtoler_ = 0.1 * pow(the_tolerance_, 2.0 / 3.0);
+        atoler_ = rtoler_ * the_absolute_tolerance_factor_;
+    }
+
+    const Real get_tolerance()
+    {
+        return the_tolerance_;
+    }
+
+    void set_tolerance(Real value)
+    {
+        if (value >= 0)
+        {
+            the_tolerance_ = value;
+            initialize_tolerances();
+        }
+    }
+
+    const Real get_absolute_tolerance_factor()
+    {
+        return the_absolute_tolerance_factor_;
+    }
+
+    void set_absolute_tolerance_factor(Real value)
+    {
+        if (value >= 0)
+        {
+            the_absolute_tolerance_factor_ = value;
+            initialize_tolerances();
+        }
+    }
+
+    const Real get_derivative_tolerance_factor()
+    {
+        return the_derivative_tolerance_factor_;
+    }
+
+    void set_derivative_tolerance_factor(Real value)
+    {
+        if (value >= 0)
+        {
+            the_derivative_tolerance_factor_ = value;
+        }
+    }
+
+    const Real get_state_tolerance_factor()
+    {
+        return the_state_tolerance_factor_;
+    }
+
+    void set_state_tolerance_factor(Real value)
+    {
+        if (value >= 0)
+        {
+            the_state_tolerance_factor_ = value;
+        }
+    }
+
 private:
     Time the_current_time_;
     Time the_next_time_;

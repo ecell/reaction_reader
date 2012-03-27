@@ -1,5 +1,5 @@
-kf1, kd1, kcat1 = 2e-9, 0.02, 10.0
-kf2, kd2, kcat2 = 2e-9, 0.02, 10.0
+kf1, kd1, kcat1 = 4e-9, 0.02, 0.1
+kf2, kd2, kcat2 = 1.5e-9, 0.02, 0.1
 # krel = 1.0
  
 with molecule_types:

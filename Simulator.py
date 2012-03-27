@@ -166,3 +166,27 @@ class ODESimulator(Simulator):
         # but not of species IDs.
         return [self.model.concrete_species[sid]
                 for sid in self.world.get_species()]
+
+    def get_tolerance(self):
+        return self.solver.get_tolerance()
+
+    def set_tolerance(self, value):
+        self.solver.set_tolerance(value)
+
+    def get_absolute_tolerance_factor(self):
+        return self.solver.get_absolute_tolerance_factor()
+
+    def set_absolute_tolerance_factor(self, value):
+        self.solver.set_absolute_tolerance_factor(value)
+
+    def get_derivative_tolerance_factor(self):
+        return self.solver.get_derivative_tolerance_factor()
+
+    def set_derivative_tolerance_factor(self, value):
+        self.solver.set_derivative_tolerance_factor(value)
+
+    def get_state_tolerance_factor(self):
+        return self.solver.get_state_tolerance_factor()
+
+    def set_state_tolerance_factor(self, value):
+        self.solver.set_state_tolerance_factor(value)

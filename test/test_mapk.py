@@ -24,9 +24,10 @@ if __name__ == '__main__':
     import matplotlib.pylab as plt
 
     t = data[0] / 60
-    plt.plot(t, data[1] + data[3], '-', label='mapk(phos(YT))')
-    plt.plot(t, data[4] + data[5], '-', label='mapk(phos(pYT))')
-    plt.plot(t, data[6], '-', label='mapk(phos(pYpT))')
+    plt.plot(t, data[1] + data[3], 'b-', label='mapk(phos(YT))')
+    plt.plot(t, data[4] + data[5], 'g-', label='mapk(phos(pYT))')
+    # plt.plot(t, data[4] + data[5] + data[6], 'g--', label='mapk(phos(pYT))')
+    plt.plot(t, data[6], 'r-', label='mapk(phos(pYpT))')
     plt.legend(loc='best', shadow=True)
     plt.xlim(t[0], t[-1])
     plt.xlabel('Time (min)')
