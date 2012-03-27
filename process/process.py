@@ -8,8 +8,9 @@ import sys
 # N_A = 6.0221367e+23
 
 
-def MassAction(k):
-    return ["MassAction", k]
+def MassAction(*args):
+    # args is required to be (k, )
+    return ["MassAction", args]
 
 def MichaelisUniUni(*args):
     # args is required to be (KmS, KmP, KcF, KcR, volume)
@@ -105,116 +106,91 @@ class MichaelisUniUniFluxProcess(FluxProcess):
 
 class Function(object):
     def __init__(self):
-        self.process_list = []
+        self.process_coef_pairs = []
 
-    def add_process(self, coefficient, process):
-        self.process_list.append(
-            {'coef': coefficient, 'func': process})
+    def add_process(self, process, coef):
+        self.process_coef_pairs.append((process, coef))
 
-    def __process(self, variable_array, time):
-        for process in self.process_list:
-            yield process['coef'] * process['func'](
-                variable_array, time)
+    def __fire_processes(self, variable_array, time):
+        for process, coef in self.process_coef_pairs:
+            yield coef * process(variable_array, time)
 
     def __call__(self, variable_array, time):
-        return sum(self.__process(variable_array, time)) + 0.0
+        return sum(self.__fire_processes(variable_array, time)) + 0.0
 
     def __str__(self):
         retval = '[%s]' % (', '.join([
-            '{coef: %s, func: %s}' % (elem['coef'], elem['func'])
-            for elem in self.process_list]))
+                    '{process: %s, coef: %s}' % (process, coef)
+                    for process, coef in self.process_coef_pairs]))
         return retval
 
 class FunctionMaker(object):
-    def __create_rule_list(self, m, reaction_results):
-        '''Create rule list from network rules of model.
-        '''
-        sid_list = m.concrete_species.keys()
-
-        vid_map = {}
-        for vid, sid in enumerate(sid_list):
-            vid_map[sid] = vid
-
-        rule_list = []
-        for result in reaction_results:
-            r = result.reaction_rule
-
-            for reaction in result.reactions:
-                rule = {}
-
-                rule['k'] = r['k']
-                rule['k_name'] = r['k_name']
-                rule['desc'] = reaction.str_simple()
-                rule['func_def'] = r['func_def']
-
-                rule['reactants'] = []
-                for reactant in reaction.reactants:
-                    rule['reactants'].append(
-                        {'id': vid_map[reactant.id], 'coef': 1})
-
-                rule['products'] = []
-                for product in reaction.products:
-                    rule['products'].append(
-                        {'id': vid_map[product.id], 'coef': 1})
-
-                # e_list -> effectors
-                rule['effectors'] = []
-                for effector in r['effectors']:
-                    for sid in sid_list:
-                        species = m.concrete_species[sid]
-                        if effector.matches(species):
-                            rule['effectors'].append(
-                                {'id':  vid_map[sid], 'coef': 1})
-                            
-                rule_list.append(rule)
-
-        return rule_list
-
     def make_functions(self, m, reaction_results):
         '''Make functions from model
         '''
         sid_list = m.concrete_species.keys()
 
-        # Function list
+        # initialize function list
         functions = []
         for i in range(len(sid_list)):
             function = Function()
             functions.append(function)
 
-        # Creates rule list.
-        rule_list = self.__create_rule_list(m, reaction_results)
+        vid_map = {}
+        for vid, sid in enumerate(sid_list):
+            vid_map[sid] = vid
 
-        # Process list
-        for rule in rule_list:
-            if rule['func_def'] is None:
-                # todo!!: move user function definition
-                k_name = rule['k_name']
-                # todo!!: (re)move "volume" paramter
-                if k_name == 'MassAction':
-                    volume = 1
-                    args = (rule['k'], volume)
-                    process = MassActionFluxProcess(
-                        rule['reactants'], [], [],
-                        args)
-                    # process = MassActionFluxProcess(
-                    #     rule['reactants'], rule['products'],
-                    #     rule['effectors'], args)
-                elif k_name == 'MichaelisUniUni':
-                    process = MichaelisUniUniFluxProcess(
-                        rule['reactants'], rule['products'], rule['effectors'],
-                        rule['k'])
+        for result in reaction_results:
+            r = result.reaction_rule
+
+            for reaction in result.reactions:
+                # print reaction.str_simple()
+                reactants = []
+                for reactant in reaction.reactants:
+                    reactants.append(
+                        {'id': vid_map[reactant.id], 'coef': 1})
+
+                products = []
+                for product in reaction.products:
+                    products.append(
+                        {'id': vid_map[product.id], 'coef': 1})
+
+                # r['effectors'] -> reaction['effectors']?
+                effectors = []
+                for effector in r['effectors']:
+                    for sid in sid_list:
+                        species = m.concrete_species[sid]
+                        if effector.matches(species):
+                            # coef has no mean for effectors
+                            effectors.append(
+                                {'id':  vid_map[sid], 'coef': 0})
+
+                if r['func_def'] is None:
+                    # todo!!: move user function definition
+                    process_name = r['k_name']
+                    # todo!!: (re)move "volume" paramter
+                    if process_name == 'MassAction':
+                        volume = 1
+                        args = r['k'] + (volume, )
+                        process = MassActionFluxProcess(
+                            reactants, [], [], args)
+                        # process = MassActionFluxProcess(
+                        #     reactants, products, effectors, args)
+                    elif process_name == 'MichaelisUniUni':
+                        process = MichaelisUniUniFluxProcess(
+                            reactants, products, effectors, r['k'])
+                    else:
+                        raise Exception('Unsupported process: %s' % (
+                                process_name))
                 else:
-                    msg = 'Unsupported process: %s' % k_name
-                    raise Exception(msg)
-            else:
-                process = rule['func_def'](
-                    rule['reactants'], rule['products'], rule['effectors'])
-
-            for reactant in rule['reactants']:
-                functions[reactant['id']].add_process(
-                    -reactant['coef'], process)
-            for product in rule['products']:
-                functions[product['id']].add_process(
-                    +product['coef'], process)
-
+                    process = r['func_def'](
+                        reactants, products, effectors)
+    
+                for reactant in reactants:
+                    functions[reactant['id']].add_process(
+                        process, -reactant['coef'])
+                for product in products:
+                    functions[product['id']].add_process(
+                        process, +product['coef'])
+    
         return functions

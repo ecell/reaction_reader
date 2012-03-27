@@ -243,14 +243,15 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *args):
-        speed = speed_r = 0
         condition = None
-        func_name = func_name_r = 'MassAction'
         effectors = []
+
+        func_name_f = func_name_r = 'MassAction'
+        args_f = args_r = 0
 
         for id, v in enumerate(self.newcls.global_list):
             # the followings should be here, shouldn't they?
-            # speed = speed_r = 0
+            # args = args_r = 0
             # condition = None
             # func_name = func_name_r = 'MassAction'
             # effectors = []
@@ -284,51 +285,53 @@ class ReactionRules(object):
             #     condition = None
             # set speed function
 
-            func_def = func_def_r = None
+            func_def_f = func_def_r = None
 
             for con_idx, con_func in enumerate(con_list):
                 if type(con_func) in [int, float]:
                     # | 0.1
-                    speed = con_func
+                    args_f = (con_func, )
                 elif type(con_func) == list:
                     # | MassAction(0.1)
-                    func_name = con_func[0]
-                    speed = con_func[1]
+                    func_name_f = con_func[0]
+                    args_f = con_func[1]
                 elif type(con_func) == tuple:
                     if type(con_func[0]) in [int, float]:
                         # | 0.1 of (0.1, 0.2)
-                        speed = con_func[0]
+                        args_f = (con_func[0], )
                     if type(con_func[1]) in [int, float]:
                         # | 0.2 of (0.1, 0.2)
-                        speed_r = con_func[1]
+                        args_r = (con_func[1], )
                     if type(con_func[0]) == list:
                         # | MA(1) of (MA(1), MA(0.2))
-                        func_name = con_func[0][0]
-                        speed = con_func[0][1]
+                        func_name_f = con_func[0][0]
+                        args_f = con_func[0][1]
                     if type(con_func[1]) == list:
                         # | MA(2) of (MA(1), MA(0.2))
                         func_name_r = con_func[1][0]
-                        speed_r = con_func[1][1]
+                        args_r = con_func[1][1]
                     if type(con_func[0]) is types.FunctionType:
-                        func_def = con_func[0]
+                        func_def_f = con_func[0]
                     if type(con_func[1]) is types.FunctionType:
                         func_def_r = con_func[1]
                 elif type(con_func) is types.FunctionType:
-                    func_def = con_func
+                    func_def_f = con_func
 
             # Checks whether reactants/products have any labels.
             # lbflag = True in [r.has_label() for r in reactants + products]
 
             # Generates reaction rule.
-            attrs = dict(k_name=func_name, k=speed, effectors=effectors, 
-                         lbl=self.newcls.with_label, func_def=func_def)
+            # lbl is required by model.Model and model.ReactionRule
+            attrs = dict(k_name=func_name_f, k=args_f, 
+                         effectors=effectors, func_def=func_def_f,
+                         lbl=self.newcls.with_label)
             rule = self.model.add_reaction_rule(
                 reactants, products, condition, **attrs)
             if v['type'] == 'neq':
                 # condition = swap_condition(con_list)
-                attrs = dict(k_name=func_name_r, k=speed_r,
-                             effectors=effectors,
-                             lbl=self.newcls.with_label, func_def=func_def_r)
+                attrs = dict(k_name=func_name_r, k=args_r,
+                             effectors=effectors, func_def=func_def_r,
+                             lbl=self.newcls.with_label)
                 rule = self.model.add_reaction_rule(
                     products, reactants, condition, **attrs)
 
