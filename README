@@ -1,23 +1,23 @@
--------------------
-pybngl.py の使い方
--------------------
+---------------------
+How to use pybngl.py
+---------------------
 
-実行方法
+How to run
 
   - $ python pybngl.py [options] [simfile]
-    -- options : オプション。下記項目参照。
-    -- simfile : シミュレーション記述ファイル。
+    -- options : options, see below.
+    -- simfile : simulation model file name.
 
 
-オプション ([] 内はデフォルト値、順序は問わない)
+Options (inside [] is default value, allow arbitrary order)
 
-  -r FILENAME : ルール展開結果を FILENAME に出力
-  -s STEP_NUM : シミュレーション を STEP_NUM ステップ行う [120]
-  -i ITR_NUM  : ルール展開を ITR_NUM 回繰り返す [10]
-  -d          : 冗長なルール記述を許す
-  -t END_TIME : 時刻が END_TIME(秒) になるまでシミュレーションを行う [-1]
-  -v          : ルール展開結果を表示する
-  -l          : loc 記述を有効にする (loc 記述がない場合は用いない)
+  -r FILENAME : output generated reactions to FILENAME
+  -s STEP_NUM : run a simulation with STEP_NUM step [120]
+  -i ITR_NUM  : loop reaction genaration with ITR_NUM times [10]
+  -d          : allow duplicated rule
+  -t END_TIME : run a simulation by END_TIME(sec)[run a simulation with 120 steps, END_TIME is not defined]
+  -v          : print out generated reactions to stdout
+  -l          : allow loc[cation] notation (You have to use this option, if you use location info in model.)
 
   終了時刻に関するオプション(-s, -t) が同時に指定されている場合、-t を優先する
 
