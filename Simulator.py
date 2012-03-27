@@ -167,6 +167,18 @@ class ODESimulator(Simulator):
         return [self.model.concrete_species[sid]
                 for sid in self.world.get_species()]
 
+    def get_min_step_interval(self):
+        return self.solver.get_min_step_interval()
+
+    def set_min_step_interval(self, value):
+        self.solver.set_min_step_interval(value)
+
+    def get_max_step_interval(self):
+        return self.solver.get_max_step_interval()
+
+    def set_max_step_interval(self, value):
+        self.solver.set_max_step_interval(value)
+
     def get_tolerance(self):
         return self.solver.get_tolerance()
 
