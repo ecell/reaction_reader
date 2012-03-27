@@ -48,6 +48,14 @@ cdef extern from "ODESolver.hpp":
         double get_step_interval()
         void set_step_interval(double)
         double get_next_time()
+        double get_tolerance()
+        double set_tolerance(double)
+        double get_absolute_tolerance_factor()
+        double set_absolute_tolerance_factor(double)
+        double get_derivative_tolerance_factor()
+        double set_derivative_tolerance_factor(double)
+        double get_state_tolerance_factor()
+        double set_state_tolerance_factor(double)
     c_Solver *new_Solver "new ODESolver"()
     void del_Solver "delete"(c_Solver*) 
 
@@ -131,9 +139,32 @@ cdef class ODESolver:
         '''Set the step interval.'''
         self.thisptr.set_step_interval(a_time)
 
-
     def get_next_time(self):
         '''Get the next time.'''
         return self.thisptr.get_next_time()
+
+    def get_tolerance(self):
+        return self.thisptr.get_tolerance()
+
+    def set_tolerance(self, value):
+        self.thisptr.set_tolerance(value)
+
+    def get_absolute_tolerance_factor(self):
+        return self.thisptr.get_absolute_tolerance_factor()
+
+    def set_absolute_tolerance_factor(self, value):
+        self.thisptr.set_absolute_tolerance_factor(value)
+
+    def get_derivative_tolerance_factor(self):
+        return self.thisptr.get_derivative_tolerance_factor()
+
+    def set_derivative_tolerance_factor(self, value):
+        self.thisptr.set_derivative_tolerance_factor(value)
+
+    def get_state_tolerance_factor(self):
+        return self.thisptr.get_state_tolerance_factor()
+
+    def set_state_tolerance_factor(self, value):
+        self.thisptr.set_state_tolerance_factor(value)
 
 import_array()

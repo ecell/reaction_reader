@@ -76,8 +76,9 @@ ODESolver::ODESolver():
     beta_ /= a_norm;
     gamma_ = 1.0 / gamma_;
   
-    rtoler_ = 0.1 * pow(the_tolerance_, 2.0 / 3.0);
-    atoler_ = rtoler_ * the_absolute_tolerance_factor_;
+    initialize_tolerances();
+    // rtoler_ = 0.1 * pow(the_tolerance_, 2.0 / 3.0);
+    // atoler_ = rtoler_ * the_absolute_tolerance_factor_;
 
     the_value_.resize(0);
     the_value_buffer_.resize(0);
