@@ -3,10 +3,12 @@ import copy
 
 
 class CompartmentSpace(object):
-    def __init__(self):
-        self.__volume = 1.0
+    def __init__(self, volume=1.0):
         self.species_list = []
         self.values = numpy.array([])
+
+        # self.compartment_list = []
+        self.volumes = numpy.array([volume])
 
     def add_species(self, species):
         if type(species) is list:
@@ -42,20 +44,26 @@ class CompartmentSpace(object):
 
     def set_volume(self, value):
         if value > 0.0:
-            self.__volume = value
+            self.volumes[0] = value
 
     def get_volume(self):
-        return self.__volume
+        return self.volumes[0]
 
     volume = property(get_volume, set_volume)
 
+    def size(self):
+        return len(self.values) + len(self.volumes)
+
     def get_data(self):
-        return self.values.copy()
+        data = numpy.empty(self.size())
+        data[: len(self.values)] = self.values
+        data[len(self.values): ] = self.volumes
+        return data
 
     def set_data(self, value):
-        if len(value) == len(self.species_list):
-            if type(value) is numpy.ndarray:
-                self.values = value.copy()
+        if len(value) == self.size() and type(value) is numpy.ndarray:
+            self.values = value[: len(self.values)]
+            self.volumes = value[len(self.values): ]
 
     data = property(get_data, set_data)
 
@@ -97,6 +105,9 @@ class World(object):
         self.__space.data = value
 
     data = property(get_data, set_data)
+
+    def size(self):
+        return self.__space.size()
 
 
 if __name__ == '__main__':

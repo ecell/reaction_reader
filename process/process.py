@@ -125,14 +125,14 @@ class Function(object):
         return retval
 
 class FunctionMaker(object):
-    def make_functions(self, m, reaction_results):
+    def make_functions(self, w, reaction_results):
         '''Make functions from model
         '''
-        sid_list = m.concrete_species.keys()
+        sid_list = w.get_species()
 
         # initialize function list
         functions = []
-        for i in range(len(sid_list)):
+        for i in range(w.size()):
             function = Function()
             functions.append(function)
 
@@ -158,12 +158,14 @@ class FunctionMaker(object):
                 # r['effectors'] -> reaction['effectors']?
                 effectors = []
                 for effector in r['effectors']:
-                    for sid in sid_list:
-                        species = m.concrete_species[sid]
-                        if effector.matches(species):
-                            # coef has no mean for effectors
-                            effectors.append(
-                                {'id':  vid_map[sid], 'coef': 0})
+                    # for sid in sid_list:
+                    #     species = m.concrete_species[sid]
+                    #     if effector.matches(species):
+                    #         effectors.append(
+                    #             {'id': vid_map[sid], 'coef': 0})
+                    # coef has no mean for effectors
+                    effectors.append(
+                        {'id': vid_map[effector.id], 'coef': 0})
 
                 if r['func_def'] is None:
                     # todo!!: move user function definition
