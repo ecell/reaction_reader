@@ -136,9 +136,11 @@ class FunctionMaker(object):
             function = Function()
             functions.append(function)
 
-        vid_map = {}
-        for vid, sid in enumerate(sid_list):
-            vid_map[sid] = vid
+        # the correspondence between indices and elements 
+        # (species or volumes) should be hidden in world object.
+        idx_map, widx = {}, len(sid_list)
+        for idx, sid in enumerate(sid_list):
+            idx_map[sid] = idx
 
         for result in reaction_results:
             r = result.reaction_rule
@@ -148,12 +150,12 @@ class FunctionMaker(object):
                 reactants = []
                 for reactant in reaction.reactants:
                     reactants.append(
-                        {'id': vid_map[reactant.id], 'coef': 1})
+                        dict(id=idx_map[reactant.id], coef=1, vid=widx))
 
                 products = []
                 for product in reaction.products:
                     products.append(
-                        {'id': vid_map[product.id], 'coef': 1})
+                        dict(id=idx_map[product.id], coef=1, vid=widx))
 
                 # r['effectors'] -> reaction['effectors']?
                 effectors = []
@@ -162,10 +164,10 @@ class FunctionMaker(object):
                     #     species = m.concrete_species[sid]
                     #     if effector.matches(species):
                     #         effectors.append(
-                    #             {'id': vid_map[sid], 'coef': 0})
+                    #             {'id': idx_map[sid], 'coef': 0})
                     # coef has no mean for effectors
                     effectors.append(
-                        {'id': vid_map[effector.id], 'coef': 0})
+                        dict(id=idx_map[effector.id], coef=0, vid=widx))
 
                 if r['func_def'] is None:
                     # todo!!: move user function definition
