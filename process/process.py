@@ -26,7 +26,7 @@ class FluxProcess(object):
     #         inspect.stack()[2][0]).locals['variable_array']
     #     return va[sp['id']]
 
-    def exit_with_message(self, msng=None):
+    def exit_with_message(self, msg=None):
         if msg is not None:
             sys.stdout.write('%s\n' % msg)
         sys.exit()
