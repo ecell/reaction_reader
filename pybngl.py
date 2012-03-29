@@ -250,18 +250,24 @@ class ReactionRules(object):
                 len(value_) > 0 and type(value_[0]) is str)
 
         def get_func(value_=None):
-            func_name_, args_, func_def_ = 'MassAction', (0, ), None
+            func_name_, args_, kwargs_, func_def_ = (
+                'MassAction', (0, ), {}, None)
             if value_ is None:
                 # return defaults
-                return func_name_, args_, func_def_
+                return func_name_, args_, kwargs_, func_def_
             elif type(value_) is types.FunctionType:
-                return func_name_, args_, value_
+                return func_name_, args_, kwargs_, value_
             elif type(value_) in (int, float):
                 # | 0.1
-                return func_name_, (value_, ), func_def_
+                return func_name_, (value_, ), kwargs_, func_def_
             else: # type(value_) in (list, tuple) and type(value_[0]) is str
                 # | MassAction(0.1)
-                return value_[0], value_[1], func_def_
+                if len(value_) == 1:
+                    return value_[0], args_, kwargs_, func_def_
+                elif len(value_) == 2:
+                    return value_[0], value_[1], kwargs_, func_def_
+                elif len(value_) > 2:
+                    return value_[0], value_[1], value_[2], func_def_
             
         for id, v in enumerate(self.newcls.global_list):
             # the followings should be here, shouldn't they?
@@ -318,22 +324,22 @@ class ReactionRules(object):
                 # unsupported expression (error?)
                 pass
 
-            func_name_f, args_f, func_def_f = get_func(con_func_f)
-            func_name_r, args_r, func_def_r = get_func(con_func_r)
+            func_name_f, args_f, kwargs_f, func_def_f = get_func(con_func_f)
+            func_name_r, args_r, kwargs_r, func_def_r = get_func(con_func_r)
 
             # Checks whether reactants/products have any labels.
             # lbflag = True in [r.has_label() for r in reactants + products]
 
             # Generates reaction rule.
             # lbl is required by model.Model and model.ReactionRule
-            attrs = dict(k_name=func_name_f, k=args_f, 
+            attrs = dict(k_name=func_name_f, args=args_f, kwargs=kwargs_f,
                          effectors=effectors, func_def=func_def_f,
                          lbl=self.newcls.with_label)
             rule = self.model.add_reaction_rule(
                 reactants, products, condition, **attrs)
             if v['type'] == 'neq':
                 # condition = swap_condition(con_list)
-                attrs = dict(k_name=func_name_r, k=args_r,
+                attrs = dict(k_name=func_name_r, args=args_r, kwargs=kwargs_r,
                              effectors=effectors, func_def=func_def_r,
                              lbl=self.newcls.with_label)
                 rule = self.model.add_reaction_rule(
