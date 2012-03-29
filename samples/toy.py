@@ -1,5 +1,3 @@
-from func import *
-
 with molecule_types:
     S(C1(MW12,MW13),C2(MW12,MW13),C3(MW12,MW13))
     X1(C1(MW12,MW13),C2(MW12,MW13),C3(MW12,MW13))

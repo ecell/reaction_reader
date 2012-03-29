@@ -9,7 +9,7 @@ P[0]
 C[60]
 
 '''
-from func import *
+from rate_functions import *
 
 with molecule_types:
     S(a)

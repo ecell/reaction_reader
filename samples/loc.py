@@ -2,8 +2,6 @@
 
 '''
 
-from func import *
-
 with molecule_types:
     L(r, d) # Ligand w/ receptor binding and dimerization sites.
     R(l, tf(Y, pY)) # Receptor with ligand and TF binding sites.

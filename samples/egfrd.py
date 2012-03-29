@@ -1,5 +1,3 @@
-from func import *
- 
 #from param import *
 
 with molecule_types:

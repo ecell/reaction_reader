@@ -1,5 +1,5 @@
-#from func import *
-from process.process import *
+from rate_functions import *
+
 
 with molecule_types:
     P6GL(C1(MW12,MW13),C2(MW12,MW13),C3(MW12,MW13),C4(MW12,MW13),C5(MW12,MW13),C6(MW12,MW13))

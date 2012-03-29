@@ -24,8 +24,6 @@ from model.Model import *
 
 from model.Species import Species
 from model.parser import Parser
-from solver.ODESolver import ODESolver
-from process.process import FunctionMaker
 from model.Error import Error
 
 import types
