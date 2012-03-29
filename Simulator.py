@@ -1,7 +1,7 @@
 import numpy
 
 import solver.ODESolver
-import process.process
+import Function
 
 
 class Simulator(object):
@@ -12,13 +12,6 @@ class Simulator(object):
         self.outputs_series = []
 
         self.solver = None
-
-    # def make_functions(self, model, reaction_results, volume):
-    #     '''Make functions from model
-    #     '''
-    #     from process.process import FunctionMaker
-    #     function_maker = FunctionMaker()
-    #     return function_maker.make_functions(model, reaction_results, volume)
 
     def initialize(self, solver, functions, variables, variables_algebraic=[]):
         '''Initialize solver
@@ -153,7 +146,7 @@ class ODESimulator(Simulator):
         else:
             self.reaction_network = reaction_network
 
-        fmaker = process.process.FunctionMaker()
+        fmaker = Function.FunctionMaker()
         # self.functions = fmaker.make_functions(
         #     self.model, reaction_network, self.world.volume)
         self.functions = fmaker.make_functions(
