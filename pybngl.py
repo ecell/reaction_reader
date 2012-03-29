@@ -243,12 +243,25 @@ class ReactionRules(object):
         pass
 
     def __exit__(self, *args):
-        condition = None
-        effectors = []
+        def is_func(value_):
+            return (type(value_) in (int, float, types.FunctionType)) or (
+                type(value_) in (list, tuple) and 
+                len(value_) > 0 and type(value_[0]) is str)
 
-        func_name_f = func_name_r = 'MassAction'
-        args_f = args_r = 0
-
+        def get_func(value_=None):
+            func_name_, args_, func_def_ = 'MassAction', 0, None
+            if value_ is None:
+                # return defaults
+                return func_name_, args_, func_def_
+            elif type(value_) is types.FunctionType:
+                return func_name_, args_, value_
+            elif type(value_) in (int, float):
+                # | 0.1
+                return func_name_, (value_, ), func_def_
+            else: # type(value_) in (list, tuple) and type(value_[0]) is str
+                # | MassAction(0.1)
+                return value_[0], value_[1], func_def_
+            
         for id, v in enumerate(self.newcls.global_list):
             # the followings should be here, shouldn't they?
             # args = args_r = 0
@@ -259,6 +272,8 @@ class ReactionRules(object):
             # create effector list
             if v.get('value') != None:
                 effectors = [read_species(self.parser, i) for i in v['value']]
+            else:
+                effectors = []
 
             # create reactants/products
             reactants, con_list = read_patterns(
@@ -285,37 +300,22 @@ class ReactionRules(object):
             #     condition = None
             # set speed function
 
-            func_def_f = func_def_r = None
+            # condition is not supported now
+            condition = None
+            con_func = con_list[0]
+            con_func_f, con_func_r = None, None
 
-            for con_idx, con_func in enumerate(con_list):
-                if type(con_func) in (int, float):
-                    # | 0.1
-                    args_f = (con_func, )
-                elif type(con_func) is list:
-                    # | MassAction(0.1)
-                    func_name_f = con_func[0]
-                    args_f = con_func[1]
-                elif type(con_func) is tuple:
-                    if type(con_func[0]) in (int, float):
-                        # | 0.1 of (0.1, 0.2)
-                        args_f = (con_func[0], )
-                    if type(con_func[1]) in (int, float):
-                        # | 0.2 of (0.1, 0.2)
-                        args_r = (con_func[1], )
-                    if type(con_func[0]) is list:
-                        # | MA(1) of (MA(1), MA(0.2))
-                        func_name_f = con_func[0][0]
-                        args_f = con_func[0][1]
-                    if type(con_func[1]) is list:
-                        # | MA(2) of (MA(1), MA(0.2))
-                        func_name_r = con_func[1][0]
-                        args_r = con_func[1][1]
-                    if type(con_func[0]) is types.FunctionType:
-                        func_def_f = con_func[0]
-                    if type(con_func[1]) is types.FunctionType:
-                        func_def_r = con_func[1]
-                elif type(con_func) is types.FunctionType:
-                    func_def_f = con_func
+            if is_func(con_func):
+                con_func_f = con_func
+            elif type(con_func) in (list, tuple) and len(con_func) == 2 and (
+                is_func(con_func[0]) and is_func(con_func[1])):
+                con_func_f, con_func_r = con_func
+            else:
+                # unsupported expression (error?)
+                pass
+
+            func_name_f, args_f, func_def_f = get_func(con_func_f)
+            func_name_r, args_r, func_def_r = get_func(con_func_r)
 
             # Checks whether reactants/products have any labels.
             # lbflag = True in [r.has_label() for r in reactants + products]
