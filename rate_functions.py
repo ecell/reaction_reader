@@ -5,13 +5,13 @@ import sys
 # N_A = 6.0221367e+23
 
 
-def MassAction(*args):
+def mass_action(*args, **kwargs):
     # args is required to be (k, )
-    return ["MassAction", args]
+    return ("mass_action", args, kwargs)
 
-def MichaelisUniUni(*args):
+def michaelis_uni_uni(*args, **kwargs):
     # args is required to be (KmS, KmP, KcF, KcR, volume)
-    return ["MichaelisUniUni", args]
+    return ("michaelis_uni_uni", args, kwargs)
 
 class FluxProcess(object):
     # def conc(self, sp):
@@ -58,7 +58,7 @@ class MichaelisUniUniFluxProcess(FluxProcess):
         self.reactants, self.products, self.effectors = (
             reactants, products, effectors)
 
-        self.KmS, self.KmP, self.KcF, self.KcR, self.volume = args
+        self.KmS, self.KmP, self.KcF, self.KcR = args
 
         # Get Species' name
         # print [x.str_simple() for x in self.species.values()]
@@ -81,20 +81,23 @@ class MichaelisUniUniFluxProcess(FluxProcess):
         #     mol_conc = conc_v / N_A
         #     return mol_conc
 
-        S = variable_array[self.reactants[0]['id']] / self.volume
-        P = variable_array[self.products[0]['id']] / self.volume
-        E = variable_array[self.effectors[0]['id']] / self.volume
+        def conc(sp):
+            return variable_array[sp['id']] / variable_array[sp['vid']]
+
+        S = conc(self.reactants[0])
+        P = conc(self.products[0])
+        E = conc(self.effectors[0])
 
         # velocity = self.KcF * E * S / (self.KmS + S)
         velocity = self.KcF * S - self.KcR * P
         velocity /= self.KmS * self.KmP + self.KmP * S + self.KmS * P
-        velocity *= self.volume
+        velocity *= variable_array[self.reactants[0]['id']]
         return velocity
 
     def __str__(self):
         retval = 'MichaelisUniUniFluxProcess('
-        retval += 'KmS=%f, KmP=%f, KcF=%f, KcR=%f, volume=%f, ' % (
-            self.KmS, self.KmP, self.KcF, self.KcR, self.volume)
+        retval += 'KmS=%f, KmP=%f, KcF=%f, KcR=%f, ' % (
+            self.KmS, self.KmP, self.KcF, self.KcR)
         retval += 'reactants=%s, ' % self.reactants
         retval += 'products=%s, ' % self.products
         retval += 'effectors=%s' % self.effectos

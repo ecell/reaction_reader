@@ -29,8 +29,8 @@ class FunctionMaker(object):
     def make_functions(self, w, reaction_results, rate_reactions={}):
         '''Make functions from model
         '''
-        __rate_reactions = dict(MassAction=MassActionFluxProcess,
-                                MichaelisMenten=MichaelisUniUniFluxProcess)
+        __rate_reactions = dict(mass_action=MassActionFluxProcess,
+                                michaelis_uni_uni=MichaelisUniUniFluxProcess)
         __rate_reactions.update(rate_reactions)
 
         sid_list = w.get_species()
