@@ -1,105 +1,85 @@
-# import inspect
-import sys
-
 # Avogadro's number
-# N_A = 6.0221367e+23
+N_A = 6.0221367e+23
 
 
-def mass_action(*args, **kwargs):
-    # args is required to be (k, )
-    return ("mass_action", args, kwargs)
+# def mass_action(*args, **kwargs):
+#     # args is required to be (k, )
+#     return ("mass_action", args, kwargs)
 
-def michaelis_uni_uni(*args, **kwargs):
-    # args is required to be (KmS, KmP, KcF, KcR, volume)
-    return ("michaelis_uni_uni", args, kwargs)
+# def michaelis_uni_uni(*args, **kwargs):
+#     # args is required to be (KmS, KmP, KcF, KcR, volume)
+#     return ("michaelis_uni_uni", args, kwargs)
 
-class FluxProcess(object):
-    # def conc(self, sp):
-    #     '''returns values of species in sp_list which has species idx
-    #     '''
-    #     # return [va[i] for i in sp_list]
-    #     # (args, varargs, varkw, locals) = inspect.getargvalues(frame)
-    #     va = inspect.getargvalues(
-    #         inspect.stack()[2][0]).locals['variable_array']
-    #     return va[sp['id']]
-
-    def exit_with_message(self, msg=None):
-        if msg is not None:
-            sys.stdout.write('%s\n' % msg)
-        sys.exit()
-
-class MassActionFluxProcess(FluxProcess):
-    def __init__(self, reactants, products, effectors, args, kwargs):
-        # self.reactants, self.products, self.effectors = (
-        #     reactants, products, effectors)
-        self.reactants = reactants
-
-        self.k_value, = args
-
-    def __call__(self, variable_array, time):
-        velocity = self.k_value * variable_array[self.reactants[0]['vid']]
-        for r in self.reactants:
-            coef = r['coef']
-            value = variable_array[r['id']] / variable_array[r['vid']]
-            while coef > 0:
-                velocity *= value
-                coef -= 1
-        return velocity
-
-    def __str__(self):
-        retval = 'MassActionFluxProcess('
-        retval += 'k=%f, ' % (self.k_value)
-        retval += 'reactants=%s' % self.reactants
-        retval += ')'
-        return retval
-
-class MichaelisUniUniFluxProcess(FluxProcess):
-    def __init__(self, reactants, products, effectors, args, kwargs):
+class RateRaw(object):
+    def __init__(self, reactants, products, effectors, *args, **kwargs):
+        self.args, self.kwargs = args, kwargs
         self.reactants, self.products, self.effectors = (
             reactants, products, effectors)
+        self.func = None
+            
+    def __call__(self, x, t):
+        return self.func(
+            x, t, self.reactants, self.products, self.effectors, 
+            *self.args, **self.kwargs)
 
-        self.KmS, self.KmP, self.KcF, self.KcR = args
-
-        # Get Species' name
-        # print [x.str_simple() for x in self.species.values()]
-        # for i, v in enumerate(species): print i+1, species[v].str_simple()
-
-        # Get Reactors' name
-        # print [i.str_simple() for i in effectors]
-
-        if len(self.reactants) != 1 or len(self.products) != 1:
-            self.exit_with_message(
-                "the numbers of reactants and products must be 1.")
-
-    def __call__(self, variable_array, time):
-        # for i, v in enumerate(self.species):
-        #     print self.species[v].str_simple(), variable_array[i]
-        # def molar_conc(sp):
-        #     """${3:function documentation}"""
-        #     n = self.conc(sp)
-        #     conc_v = n / self.volume
-        #     mol_conc = conc_v / N_A
-        #     return mol_conc
-
-        def conc(sp):
-            return variable_array[sp['id']] / variable_array[sp['vid']]
-
-        S = conc(self.reactants[0])
-        P = conc(self.products[0])
-        E = conc(self.effectors[0])
-
-        # velocity = self.KcF * E * S / (self.KmS + S)
-        velocity = self.KcF * S - self.KcR * P
-        velocity /= self.KmS * self.KmP + self.KmP * S + self.KmS * P
-        velocity *= variable_array[self.reactants[0]['id']]
-        return velocity
+    def name(self):
+        return self.func.__name__ if self.func is not None else ''
 
     def __str__(self):
-        retval = 'MichaelisUniUniFluxProcess('
-        retval += 'KmS=%f, KmP=%f, KcF=%f, KcR=%f, ' % (
-            self.KmS, self.KmP, self.KcF, self.KcR)
-        retval += 'reactants=%s, ' % self.reactants
-        retval += 'products=%s, ' % self.products
-        retval += 'effectors=%s' % self.effectos
-        retval += ')'
+        retval = '%s(reactants=%s, products=%s, effectors=%s, ' % (
+            self.name(), self.reactants, self.products, self.effectors)
+        retval += 'args=%s, kwargs=%s)' % (
+            self.args, self.kwargs)
         return retval
+        
+def rateraw(func):
+    def wrapper(reactants, products, effectors, *args, **kwargs):
+        raterawobj = RateRaw(reactants, products, effectors, *args, **kwargs)
+        raterawobj.func = func
+        return raterawobj
+    return wrapper
+
+def conc(x, sp):
+    return x[sp['id']] / x[sp['vid']]
+
+def molarconc(x, sp):
+    return conc(x, xp) / N_A
+
+def volume(x, sp):
+    return x[sp['vid']]
+
+@rateraw
+def mass_action(x, t, reactants, products, effectors, *args, **kwargs):
+    k, = args
+    
+    veloc = k * volume(x, reactants[0])
+    for r in reactants:
+        coef = r['coef']
+        value = conc(x, r)
+        while coef > 0:
+            veloc *= value
+            coef -= 1
+    return veloc
+
+@rateraw
+def michaelis_menten(x, t, reactants, products, effectors, *args, **kwargs):
+    k, Km, = args
+    S = conc(x, reactants[0])
+    E = conc(x, effectors[0])
+
+    veloc = k * E * S / (Km + S)
+    veloc *= volume(x, reactants[0])
+    return veloc
+
+@rateraw
+def michaelis_uni_uni(x, t, reactants, products, effectors, *args, **kwargs):
+    KmS, KmP, KcF, KcR = args
+
+    S = conc(x, reactants[0])
+    P = conc(x, products[0])
+    E = conc(x, effectors[0])
+
+    veloc = KcF * S - KcR * P
+    veloc /= KmS * KmP + KmP * S + KmS * P
+    veloc *= volume(x, reactants[0])
+    return veloc
