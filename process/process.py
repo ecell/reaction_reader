@@ -32,32 +32,33 @@ class FluxProcess(object):
         sys.exit()
 
 class MassActionFluxProcess(FluxProcess):
-    def __init__(self, reactants, products, effectors, args):
+    def __init__(self, reactants, products, effectors, args, kwargs):
         # self.reactants, self.products, self.effectors = (
         #     reactants, products, effectors)
         self.reactants = reactants
 
-        self.k_value, self.volume = args
+        self.k_value, = args
+        print kwargs
 
     def __call__(self, variable_array, time):
-        velocity = self.k_value * self.volume
+        velocity = self.k_value * variable_array[self.reactants[0]['vid']]
         for r in self.reactants:
-            coefficient = r['coef']
-            value = variable_array[r['id']] / self.volume
-            while coefficient > 0:
+            coef = r['coef']
+            value = variable_array[r['id']] / variable_array[r['vid']]
+            while coef > 0:
                 velocity *= value
-                coefficient -= 1
+                coef -= 1
         return velocity
 
     def __str__(self):
         retval = 'MassActionFluxProcess('
-        retval += 'k=%f, volume=%f, ' % (self.k_value, self.volume)
+        retval += 'k=%f, ' % (self.k_value)
         retval += 'reactants=%s' % self.reactants
         retval += ')'
         return retval
 
 class MichaelisUniUniFluxProcess(FluxProcess):
-    def __init__(self, reactants, products, effectors, args):
+    def __init__(self, reactants, products, effectors, args, kwargs):
         self.reactants, self.products, self.effectors = (
             reactants, products, effectors)
 
@@ -125,9 +126,13 @@ class Function(object):
         return retval
 
 class FunctionMaker(object):
-    def make_functions(self, w, reaction_results):
+    def make_functions(self, w, reaction_results, rate_reactions={}):
         '''Make functions from model
         '''
+        __rate_reactions = dict(MassAction=MassActionFluxProcess,
+                                MichaelisMenten=MichaelisUniUniFluxProcess)
+        __rate_reactions.update(rate_reactions)
+
         sid_list = w.get_species()
 
         # initialize function list
@@ -170,19 +175,12 @@ class FunctionMaker(object):
                         dict(id=idx_map[effector.id], coef=0, vid=widx))
 
                 if r['func_def'] is None:
-                    # todo!!: move user function definition
-                    process_name = r['k_name']
-                    # todo!!: (re)move "volume" paramter
-                    if process_name == 'MassAction':
-                        volume = 1
-                        args = r['k'] + (volume, )
-                        process = MassActionFluxProcess(
-                            reactants, [], [], args)
-                        # process = MassActionFluxProcess(
-                        #     reactants, products, effectors, args)
-                    elif process_name == 'MichaelisUniUni':
-                        process = MichaelisUniUniFluxProcess(
-                            reactants, products, effectors, r['k'])
+                    process_name, args, kwargs = (
+                        r['k_name'], r['args'], r['kwargs'])
+
+                    if process_name in __rate_reactions.keys():
+                        process = __rate_reactions[process_name](
+                            reactants, products, effectors, args, kwargs)
                     else:
                         raise Exception('Unsupported process: %s' % (
                                 process_name))
