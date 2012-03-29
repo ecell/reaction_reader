@@ -244,12 +244,13 @@ class ReactionRules(object):
 
     def __exit__(self, *args):
         def is_func(value_):
-            return (type(value_) in (int, float, types.FunctionType)) or (
+            return value_ is None or (
+                type(value_) in (int, float, types.FunctionType)) or (
                 type(value_) in (list, tuple) and 
                 len(value_) > 0 and type(value_[0]) is str)
 
         def get_func(value_=None):
-            func_name_, args_, func_def_ = 'MassAction', 0, None
+            func_name_, args_, func_def_ = 'MassAction', (0, ), None
             if value_ is None:
                 # return defaults
                 return func_name_, args_, func_def_
@@ -302,9 +303,12 @@ class ReactionRules(object):
 
             # condition is not supported now
             condition = None
-            con_func = con_list[0]
-            con_func_f, con_func_r = None, None
+            if len(con_list) > 0:
+                con_func = con_list[0]
+            else:
+                con_func = None
 
+            con_func_f, con_func_r = None, None
             if is_func(con_func):
                 con_func_f = con_func
             elif type(con_func) in (list, tuple) and len(con_func) == 2 and (
