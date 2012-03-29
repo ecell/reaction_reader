@@ -1,4 +1,4 @@
-from rate_functions import *
+from rateraws import *
 
 
 with molecule_types:

@@ -9,7 +9,11 @@ P[0]
 C[60]
 
 '''
-# from rate_functions import *
+# from rateraws import *
+
+# def michaelis_uni_uni(*args, **kwargs):
+#     # args is required to be (KmS, KmP, KcF, KcR, volume)
+#     return ("michaelis_uni_uni", args, kwargs)
 
 with molecule_types:
     S(a)
