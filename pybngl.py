@@ -249,7 +249,7 @@ class ReactionRules(object):
 
         def get_func(value_=None):
             func_name_, args_, kwargs_, func_def_ = (
-                'MassAction', (0, ), {}, None)
+                'mass_action', (0, ), {}, None)
             if value_ is None:
                 # return defaults
                 return func_name_, args_, kwargs_, func_def_
@@ -267,16 +267,11 @@ class ReactionRules(object):
                 elif len(value_) > 2:
                     return value_[0], value_[1], value_[2], func_def_
             
-        for id, v in enumerate(self.newcls.global_list):
-            # the followings should be here, shouldn't they?
-            # args = args_r = 0
-            # condition = None
-            # func_name_f = func_name_r = 'MassAction'
-            # effectors = []
-
+        for idx, v in enumerate(self.newcls.global_list):
             # create effector list
-            if v.get('value') != None:
-                effectors = [read_species(self.parser, i) for i in v['value']]
+            if v.get('value') is not None:
+                effectors = [self.model.register_species(
+                        read_species(self.parser, i)) for i in v['value']]
             else:
                 effectors = []
 
@@ -464,7 +459,6 @@ def read_patterns(m, p, species, label_flag=True):
 
             elif entity.get('type') == 'bracket':
                 con_list.append(entity['value'])
-
     else:
         sp = read_species(p, species)
         # sp.concrete = False
