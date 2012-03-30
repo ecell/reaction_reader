@@ -4,68 +4,81 @@ import copy
 
 class CompartmentSpace(object):
     def __init__(self, volume=1.0):
-        self.species_list = []
-        self.values = numpy.array([])
-
-        # self.compartment_list = []
-        self.volumes = numpy.array([volume])
+        self.__species_list = []
+        self.__data = numpy.array([volume], numpy.float64)
 
     def add_species(self, species):
+        num_of_species = len(self.__species_list)
+        offset = self.species_offset + num_of_species
+
         if type(species) is list:
-            size = len(self.values)
             for elem in species:
-                if not elem in self.species_list:
-                    self.species_list.append(elem)
-            self.values = numpy.append(self.values, numpy.zeros(
-                    len(self.species_list) - size, numpy.float64))
+                if not elem in self.__species_list:
+                    self.__species_list.append(elem)
+            num_of_new_species = len(self.__species_list) - num_of_species
+
+            self.__data = numpy.concatenate((
+                    self.__data[: offset], 
+                    numpy.zeros(num_of_new_species, dtype=self.__data.dtype),
+                    self.__data[offset: ]))
         else:
-            if not species in self.species_list:
-                self.species_list.append(species)
-                self.values = numpy.append(self.values, [0.0])
+            if not species in self.__species_list:
+                self.__species_list.append(species)
+                self.__data = numpy.insert(self.__data, offset, 0.0)
 
     def get_species(self):
-        return copy.copy(self.species_list)
+        return copy.copy(self.__species_list)
 
     def __get_index(self, species):
-        if species in self.species_list:
-            return self.species_list.index(species)
+        if species in self.__species_list:
+            return self.__species_list.index(species) + self.species_offset
         else:
             return None
 
     def set_value(self, species, value):
         idx = self.__get_index(species)
         if idx is not None:
-            self.values[idx] = value
+            self.__data[idx] = value
 
     def get_value(self, species):
         idx = self.__get_index(species)
         if idx is not None:
-            return self.values[idx]
+            return self.__data[idx]
 
     def set_volume(self, value):
         if value > 0.0:
-            self.volumes[0] = value
+            self.__data[self.compartment_offset] = value
 
     def get_volume(self):
-        return self.volumes[0]
+        return self.__data[self.compartment_offset]
 
     volume = property(get_volume, set_volume)
 
     def size(self):
-        return len(self.values) + len(self.volumes)
+        return self.__data.size
 
     def get_data(self):
-        data = numpy.empty(self.size())
-        data[: len(self.values)] = self.values
-        data[len(self.values): ] = self.volumes
-        return data
+        return self.__data.copy()
 
     def set_data(self, value):
-        if len(value) == self.size() and type(value) is numpy.ndarray:
-            self.values = value[: len(self.values)]
-            self.volumes = value[len(self.values): ]
+        if (len(value) == self.size() and type(value) is numpy.ndarray and
+            all(value[self.compartment_offset: ] > 0)):
+            self.__data = value.copy()
+        else:
+            # raise an error for safety
+            pass
 
     data = property(get_data, set_data)
+
+    def get_species_offset(self):
+        return 0
+
+    species_offset = property(get_species_offset)
+
+    def get_compartment_offset(self):
+        return len(self.__species_list)
+
+    compartment_offset = property(get_compartment_offset)
 
 class World(object):
     def __init__(self, volume=1.0):
