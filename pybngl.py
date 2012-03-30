@@ -603,7 +603,7 @@ class Pybngl(object):
             # self.fout.write('# volume : %g\n' % volume)
             # self.fout.write('#\n')
 
-        return m, seed_species
+        return m, seed_species, namespace
 
     def generate_reaction_network(
         self, m, seed_species, rulefilename=None, maxiter=10):
@@ -747,7 +747,7 @@ if __name__ == '__main__':
 
     filename = args[0]
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
-    m, seed_species = pybngl.parse_model(filename, m, p)
+    m, seed_species, _ = pybngl.parse_model(filename, m, p)
     reaction_results = pybngl.generate_reaction_network(
         m, seed_species, maxiter=options.itr_num, 
         rulefilename=options.rulefile)

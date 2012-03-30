@@ -1,5 +1,6 @@
-kf1, kd1, kcat1 = 4e-9, 0.02, 0.1
-kf2, kd2, kcat2 = 1.5e-9, 0.02, 0.1
+# world.volume = 1e-18
+kf1, kd1, kcat1 = 6.7e-23, 0.02, 0.1
+kf2, kd2, kcat2 = 2.5e-23, 0.02, 0.1
 # krel = 1.0
  
 with molecule_types:
@@ -8,8 +9,8 @@ with molecule_types:
     # pp(bs(on, off))
 
 with molecule_inits:
-    mapk(phos(YT)) [1e+7]
-    kk(bs(on)) [1e+6]
+    mapk(phos(YT)) [600]
+    kk(bs(on)) [60]
     # pp(bs(on)) [0]
 
 with reaction_rules:

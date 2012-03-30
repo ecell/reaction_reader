@@ -10,12 +10,13 @@ if __name__ == '__main__':
     filename = 'samples/mapk.py'
 
     parser = pybngl.Pybngl()
-    m, seed_species = parser.parse_model(filename)
+    m, seed_species, namespace = parser.parse_model(filename)
     reaction_results = parser.generate_reaction_network(m, seed_species)
     # reaction_results = parser.generate_reaction_network(
     #     m, seed_species, rulefilename='test/mapk.txt')
 
     w = pybngl.create_world(m, seed_species)
+    w.volume = 1e-18
     simulator = Simulator.ODESimulator(m, w, reaction_results)
 
     simulator.run(60 * 60)
