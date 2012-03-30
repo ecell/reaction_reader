@@ -15,6 +15,24 @@ class RateRaw(object):
         self.args, self.kwargs = args, kwargs
         self.reactants, self.products, self.effectors = (
             reactants, products, effectors)
+            
+    def __call__(self, x, t):
+        return 0.0
+
+    def name(self):
+        return self.__class__.__name__
+
+    def __str__(self):
+        retval = '%s(reactants=%s, products=%s, effectors=%s, ' % (
+            self.name(), self.reactants, self.products, self.effectors)
+        retval += 'args=%s, kwargs=%s)' % (
+            self.args, self.kwargs)
+        return retval
+
+class DecoratedRateRaw(RateRaw):
+    def __init__(self, reactants, products, effectors, *args, **kwargs):
+        super(DecoratedRateRaw, self).__init__(
+            reactants, products, effectors, *args, **kwargs)
         self.func = None
             
     def __call__(self, x, t):
@@ -25,16 +43,10 @@ class RateRaw(object):
     def name(self):
         return self.func.__name__ if self.func is not None else ''
 
-    def __str__(self):
-        retval = '%s(reactants=%s, products=%s, effectors=%s, ' % (
-            self.name(), self.reactants, self.products, self.effectors)
-        retval += 'args=%s, kwargs=%s)' % (
-            self.args, self.kwargs)
-        return retval
-        
 def rateraw(func):
     def wrapper(reactants, products, effectors, *args, **kwargs):
-        raterawobj = RateRaw(reactants, products, effectors, *args, **kwargs)
+        raterawobj = DecoratedRateRaw(
+            reactants, products, effectors, *args, **kwargs)
         raterawobj.func = func
         return raterawobj
     return wrapper
@@ -65,7 +77,7 @@ def mass_action(x, t, reactants, products, effectors, *args, **kwargs):
 def michaelis_menten(x, t, reactants, products, effectors, *args, **kwargs):
     k, Km, = args
     S = conc(x, reactants[0])
-    E = conc(x, effectors[0])
+    E = sum([conc(x, effector) for effector in effectors])
 
     veloc = k * E * S / (Km + S)
     veloc *= volume(x, reactants[0])
@@ -77,7 +89,7 @@ def michaelis_uni_uni(x, t, reactants, products, effectors, *args, **kwargs):
 
     S = conc(x, reactants[0])
     P = conc(x, products[0])
-    E = conc(x, effectors[0])
+    E = sum([conc(x, effector) for effector in effectors])
 
     veloc = KcF * S - KcR * P
     veloc /= KmS * KmP + KmP * S + KmS * P
