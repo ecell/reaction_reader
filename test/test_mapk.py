@@ -2,6 +2,7 @@ import World
 import Simulator
 
 import pybngl
+import rateraw
 
 
 if __name__ == '__main__':
@@ -15,9 +16,14 @@ if __name__ == '__main__':
     # reaction_results = parser.generate_reaction_network(
     #     m, seed_species, rulefilename='test/mapk.txt')
 
+    rateraws = rateraw.load_rateraws(namespace)
+    # print rateraw.load_rateraws(rateraw)
+    # print rateraw.load_rateraws(namespace)
+
     w = pybngl.create_world(m, seed_species)
     w.volume = 1e-18
-    simulator = Simulator.ODESimulator(m, w, reaction_results)
+    simulator = Simulator.ODESimulator(
+        m, w, reaction_results, rateraws=rateraws)
 
     simulator.run(60 * 60)
     data = simulator.get_logged_data().T

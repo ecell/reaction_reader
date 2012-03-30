@@ -1,3 +1,18 @@
+from rateraw import rateraw, conc, volume
+
+@rateraw
+def my_mass_action(x, t, reactants, products, effectors, *args, **kwargs):
+    k, = args
+    
+    veloc = k * volume(x, reactants[0])
+    for r in reactants:
+        coef = r['coef']
+        value = conc(x, r)
+        while coef > 0:
+            veloc *= value
+            coef -= 1
+    return veloc
+
 # world.volume = 1e-18
 kf1, kd1, kcat1 = 6.7e-23, 0.02, 0.1
 kf2, kd2, kcat2 = 2.5e-23, 0.02, 0.1
@@ -16,7 +31,8 @@ with molecule_inits:
 with reaction_rules:
     mapk(phos(YT)) + kk(bs(on)) <_> mapk(phos(YT)[1]).kk(bs(on)[1]) | (kf1, kd1)
     # mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs(off)) | kcat1
-    mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs) | kcat1
+    # mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs) | kcat1
+    mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs) | ('my_mass_action', (kcat1, ))
 
     mapk(phos(pYT)) + kk(bs(on)) <_> mapk(phos(pYT)[1]).kk(bs(on)[1]) | (kf2, kd2)
     # mapk(phos(pYT)[1]).kk(bs[1]) > mapk(phos(pYpT)) + kk(bs(off)) | kcat2

@@ -1,3 +1,5 @@
+import types
+
 # Avogadro's number
 N_A = 6.0221367e+23
 
@@ -29,27 +31,40 @@ class RateRaw(object):
             self.args, self.kwargs)
         return retval
 
-class DecoratedRateRaw(RateRaw):
-    def __init__(self, reactants, products, effectors, *args, **kwargs):
-        super(DecoratedRateRaw, self).__init__(
-            reactants, products, effectors, *args, **kwargs)
-        self.func = None
-            
-    def __call__(self, x, t):
-        return self.func(
-            x, t, self.reactants, self.products, self.effectors, 
-            *self.args, **self.kwargs)
-
-    def name(self):
-        return self.func.__name__ if self.func is not None else ''
-
 def rateraw(func):
-    def wrapper(reactants, products, effectors, *args, **kwargs):
-        raterawobj = DecoratedRateRaw(
-            reactants, products, effectors, *args, **kwargs)
-        raterawobj.func = func
-        return raterawobj
-    return wrapper
+    class DecoratedRateRaw(RateRaw):
+        def __init__(self, reactants, products, effectors, *args, **kwargs):
+            super(DecoratedRateRaw, self).__init__(
+                reactants, products, effectors, *args, **kwargs)
+            self.func = func
+                
+        def __call__(self, x, t):
+            return self.func(
+                x, t, self.reactants, self.products, self.effectors, 
+                *self.args, **self.kwargs)
+    
+        def name(self):
+            return self.func.__name__
+    
+    return DecoratedRateRaw
+
+def load_rateraws(module, module_name=None):
+    if type(module) is types.ModuleType:
+        if module_name is None:
+            module_name = '%s.' % (module.__name__)
+        namespace = module.__dict__
+    elif issubclass(type(module), dict):
+        if module_name is None:
+            module_name = ''
+        namespace = module
+    else:
+        return {}
+
+    rateraws = {}
+    for key, value in namespace.items():
+        if type(value) is type and issubclass(value, RateRaw):
+            rateraws['%s%s' % (module_name, key)] = value
+    return rateraws
 
 def conc(x, sp):
     return x[sp['id']] / x[sp['vid']]
