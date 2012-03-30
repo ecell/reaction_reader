@@ -133,7 +133,7 @@ class Simulator(object):
             self.solver.register_status_event(status_event)
 
 class ODESimulator(Simulator):
-    def __init__(self, m, w, reaction_network=None, maxiter=10):
+    def __init__(self, m, w, reaction_network=None, maxiter=10, rateraws={}):
         super(ODESimulator, self).__init__()
 
         # self.world is not udpated during the simulation
@@ -146,11 +146,12 @@ class ODESimulator(Simulator):
         else:
             self.reaction_network = reaction_network
 
+        # self.rateraws = rateraws
         fmaker = Function.FunctionMaker()
         # self.functions = fmaker.make_functions(
         #     self.model, reaction_network, self.world.volume)
         self.functions = fmaker.make_functions(
-            self.world, self.reaction_network)
+            self.world, self.reaction_network, rateraws=rateraws)
         self.initialize(solver.ODESolver.ODESolver(), 
                         self.functions, self.world.data)
 
