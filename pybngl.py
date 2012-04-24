@@ -228,6 +228,9 @@ class MyDict(dict):
         super(MyDict, self).__setitem__(key, val)
 
     def __getitem__(self, key):
+        if key in ('True', 'False'):
+            return eval(key)
+
         retval = self.get(key)
         if retval is None:
             retval = self.newcls(key)
