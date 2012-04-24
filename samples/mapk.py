@@ -1,4 +1,5 @@
-from ratelaw import ratelaw, conc, volume
+from numpy import pi, inf
+from ratelaw import ratelaw, conc, volume, N_A
 
 @ratelaw
 def my_mass_action(x, t, reactants, products, effectors, *args, **kwargs):
@@ -13,36 +14,51 @@ def my_mass_action(x, t, reactants, products, effectors, *args, **kwargs):
             coef -= 1
     return veloc
 
-# world.volume = 1e-18
-kf1, kd1, kcat1 = 6.7e-23, 0.02, 0.1
-kf2, kd2, kcat2 = 2.5e-23, 0.02, 0.1
-# krel = 1.0
- 
+k1 = 0.027e+9 / (N_A * 1000)
+k2 = 1.35
+k3 = 1.5
+k4 = 0.056e+9 / (N_A * 1000)
+k5 = 1.73
+k6 = 15.0
+
+sigma, D = 5e-9, 2e-12
+
+kD = 4 * pi * sigma * D
+kon1, koff1, kf1 = k1 * kD / (k1 + kD), k2 * kD / (k1 + kD), k3
+kon2, koff2, kf2 = k4 * kD / (k4 + kD), k5 * kD / (k4 + kD), k6
+krel = 1e-6
+
 with molecule_types:
     mapk(phos(YT, pYT, pYpT))
     kk(bs(on, off))
-    # pp(bs(on, off))
+    pp(bs(on, off))
 
 with molecule_inits:
-    mapk(phos(YT)) [600]
-    kk(bs(on)) [60]
-    # pp(bs(on)) [0]
+    mapk(phos(YT)) [120]
+    kk(bs(on)) [30]
+    pp(bs(on)) [30]
 
 with reaction_rules:
-    mapk(phos(YT)) + kk(bs(on)) <_> mapk(phos(YT)[1]).kk(bs(on)[1]) | (kf1, kd1)
-    # mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs(off)) | kcat1
-    # mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs) | kcat1
-    mapk(phos(YT)[1]).kk(bs[1]) > mapk(phos(pYT)) + kk(bs) | ('my_mass_action', (kcat1, ))
+    mapk(phos(YT)) + kk(bs(on)) <_> mapk(phos(YT)[1]).kk(bs(on)[1]) \
+        | (kon1, koff1)
+    mapk(phos(YT)[1]).kk(bs(on)[1]) \
+        > mapk(phos(pYT)) + kk(bs(off if krel < inf else on)) | kf1
 
-    mapk(phos(pYT)) + kk(bs(on)) <_> mapk(phos(pYT)[1]).kk(bs(on)[1]) | (kf2, kd2)
-    # mapk(phos(pYT)[1]).kk(bs[1]) > mapk(phos(pYpT)) + kk(bs(off)) | kcat2
-    mapk(phos(pYT)[1]).kk(bs[1]) > mapk(phos(pYpT)) + kk(bs) | kcat2
+    mapk(phos(pYT)) + kk(bs(on)) <_> mapk(phos(pYT)[1]).kk(bs(on)[1]) \
+        | (kon2, koff2)
+    mapk(phos(pYT)[1]).kk(bs(on)[1]) \
+        > mapk(phos(pYpT)) + kk(bs(off if krel < inf else on)) | kf2
 
-    # mapk(phos(pYpT)) + pp(bs(on)) <_> mapk(phos(pYpT)[1]).pp(bs(on)[1]) | (kf1, kd1)
-    # mapk(phos(pYpT)[1]).pp(bs[1]) > mapk(phos(pYT)) + pp(bs(off)) | kcat1
+    mapk(phos(pYpT)) + pp(bs(on)) <_> mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
+        | (kon1, koff1)
+    mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
+        > mapk(phos(pYT)) + pp(bs(off if krel < inf else on)) | kf1
 
-    # mapk(phos(pYT)) + pp(bs(on)) <_> mapk(phos(pYT)[1]).pp(bs(on)[1]) | (kf2, kd2)
-    # mapk(phos(pYT)[1]).pp(bs[1]) > mapk(phos(YT)) + pp(bs(off)) | kcat2
+    mapk(phos(pYT)) + pp(bs(on)) <_> mapk(phos(pYT)[1]).pp(bs(on)[1]) \
+        | (kon2, koff2)
+    mapk(phos(pYT)[1]).pp(bs(on)[1]) \
+        > mapk(phos(YT)) + pp(bs(off if krel < inf else on)) | kf2
 
-    # kk(bs(off)) > kk(bs(on)) | krel
-    # pp(bs(off)) > pp(bs(on)) | krel
+    if krel < inf:
+        kk(bs(off)) > kk(bs(on)) | krel
+        pp(bs(off)) > pp(bs(on)) | krel
