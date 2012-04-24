@@ -1,6 +1,6 @@
-from rateraw import rateraw, conc, volume
+from ratelaw import ratelaw, conc, volume
 
-@rateraw
+@ratelaw
 def my_mass_action(x, t, reactants, products, effectors, *args, **kwargs):
     k, = args
     

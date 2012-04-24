@@ -9,7 +9,7 @@ P[0]
 C[60]
 
 '''
-# from rateraw import *
+# from ratelaw import *
 
 # def michaelis_uni_uni(*args, **kwargs):
 #     # args is required to be (KmS, KmP, KcF, KcR, volume)
