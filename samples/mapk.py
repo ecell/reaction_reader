@@ -21,12 +21,18 @@ k4 = 0.056e+9 / (N_A * 1000)
 k5 = 1.73
 k6 = 15.0
 
-sigma, D = 5e-9, 2e-12
+# sigma, D = 5e-9, 2e-12
+sigma = 5e-9
 
 kD = 4 * pi * sigma * D
 kon1, koff1, kf1 = k1 * kD / (k1 + kD), k2 * kD / (k1 + kD), k3
 kon2, koff2, kf2 = k4 * kD / (k4 + kD), k5 * kD / (k4 + kD), k6
-krel = 1e-6
+
+tau_rel = 1e-3
+krel = 0.69314718055994529 / tau_rel
+# krel = inf
+
+# Nkk, Npp = 30, 30
 
 with molecule_types:
     mapk(phos(YT, pYT, pYpT))
@@ -35,8 +41,8 @@ with molecule_types:
 
 with molecule_inits:
     mapk(phos(YT)) [120]
-    kk(bs(on)) [30]
-    pp(bs(on)) [30]
+    kk(bs(on)) [Nkk]
+    pp(bs(on)) [60 - Nkk]
 
 with reaction_rules:
     mapk(phos(YT)) + kk(bs(on)) <_> mapk(phos(YT)[1]).kk(bs(on)[1]) \
