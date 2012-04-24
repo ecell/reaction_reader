@@ -57,9 +57,9 @@ if __name__ == '__main__':
 
     filename = 'samples/mapk.py'
 
-    colors = ['b', 'g', 'r', 'c', 'y', 'k']
+    colors = ['b', 'g', 'r', 'c', 'k']
 
-    D_list = [0.06e-12, 0.25e-12, 1.0e-12, 4e-12]
+    D_list = [0.06e-12, 0.25e-12, 1.0e-12, 4e-12, numpy.inf]
     for i, D in enumerate(D_list):
         x, y = run(filename, dict(D=D))
 
@@ -67,7 +67,8 @@ if __name__ == '__main__':
         y = y / 120.0
 
         c = colors[i]
-        plt.semilogx(x, y[2], 'o-', color=c, markeredgecolor=c, markerfacecolor=c, label=r'$%g\mathrm{\mu m^2/s}$' % (D * 1e+12))
+        label = r'$D=%g\mathrm{\mu m^2/s}$' % (D * 1e+12) if D < numpy.inf else r'$D\rightarrow\infty$'
+        plt.semilogx(x, y[2], '-', color=c, markeredgecolor=c, markerfacecolor=c, label=label)
 
     plt.xlabel('[KK]/[P]')
     plt.legend(loc='best', shadow=True)

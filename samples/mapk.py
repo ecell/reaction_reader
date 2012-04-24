@@ -23,10 +23,14 @@ k6 = 15.0
 
 # sigma, D = 5e-9, 2e-12
 sigma = 5e-9
-
 kD = 4 * pi * sigma * D
-kon1, koff1, kf1 = k1 * kD / (k1 + kD), k2 * kD / (k1 + kD), k3
-kon2, koff2, kf2 = k4 * kD / (k4 + kD), k5 * kD / (k4 + kD), k6
+
+if kD < inf:
+    kon1, koff1, kf1 = k1 * kD / (k1 + kD), k2 * kD / (k1 + kD), k3
+    kon2, koff2, kf2 = k4 * kD / (k4 + kD), k5 * kD / (k4 + kD), k6
+else:
+    kon1, koff1, kf1 = k1, k2, k3
+    kon2, koff2, kf2 = k4, k5, k6
 
 tau_rel = 1e-3
 krel = 0.69314718055994529 / tau_rel
