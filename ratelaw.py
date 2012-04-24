@@ -12,7 +12,7 @@ N_A = 6.0221367e+23
 #     # args is required to be (KmS, KmP, KcF, KcR, volume)
 #     return ("michaelis_uni_uni", args, kwargs)
 
-class RateRaw(object):
+class RateLaw(object):
     def __init__(self, reactants, products, effectors, *args, **kwargs):
         self.args, self.kwargs = args, kwargs
         self.reactants, self.products, self.effectors = (
@@ -31,10 +31,10 @@ class RateRaw(object):
             self.args, self.kwargs)
         return retval
 
-def rateraw(func):
-    class DecoratedRateRaw(RateRaw):
+def ratelaw(func):
+    class DecoratedRateLaw(RateLaw):
         def __init__(self, reactants, products, effectors, *args, **kwargs):
-            super(DecoratedRateRaw, self).__init__(
+            super(DecoratedRateLaw, self).__init__(
                 reactants, products, effectors, *args, **kwargs)
             self.func = func
                 
@@ -46,9 +46,9 @@ def rateraw(func):
         def name(self):
             return self.func.__name__
     
-    return DecoratedRateRaw
+    return DecoratedRateLaw
 
-def load_rateraws(module, module_name=None):
+def load_ratelaws(module, module_name=None):
     if type(module) is types.ModuleType:
         if module_name is None:
             module_name = '%s.' % (module.__name__)
@@ -60,11 +60,11 @@ def load_rateraws(module, module_name=None):
     else:
         return {}
 
-    rateraws = {}
+    ratelaws = {}
     for key, value in namespace.items():
-        if type(value) is type and issubclass(value, RateRaw):
-            rateraws['%s%s' % (module_name, key)] = value
-    return rateraws
+        if type(value) is type and issubclass(value, RateLaw):
+            ratelaws['%s%s' % (module_name, key)] = value
+    return ratelaws
 
 def conc(x, sp):
     return x[sp['id']] / x[sp['vid']]
@@ -75,7 +75,7 @@ def molarconc(x, sp):
 def volume(x, sp):
     return x[sp['vid']]
 
-@rateraw
+@ratelaw
 def mass_action(x, t, reactants, products, effectors, *args, **kwargs):
     k, = args
     
@@ -88,7 +88,7 @@ def mass_action(x, t, reactants, products, effectors, *args, **kwargs):
             coef -= 1
     return veloc
 
-@rateraw
+@ratelaw
 def michaelis_menten(x, t, reactants, products, effectors, *args, **kwargs):
     k, Km, = args
     S = conc(x, reactants[0])
@@ -98,7 +98,7 @@ def michaelis_menten(x, t, reactants, products, effectors, *args, **kwargs):
     veloc *= volume(x, reactants[0])
     return veloc
 
-@rateraw
+@ratelaw
 def michaelis_uni_uni(x, t, reactants, products, effectors, *args, **kwargs):
     KmS, KmP, KcF, KcR = args
 

@@ -2,7 +2,7 @@
 $Header: /home/takeuchi/0613/process/process.py,v 1.10 2012/02/10 01:18:12 takeuchi Exp $
 '''
 
-from rateraw import mass_action, michaelis_menten, michaelis_uni_uni
+from ratelaw import mass_action, michaelis_menten, michaelis_uni_uni
 
 
 class Function(object):
@@ -26,13 +26,13 @@ class Function(object):
         return retval
 
 class FunctionMaker(object):
-    def make_functions(self, w, reaction_results, rateraws={}):
+    def make_functions(self, w, reaction_results, ratelaws={}):
         '''Make functions from model
         '''
-        __rateraws = dict(mass_action=mass_action,
+        __ratelaws = dict(mass_action=mass_action,
                                 michaelis_menten=michaelis_menten,
                                 michaelis_uni_uni=michaelis_uni_uni)
-        __rateraws.update(rateraws)
+        __ratelaws.update(ratelaws)
 
         sid_list = w.get_species()
 
@@ -79,8 +79,8 @@ class FunctionMaker(object):
                     process_name, args, kwargs = (
                         r['k_name'], r['args'], r['kwargs'])
 
-                    if process_name in __rateraws.keys():
-                        process = __rateraws[process_name](
+                    if process_name in __ratelaws.keys():
+                        process = __ratelaws[process_name](
                             reactants, products, effectors, *args, **kwargs)
                     else:
                         raise Exception('Unsupported process: %s' % (
