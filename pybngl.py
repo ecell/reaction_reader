@@ -558,14 +558,17 @@ class Pybngl(object):
         self.fout = fout
         self.loc = loc
 
+        self.namespace = MyDict()
+
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, m=None, p=None):
+    def parse_model(self, filename, m=None, p=None, params={}):
         if m is None: m = Model()
         if p is None: p = Parser()
 
-        namespace = MyDict()
+        namespace = self.namespace
+        namespace.update(params)
         namespace['reaction_rules'] = ReactionRules(
             m, p, namespace.newcls)
         namespace['molecule_inits'] = MoleculeInits(
