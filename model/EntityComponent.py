@@ -66,6 +66,7 @@ class EntityComponent(object):
         state_value: The value set to the state.
         '''
         assert state_name in self.state_types
+        # assert state_value in self.state_types[state_name].states
         state_type = self.state_types[state_name]
         if state_value == STATE_UNSPECIFIED_STRING:
             index = -1

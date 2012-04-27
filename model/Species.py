@@ -2,6 +2,7 @@ from Entity import *
 from PatternMatchingInfo import *
 from Pair import *
 from Binding import *
+from PartialEntity import PartialEntity
 
 class Species(object):
     '''The species.'''
@@ -29,7 +30,6 @@ class Species(object):
 
         # List of patterns that do not match to this species.
         self.__unmatched_patterns = []
-
 
     @property
     def id(self):
@@ -558,5 +558,12 @@ class Species(object):
                     return True
 
         return False
+
+
+    def __getattr__(self, key):
+        return PartialEntity(key, self)
+
+    def __getitem__(self, key):
+        print self.str_simple(), [key]
 
 

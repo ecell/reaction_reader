@@ -1,5 +1,8 @@
 class Binding(object):
-    '''The binding between two components.'''
+    """The binding between two components.
+
+    
+    """
     def __init__(self, id, species, component_1, component_2, temporary, \
         **attrs):
         '''
@@ -178,7 +181,7 @@ class Binding(object):
         '''Returns the string representation of this object.'''
         retval = 'Binding('
         retval += 'id=\'%d\', ' % self.__id
-        retval += 'temporay=%s, ' % self.__temporary
+        retval += 'temporary=%s, ' % self.__temporary
         retval += 'deleted=%s, ' % self.__deleted
         retval += '%s(%d).%s' % (self.entity_1.name, self.entity_1.id, \
             self.component_1.name)

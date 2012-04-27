@@ -1,244 +1,190 @@
-'''
-$Header: /home/takeuchi/0613/pybngl.py,v 1.64 2012/02/10 00:54:22 takeuchi Exp $
-'''
-
 from __future__ import with_statement
 from model.Model import *
-#from model.model import Model
-#from model.model import Species
-#from model.model import BINDING_SPECIFIED
-#from model.model import BINDING_NONE
-#from model.model import BINDING_ANY
-#from model.model import BINDING_UNSPECIFIED
-#from model.parser import Parser
-#from solver.ODESolver import ODESolver
-#from process.process import FunctionMaker
-#from Simulator import Simulator
-#from model.model import IncludingEntityCondition
-#from model.model import NotCondition
-#from model.model import AndCondition
-#from model.model import REACTANTS
-#from model.model import PRODUCTS
-#from model.model import Error
-#from optparse import OptionParser
-
 from model.Species import Species
 from model.parser import Parser
 from model.Error import Error
-
+from model.EntityType import EntityType
+from model.StateType import StateType
+from model.RuleEntityComponent import RuleEntityComponent
+from model.Binding import Binding
 import types
 
 import World
 import Simulator
 
-
 class AnyCallable(object):
-    with_label = False
-    global_list = []
-    tmp_list = []
 
-    @classmethod
-    def get_with_label(cls):
-        return cls.with_label
+    model = None
 
-    @classmethod
-    def set_with_label(cls, value):
-        cls.with_label = value
+    def __init__(self, key, outer=None, **kwargs):
+        self.key = key
+        self.outer = outer
 
-    @classmethod
-    def get_global_list(cls):
-        return cls.global_list
+    def __str__(self):
+        return str(self.key)
 
-    @classmethod
-    def get_tmp_list(cls):
-        return cls.tmp_list
 
-    @classmethod
-    def set_tmp_list(cls, value):
-        cls.tmp_list = value
-
-    def __init__(self, key, outer=None):
-        # print "start:", key
-
-        self.get_tmp_list().append({'name': key})
-
-        super(AnyCallable, self).__setattr__('_key', key)
-        super(AnyCallable, self).__setattr__('_outer', outer)
+class MoleculeTypesAnycallable(AnyCallable):
+    def __init__(self, key, outer=None, **kwargs):
+        super(MoleculeTypesAnycallable, self).__init__(key, outer, **kwargs)
+        # print "Constrcuted!!"
 
     def __call__(self, *args, **kwargs):
-        # print "end:", self._key
+        # print self, args, kwargs
 
-        tmp_list = self.get_tmp_list()
-        matched_indices = []
+        # creates entity type
+        entity_type = self.model.add_entity_type(self.key)
 
-        for i, a_dict in enumerate(tmp_list):
-            if a_dict.get('name') == self._key:
-                matched_indices.append(i)
+        # adds components to entity type
+        for a in args:
+            entity_type.add_component(a.key)
 
-        parent   = tmp_list.pop(matched_indices[-1])
-        children = tmp_list[matched_indices[-1]:]
-        del tmp_list[matched_indices[-1]:]
-        tmp_list.append({'name': parent['name'], 'children': children})
+        # adds components with states to entity type
+        for key, value in kwargs.items():
+            state_list = [str(i) if type(i) == int else i.key for i in value]
+            states = StateType(self.key, state_list)
+            entity_type.add_component(key, {key: states})
 
-        if len(tmp_list) >= 3 and tmp_list[-2].get('name') is '.':
-            if tmp_list[-3].get('name') is '.':
-                tmp_list[-3]['children'].append(tmp_list.pop(-1))
-                tmp_list.pop(-1)
-            elif 'children' in tmp_list[-2]:
-                # > A.B [C]
-                pass
-            else:
-                dot_list = [tmp_list.pop(-3), tmp_list.pop(-1)]
-                tmp_list[-1]['children'] = dot_list
+        # registers entity type to parser
+        self.parser.add_entity_type(entity_type)
 
+        print str(entity_type)
+        
         return self
 
-    def __setattr__(self, key, value):
-        pass
 
-    def __getattr__(self, key):
-        try:
-            return super(AnyCallable, self).__getattr__(key)
-        except:
-            self.get_tmp_list().append({'name': '.'})
-            return type(self)(key, self)
+class MoleculeInitsAnycallable(AnyCallable):
+    def __init__(self, key, outer=None, **kwargs):
+        super(MoleculeInitsAnycallable, self).__init__(key, outer, **kwargs)
+        self.sp = None
+        # __init__() should return None.
+
+    def __call__(self, *args, **kwargs):
+        # print self, args, kwargs
+
+        # creates species
+        sp = Species()
+
+        # adds entity to species
+        entity = EntityType(self.key)
+        for i in args:
+            entity.add_component(i.key)
+        for key, value in kwargs.items():
+            states = StateType(key, [value.key])
+            entity.add_component(key, {key: states})
+        target = sp.add_entity(entity)
+            
+        # sets species' binding_state to BINGING_NONE (to be fixed.)
+        for i in target.components.values():
+            i.binding_state = BINDING_NONE
+        for i in args:
+            if type(i) == RuleEntityComponent:
+                target_comp = target.find_components(i.key)[0]
+                target_comp.binding_state = BINDING_SPECIFIED
+                binding = Binding(i.bind_info, self.sp, target_comp, target_comp, False)
+                target_comp.setbinding(binding)
+
+        # sets state of components
+        for key, values in kwargs.items():
+            target.find_components(key)[0].set_state(key, value.key)
+            
+        # sets concreteness of species
+        sp.concrete = True
+
+        # registers species to model
+        # self.model.register_species(sp)
+        self.sp = sp
+        # print "MIAC.__call__(): " + self.sp.str_simple()
+
+        return sp
 
     def __getitem__(self, key):
-        # print "parameter: " + str(key)
-        tmp_list = self.get_tmp_list()
+        # registers value of species to seed_species(list of #species.)
+        # print 'Mol.Ini.Any.Cal.__getitem__().key:', key
 
-        if type(key) == int or type(key) == float:
-            # [1]
-            addval = {'type': 'bracket', 'value': str(key)}
-            if "children" in tmp_list[-1]:
-                tmp_list[-1]['children'].append(addval)
-            else:
-                tmp_list[-1]['children'] = [addval]
-        else:
-            # [michaelis_menten]
-            effect_list = tmp_list[2:]
-            del tmp_list[2:]
-            addval = {'xxx': 'effector', 'value': effect_list}
+        if self.sp != None:
+            self.seed_species[self.sp] = float(key)
 
-            if len(tmp_list) >= 3: # 7/20 pattern 3) L.R>L+R[]
-                tmp_list.append(addval)
-            else:
-                tmp_list[1]['children'].append(addval)
+        ###todo
+        # In case of binding.
+        self.bind_info = key
 
-        return self
+        return RuleEntityComponent(self.key, key)
 
-    def operator(self, rhs):
-        tmp_list = self.get_tmp_list()
+    def __getattr__(self, key):
+        pass
 
-        eff_dict = None
-
-        for i, v in enumerate(tmp_list[1]['children']):
-            if v.get('xxx') == 'effector':
-                eff_dict = tmp_list[1]['children'].pop(i)
-
-        for i, v in enumerate(tmp_list[0]['children']):
-            if v.get('name') == '_':
-                tmp_list[0]['children'].pop(i)
-                rhs = 'neq'
-
-        tmp_dict = {'type': rhs, 'children': tmp_list}
-        if eff_dict:
-            tmp_dict.update(eff_dict)
-
-        self.get_global_list().append(tmp_dict)
-
-        # tmp_list = [] and self.tmp_list = [] don't work
-        self.set_tmp_list([])
-
-    def __gt__(self, rhs):
-        self.operator('gt')
-
-    def __lt__(self, rhs):
-        term = self.get_tmp_list().pop(-1)
-        self.get_tmp_list()[0]['children'].append(term)
-        return True
-
-    def __ne__(self, rhs):
-        self.operator('neq')
-
-    def __add__(self,rhs):
-        tmp_list = self.get_tmp_list()
-
-        if tmp_list[-2].get('type') == 'add':
-            # A+B+C(reactants)
-            tmp_list[-2]['children'].append(tmp_list.pop(-1))
-        elif len(tmp_list) == 2:
-            # A+B(reactants)
-            add_list = [tmp_list.pop(-2), tmp_list.pop(-1)]
-            add_dict = {'type': 'add', 'children': add_list}
-            tmp_list.append(add_dict)
-        elif tmp_list[1]['children'][-1].get('type') == 'effector':
-            eff_dict = tmp_list[1]['children'].pop(-1)
-
-            if tmp_list[1].get('type') == 'add':
-                # A+B+C [D](products)
-                tmp_list[1]['children'].append(eff_dict['value'].pop(0))
-                tmp_list[1]['children'].append(eff_dict)
-            else:
-                # A+B [D](products)
-                add_list = [tmp_list.pop(-1), eff_dict['value'].pop(0)]
-                add_list.append(eff_dict)
-                add_dict = {'type': 'add', 'children': add_list}
-                tmp_list.append(add_dict)
-        elif tmp_list[1].get('type') == 'add':
-            # A+B+C(products)
-            for i in range(2, len(tmp_list)):
-                tmp_list[1]['children'].append(tmp_list[i])
-            del tmp_list[2:]
-        else:
-            # A+B(products)
-            add_list = tmp_list[1:]
-            del tmp_list[1:]
-            add_dict = {'type':'add', 'children': add_list}
-            tmp_list.append(add_dict)
-
-        return self
-
-    def __or__(self, rhs):
-        addval = {'type': 'bracket', 'value':rhs}
-        if len(self.get_tmp_list()) >= 3: # 7/20 pattern 3) L.R>L+R[]
-            self.get_tmp_list().append(addval)
-        else:
-            self.get_tmp_list()[1]['children'].append(addval)
-
-    def __mod__(self, rhs):
-        # print "label: " + str(rhs)
-
-        if type(rhs) in (int, float):
-            addval = {'type': 'label', 'value': str(rhs)}
-            self.set_with_label(True)
-
-            if "children" in self.get_tmp_list()[-1]:
-                self.get_tmp_list()[-1]['children'].append(addval)
-            else:
-                self.get_tmp_list()[-1]['children'] = [addval]
+class ReactionRulesAnycallable(AnyCallable):
+    def __init__(self, key, outer=None, **kwargs):
+        super(ReactionRulesAnycallable, self).__init__(key, outer, **kwargs)
 
 class MyDict(dict):
-    def __init__(self):
+    def __init__(self, model, parser):
         super(MyDict, self).__init__()
+        self.newcls = [type('MyAnyCallable', (AnyCallable, ), 
+                            dict(m=model, p=parser))]
 
-        self.newcls = type('MyAnyCallable', (AnyCallable, ), {})
+        # self.typecls = type('TypeAnyCallable', (AnyCallable, ), dict(m=model, section='molecule_types'))
+        # self.initcls = type('TypeAnyCallable', (AnyCallable, ), dict(m=model, section='molecule_inits'))
+        # self.rulecls = type('TypeAnyCallable', (AnyCallable, ), dict(m=model, section='reaction_rules'))
 
     def __setitem__(self, key, val):
         super(MyDict, self).__setitem__(key, val)
 
     def __getitem__(self, key):
-        if key in ('True', 'False'):
-            return eval(key)
-
         retval = self.get(key)
         if retval is None:
-            retval = self.newcls(key)
+            newcls= self.get_anycallable_cls()
+            retval = newcls(key, section=type(retval).__name__)
         return retval
+
+    def get_anycallable_cls(self):
+        return self.newcls[-1]
+
+class MoleculeTypes(object):
+    def __init__(self, m, p, mydict, loc=None):
+        self.model, self.parser, self.mydict = m, p, mydict
+        self.loc = loc
+        self.section = 'MoleculeTypes'
+
+    def __str__(self):
+        return 'MoleculeTypes'
+
+    def __enter__(self):
+        self.mydict.newcls.append(type('MyAnyCallable',
+                                       (MoleculeTypesAnycallable, ), {}))
+        self.mydict.newcls[-1].model = self.model
+        self.mydict.newcls[-1].parser = self.parser
+
+    def __exit__(self, *args):
+        pass
+
+class MoleculeInits(object):
+    def __init__(self, m, p, mydict):
+        self.model, self.parser, self.mydict = m, p, mydict
+        self.seed_species = {}
+        self.section = 'MoleculeInits'
+
+    def __str__(self):
+        return 'MoleculeInits'
+
+    def __enter__(self):
+        self.mydict.newcls.append(type('MyAnyCallable',
+                                       (MoleculeInitsAnycallable, ), {}))
+        self.mydict.newcls[-1].model = self.model
+        self.mydict.newcls[-1].parser = self.parser
+        self.mydict.newcls[-1].seed_species = self.seed_species
+
+    def __exit__(self, *args):
+        pass
 
 class ReactionRules(object):
     def __init__(self, m, p, newcls):
         self.model, self.parser, self.newcls = m, p, newcls
+        self.section = 'ReactionRules'
+
+    def __str__(self):
+        return 'ReactionRules'
 
     def __enter__(self):
         pass
@@ -341,39 +287,6 @@ class ReactionRules(object):
                 rule = self.model.add_reaction_rule(
                     products, reactants, condition, **attrs)
 
-class MoleculeTypes(object):
-    def __init__(self, m, p, newcls, loc=None):
-        self.model, self.parser, self.newcls = m, p, newcls
-        self.loc = loc
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *args):
-        # string. check for double registration such as A and A.B.
-        mole_entity_list = []
-
-        for i in self.newcls.tmp_list:
-            if i['name'] not in mole_entity_list and i['name'] != '.':
-                tmpmole = self.model.add_entity_type(i['name'])
-                mole_entity_list.append(i['name'])
-
-                for j in i['children']:
-                    if j.has_key('children'):
-                        state_name = 'state_'+i['name']+'_'+j['name']
-                        state = [k['name'] for k in j['children']]
-                        p_state = self.model.add_state_type(state_name, state)
-                        tmpmole.add_component(j['name'], {j['name']: p_state})
-                    else:
-                        tmpmole.add_component(j['name'])
-
-                # for location (01/17)
-                if self.loc is not None:
-                    tmpmole.add_component('loc', {'loc': self.loc})
-                
-                self.parser.add_entity_type(tmpmole)
-
-        self.newcls.tmp_list = []
 
 def read_entity(sp, p, entity, binding_components):
     if 'type' in entity:
@@ -527,54 +440,27 @@ def print_tree(a, n=0, fout=sys.stdout):
             else:
                 fout.write('%s\n' % pr_str(n if idx > 0 else 0, key, value))
 
-class MoleculeInits(object):
-    def __init__(self, m, p, newcls):
-        self.model, self.parser, self.newcls = m, p, newcls
-        self.seed_species = {}
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *args):
-        self.seed_species = {}
-        for i in self.newcls.tmp_list:
-            sp = read_species(self.parser, i)
-            sp.concrete = True
-
-            species_str_list = [
-                x.str_simple() for x in self.seed_species.keys()]
-            if sp.str_simple() in species_str_list:
-                raise ValueError
-
-            sp = self.model.register_species(sp)
-
-            self.seed_species[sp] = float(i['children'].pop(-1)['value'])
-
-        self.newcls.tmp_list = []
-
 class Pybngl(object):
     def __init__(self, verbose=False, loc=None, fout=sys.stdout):
         self.verbose = verbose
         self.fout = fout
         self.loc = loc
 
-        self.namespace = MyDict()
-
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, m=None, p=None, params={}):
+    def parse_model(self, filename, m=None, p=None):
         if m is None: m = Model()
         if p is None: p = Parser()
 
-        namespace = self.namespace
-        namespace.update(params)
+        namespace = MyDict(m, p)
+
         namespace['reaction_rules'] = ReactionRules(
             m, p, namespace.newcls)
         namespace['molecule_inits'] = MoleculeInits(
-            m, p, namespace.newcls)
+            m, p, namespace)
         namespace['molecule_types'] = MoleculeTypes(
-            m, p, namespace.newcls, loc=self.loc)
+            m, p, namespace, loc=self.loc)
 
         exec file(filename) in namespace
 
@@ -622,6 +508,14 @@ class Pybngl(object):
 
         # Outputs information to stdout
         if self.is_verbose():
+            self.fout.write('# << species >>\n')
+            cnt = 1
+            for sp_id in sorted(m.concrete_species.iterkeys()):
+                sp = m.concrete_species[sp_id]
+                self.fout.write('# %d %s\n' % (cnt, sp.str_simple()))
+                cnt += 1
+            self.fout.write('#\n')
+
             self.fout.write('# << reactions >>\n')
             cnt = 1
             for result in reaction_results:
@@ -654,7 +548,6 @@ def create_world(m, seed_species):
 if __name__ == '__main__':
     import optparse
     import sys
-
 
     def create_option_parser():
         usage = "python pybngl.py [options] SIMULATION_FILE"
@@ -731,7 +624,6 @@ if __name__ == '__main__':
         # ##### ONLY FOR toy.py #####
 
         return output_series
-
 
     m, p = Model(), Parser()
 

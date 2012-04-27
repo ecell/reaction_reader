@@ -1,3 +1,5 @@
+from Error import Error
+
 class Pair(object):
     '''The base class for a pair of objects.'''
 

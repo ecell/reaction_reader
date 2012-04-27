@@ -1,10 +1,19 @@
-import model
+#import model
 import sys
+from Model import Model
+from Species import Species
+from ReactionRule import ReactionRule
+from general_func import *
 
 class Parser(object):
 
     def __init__(self):
         self.__entity_types = {}
+
+    @property
+    def entity_types(self):
+        '''Returns the map of entity types.(2012-04-23)'''
+        return self.__entity_types
 
     def add_entity_type(self, entity_type):
         self.__entity_types[entity_type.name] = entity_type
@@ -35,7 +44,7 @@ class Parser(object):
             entity_name_list.append(entity_name.strip())
             entity_content_list.append(entity_content.strip())
 
-        sp = model.Species()
+        sp = Species()
         binding_components = {}
         for i, name in enumerate(entity_name_list):
 
@@ -83,17 +92,18 @@ class Parser(object):
                 binding_id = None
                 comp_str_list = c_str.split('!')
                 if len(comp_str_list) == 1:
-                    binding_state = model.BINDING_NONE
+                    binding_state = BINDING_NONE
                 elif len(comp_str_list) == 2:
                     binding_value = comp_str_list[1].strip()
                     if binding_value.isdigit():
-                        binding_state = model.BINDING_SPECIFIED
+                        # binding_state = model.BINDING_SPECIFIED
+                        binding_state = BINDING_SPECIFIED
                         binding_id = int(binding_value)
                     else:
-                        if binding_value == model.BINDING_UNSPECIFIED_STRING:
-                            binding_state = model.BINDING_UNSPECIFIED
-                        elif binding_value == model.BINDING_ANY_STRING:
-                            binding_state = model.BINDING_ANY
+                        if binding_value == BINDING_UNSPECIFIED_STRING:
+                            binding_state = BINDING_UNSPECIFIED
+                        elif binding_value == BINDING_ANY_STRING:
+                            binding_state = BINDING_ANY
                         else:
                             return None
                 else:
@@ -234,7 +244,7 @@ class Parser(object):
         if register:
             rule = m.add_reaction_rule(reactants, products, condition, **attrs)
         else:
-            rule = model.ReactionRule(id, m, reactants, products, concrete, \
+            rule = ReactionRule(id, m, reactants, products, concrete, \
                 condition, **attrs)
         return rule
 

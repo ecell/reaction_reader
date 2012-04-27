@@ -1,3 +1,6 @@
+from Error import Error
+from general_func import *
+
 class Condition(object):
     '''
     The base class of conditions.
