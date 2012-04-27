@@ -1,4 +1,4 @@
-class FactoryProduct(object):
+class RuleFactoryProduct(object):
     def __init__(self, key, *args, **kwargs):
         self.key = key
         self.__factory = None
@@ -13,29 +13,29 @@ class FactoryProduct(object):
 
     factory = property(get_factory, set_factory)
 
-class AnyCallable(FactoryProduct):
+class AnyCallable(RuleFactoryProduct):
     def __init__(self, key, *args, **kwargs):
-        FactoryProduct.__init__(key, *args, **kwargs)
+        RuleFactoryProduct.__init__(key, *args, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        obj = self.factory.create_rule_entity(self.key, *args, **kwarg)
+        obj = self.factory.create_RuleEntity(self.key, *args, **kwarg)
         return obj
 
-class RuleEntity(FactoryProduct):
+class RuleEntity(RuleFactoryProduct):
     def __init__(self, key, *args, **kwargs):
-        FactoryProduct.__init__(key, *args, **kwargs)
+        RuleFactoryProduct.__init__(key, *args, **kwargs)
 
         self.args = args
         self.kwargs = kwargs
     
 class RuleFactory:
-    def create_any_callable(self, *args, **kwargs):
-        obj = AnyCallable(self, *args, **kwargs)
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = AnyCallable(*args, **kwargs)
         obj.factory = self
         return obj
 
-    def create_rule_entity(self, *args, **kwargs):
-        obj = RuleEntity(self, *args, **kwargs)
+    def create_RuleEntity(self, *args, **kwargs):
+        obj = RuleEntity(*args, **kwargs)
         obj.factory = self
         return obj
 
@@ -53,9 +53,7 @@ class MoleculeTypesRuleFactory(RuleFactory):
 
         self.model = model
 
-    def create_any_callable(self, *args, **kwargs):
-        obj = MoleculeTypesAnyCallable(self, *args, **kwargs)
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = MoleculeTypesAnyCallable(*args, **kwargs)
         obj.factory = self
         return obj
-
-class
