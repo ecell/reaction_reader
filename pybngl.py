@@ -62,8 +62,6 @@ class MoleculeTypesAnycallable(AnyCallable):
 
         print '[MoleculeTypes] ' + str(entity)
 
-        import pdb; pdb.set_trace()
-
         return entity
 
 
