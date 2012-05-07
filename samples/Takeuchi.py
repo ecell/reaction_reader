@@ -29,18 +29,18 @@ with molecule_inits:
 with reaction_rules:
     egfr(l, d[1], X = A, Y = P[1], XX=Axs[3], YY=True, a=a).eg(a) > A(a) | 0.1
     A(a[1]) > G(g) | 0.1
-    A(a) > G(g[1]).B(b[1]) | 0.2
+
     A(a).B(b) > G(g) | 0.3
     A(a).B(b) > G(g).B(b) | 0.4
 
-
-    A(a) + B(b) > C(c) | 1.1
-    A(a) > B(b) + C(c) | 1.2
+    A(a) + B(b) > C(c) [A(a).B(c[1])] | 1.1
+    A(a) > B(b) + C(c) [A(a).B(c[1])] | 1.2
+    A(a) > B(b) + C(c).D(d) [A(a).B(c[1]), A(a), A(a).A(b).A(c)] | 1.3
 
     A(a).B(b) > D(d).E(e).F(f) + G(g) | 2.1
-    A(a) + B(b) + C(c) > D(d) + E(e).F(f) | 2.2
+    A(a) + B(b) + C(c) > D(d) + E(e).F(f) [A(a).B(b)] | 2.2
 
-    A(a[1]).B(b[1]) > D(d).E(e).F(f) + G(g) | 2.1
-    A(a) == A(a[1], Y=U[1]).B(b[1]) + A(a) + A(a).B(b) > D(d).E(e).F(f) + G(g) | 2.1
+    A(a[1]).B(b[1]) > D(d).E(e).F(f) +G(g) [C(c), C(c)] | 2.1
+    A(a) + A(a[1], Y=U[1]).B(b[1]) + A(a) + A(a).B(b) > D(d).E(e).F(f) + G(g) | 2.1
 
-#    egf(r) + egfr(l) > egf(r[1]).egfr(l[1]) [egf(r)] | mm(k, k)
+    egf(r) + egfr(l) > egf(r[1]).egfr(l[1]) [egf(r)] | mm(k, k)

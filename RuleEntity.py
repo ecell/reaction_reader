@@ -10,13 +10,16 @@ def make_setlist(entity1, entity2):
 
     for ent in [entity1, entity2]:
         if type(ent) == RuleEntity:
-            setlist.join(RuleEntitySet(ent))
+            setlist.join(RuleEntitySet(ent, k = ent.k, effector = ent.effector))
         elif type(ent) == RuleEntitySet:
             setlist.join(ent)
         elif type(ent) == RuleEntitySetList:
             setlist = ent
         else:
             raise TypeError
+
+    setlist.set_k(entity2.k)
+    setlist.set_effector(entity2.effector)
 
     return setlist
 
@@ -31,10 +34,10 @@ def make_rule(entity1, entity2):
 
     for ent in [entity1, entity2]:
         if type(ent) == RuleEntity:
-            setlist = RuleEntitySetList(k = ent.k)
-            setlist.join(RuleEntitySet(ent))
+            setlist = RuleEntitySetList(k = ent.k, effector = ent.effector)
+            setlist.join(RuleEntitySet(ent, k = ent.k, effector = ent.effector))
         elif type(ent) == RuleEntitySet:
-            setlist = RuleEntitySetList(k = ent.k)
+            setlist = RuleEntitySetList(k = ent.k, effector = ent.effector)
             setlist.join(ent)
         elif type(ent) == RuleEntitySetList:
             setlist = ent
@@ -47,10 +50,11 @@ def make_rule(entity1, entity2):
 
 class RuleEntity(object):
     '''This class corresponds to Entity.'''
-    def __init__(self, key, k = 0):
+    def __init__(self, key, k = 0, effector = None):
         self.__key = key
         self.__components = []
         self.__k = k
+        self.__effector = effector
 
     @property
     def key(self):
@@ -65,16 +69,26 @@ class RuleEntity(object):
     def k(self):
         return self.__k
 
+    @property
+    def effector(self):
+        return self.__effector
+
     def __getitem__(self, key):
         '''
         egf(r).egfr(l) [100]
         '''
 
-        print '[MoleculeInits] ' + str(self) + ' [' + str(key) + ']'
-        # print [(str(i), str(i.key), str(i.state), i.bind) for i in self.components]
-        # print [(type(i), type(i.key), type(i.state), type(i.bind)) for i in self.components]
+        if type(key) == int or type(key) == float:
+            print '[MoleculeInits] ' + str(self) + ' [' + str(key) + ']'
+            # print [(str(i), str(i.key), str(i.state), i.bind) for i in self.components]
+            # print [(type(i), type(i.key), type(i.state), type(i.bind)) for i in self.components]
 
-        return float(key)
+            return float(key)
+
+        else:
+            # print key, type(key)
+            self.__effector = key
+            return self
 
 
     def join(self, comp):
@@ -180,9 +194,10 @@ class RuleEntityComponent(object):
 
 class RuleEntitySet(object):
     '''The set of RuleEntity.  This class corresponds to Species.'''
-    def __init__(self, en, k = 0, **attrs):
+    def __init__(self, en, k = 0, effector = None, **attrs):
         self.__entities = [en,]
         self.__k = k
+        self.__effector = effector
         for (k, v) in attrs.iteritems():
             self.__attrs[k] = v
 
@@ -193,6 +208,10 @@ class RuleEntitySet(object):
     @property
     def k(self):
         return self.__k
+
+    @property
+    def effector(self):
+        return self.__effector
 
     @property
     def attributes(self):
@@ -213,10 +232,8 @@ class RuleEntitySet(object):
         '''
         egf(r).egfr(l) [100]
         '''
-        print '[MoleculeInits] ' + str(self) + ' [' + str(key) + ']'
-        # print [(str(i), str(i.key), str(i.state), i.bind) for i in self.components]
-
-        return float(key)
+        self.__effector = key
+        return self
         
     def __or__(self, rhs):
         # print 'RuleEntitySet.__or__()'
@@ -240,17 +257,32 @@ class RuleEntitySet(object):
         
 class RuleEntitySetList(object):
     '''The list of RuleEntitySets(aka Species.)'''
-    def __init__(self, k = 0):
+    def __init__(self, k = 0, effector = None):
         self.__species = []
         self.__k = k
+        self.__effector = effector
 
     @property
     def species(self):
         return self.__species
 
-    @property
-    def k(self):
+#    @property
+#    def k(self):
+#        return self.__k
+    def get_k(self):
         return self.__k
+    def set_k(self, k):
+        self.__k = k
+    k = property(get_k, set_k)
+
+#    @property
+#    def effector(self):
+#        return self.__effector
+    def get_effector(self):
+        return self.__effector
+    def set_effector(self, effector):
+        self.__effector = effector
+    effector = property(get_effector, set_effector)
 
     def join(self, sp):
         '''
@@ -280,6 +312,11 @@ class RuleEntitySetList(object):
         # print 'RuleEntitySetList.__add__()'
         return make_setlist(self, rhs)
 
+
+    def __getitem__(self, key):
+        self.__effector = key
+        return self
+
     def __str__(self):
         tmp = ''
         for i in self.species:
@@ -294,7 +331,7 @@ class PartialEntity(object):
         if type(sp) == RuleEntitySet:
             self.__sp = sp
         elif type(sp) == RuleEntity:
-            self.__sp = RuleEntitySet(sp)
+            self.__sp = RuleEntitySet(sp, k = sp.k, effector = sp.effector)
         else:
             raise TypeError
 
@@ -329,14 +366,23 @@ class PartialEntity(object):
 
 class Rule(object):
     def __init__(self, reactants, products, direction):
+        # *** CHECK *** only set values in __init__()
         self.__reactants = reactants # RuleEntitySetList
         self.__products = products   # RuleEntitySetList
         self.__direction = direction # '>' or '<' ('<' = '<_>')
 
-        print '[ReactionRules] ' + str(reactants) + ' > ' + str(products) + ' | ' + str(products.k)
+        if products.effector != None:
+            if type(products.effector) == tuple:
+                str_eff = ' ['
+                for i in products.effector:
+                    str_eff += str(i) + ', '
+                str_eff = str_eff[:-2] + ']'
+            else:
+                str_eff = ' [' + str(products.effector) + '] '
+        else:
+            str_eff = ''
 
-#        import pdb; pdb.set_trace()
-
+        print '[ReactionRules] ' + str(reactants) + ' > ' + str(products) + str_eff + '| ' + str(products.k)
 
     @property
     def reactants(self):
