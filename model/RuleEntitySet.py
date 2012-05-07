@@ -18,24 +18,6 @@ class RuleEntitySet(object):
         '''Returns the number of entities.'''
         return self.__serial_entities
 
-    def __setitem__(self, k, v):
-        '''
-        Sets the attributes.
-
-        k: The key.
-        v: The value.
-        '''
-        self.__attrs[k] = v
-
-    def __getitem__(self, k):
-        '''
-        Returns the value of the attribute of given key.
-        If given key is not found, returns None.
-
-        k: The key.
-        '''
-        return self.__attrs.get(k, None)
-
     @property
     def attributes(self):
         '''Returns the list of attributes.'''
@@ -62,11 +44,15 @@ class RuleEntitySet(object):
         '''
         egf(r).egfr(l) [100]
         '''
-        print "parameter: " + key
+        print '[MoleculeInits]' + str(self.entities) + key
 
         return float(key)
         
 
     def str_simple(self):
-        ''''''
+        ''' '''
+        return self.__str__()
+
+    def __str__(self):
         return [i.str_simple() for i in self.__entities]
+        

@@ -43,6 +43,12 @@ class RuleEntity(object):
     def join(self, comp):
         self.__components.append(comp)
 
+    def __getattr__(self, key):
+        return PartialEntity(key, self)
+
     def str_simple(self):
-        ''''''
-        return [i.str_simple() for i in self.__entities]
+        ''' '''
+        return self.__str__()
+
+    def __str__(self):
+        return self.key + [i.str_simple() for i in self.__components]

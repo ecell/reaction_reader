@@ -12,13 +12,37 @@ import types
 import World
 import Simulator
 
-class AnyCallable(object):
+from RuleEntity import *
 
+class AnyCallable(object):
     model = None
 
     def __init__(self, key, outer=None, **kwargs):
         self.key = key
         self.outer = outer
+        self.en = None
+
+    def __call__(self, *args, **kwargs):
+        entity = RuleEntity(self.key)
+
+        # A(l[1], d, X=P, Y=U[1])
+        for i in args:
+            if type(i) == RuleEntityComponent: # l[1]
+                entity.join(i)
+            else: # d
+                entity.join(RuleEntityComponent(i))
+        for k, v in kwargs.items():
+            if type(v) == RuleEntityComponent: # Y=U[1]
+                entity.join(RuleEntityComponent(k, bind = v.bind, state = v.key))
+            else:  # X=P
+                entity.join(RuleEntityComponent(k, state = v.key))
+
+        self.en = entity
+        
+        return entity
+
+    def __getitem__(self, key):
+        return RuleEntityComponent(self.key, bind = key)
 
     def __str__(self):
         return str(self.key)
@@ -27,96 +51,32 @@ class AnyCallable(object):
 class MoleculeTypesAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
         super(MoleculeTypesAnycallable, self).__init__(key, outer, **kwargs)
-        # print "Constrcuted!!"
 
     def __call__(self, *args, **kwargs):
-        # print self, args, kwargs
+        entity = RuleEntity(self.key)
 
-        # creates entity type
-        entity_type = self.model.add_entity_type(self.key)
+        for i in args:
+            entity.join(RuleEntityComponent(i))
+        for k, v in kwargs.items():
+            entity.join(RuleEntityComponent(k, state = v))
 
-        # adds components to entity type
-        for a in args:
-            entity_type.add_component(a.key)
+        print '[MoleculeTypes] ' + str(entity)
 
-        # adds components with states to entity type
-        for key, value in kwargs.items():
-            state_list = [str(i) if type(i) == int else i.key for i in value]
-            states = StateType(self.key, state_list)
-            entity_type.add_component(key, {key: states})
+        import pdb; pdb.set_trace()
 
-        # registers entity type to parser
-        self.parser.add_entity_type(entity_type)
-
-        print str(entity_type)
-        
-        return self
+        return entity
 
 
 class MoleculeInitsAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
         super(MoleculeInitsAnycallable, self).__init__(key, outer, **kwargs)
-        self.sp = None
         # __init__() should return None.
 
-    def __call__(self, *args, **kwargs):
-        # print self, args, kwargs
-
-        # creates species
-        sp = Species()
-
-        # adds entity to species
-        entity = EntityType(self.key)
-        for i in args:
-            entity.add_component(i.key)
-        for key, value in kwargs.items():
-            states = StateType(key, [value.key])
-            entity.add_component(key, {key: states})
-        target = sp.add_entity(entity)
-            
-        # sets species' binding_state to BINGING_NONE (to be fixed.)
-        for i in target.components.values():
-            i.binding_state = BINDING_NONE
-        for i in args:
-            if type(i) == RuleEntityComponent:
-                target_comp = target.find_components(i.key)[0]
-                target_comp.binding_state = BINDING_SPECIFIED
-                binding = Binding(i.bind_info, self.sp, target_comp, target_comp, False)
-                target_comp.setbinding(binding)
-
-        # sets state of components
-        for key, values in kwargs.items():
-            target.find_components(key)[0].set_state(key, value.key)
-            
-        # sets concreteness of species
-        sp.concrete = True
-
-        # registers species to model
-        # self.model.register_species(sp)
-        self.sp = sp
-        # print "MIAC.__call__(): " + self.sp.str_simple()
-
-        return sp
-
-    def __getitem__(self, key):
-        # registers value of species to seed_species(list of #species.)
-        # print 'Mol.Ini.Any.Cal.__getitem__().key:', key
-
-        if self.sp != None:
-            self.seed_species[self.sp] = float(key)
-
-        ###todo
-        # In case of binding.
-        self.bind_info = key
-
-        return RuleEntityComponent(self.key, key)
-
-    def __getattr__(self, key):
-        pass
 
 class ReactionRulesAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
         super(ReactionRulesAnycallable, self).__init__(key, outer, **kwargs)
+
 
 class MyDict(dict):
     def __init__(self, model, parser):
@@ -179,17 +139,24 @@ class MoleculeInits(object):
         pass
 
 class ReactionRules(object):
-    def __init__(self, m, p, newcls):
-        self.model, self.parser, self.newcls = m, p, newcls
+    def __init__(self, m, p, mydict):
+        self.model, self.parser, self.mydict = m, p, mydict
         self.section = 'ReactionRules'
 
     def __str__(self):
         return 'ReactionRules'
 
     def __enter__(self):
-        pass
+        self.mydict.newcls.append(type('MyAnyCallable',
+                                       (ReactionRulesAnycallable, ), {}))
+        self.mydict.newcls[-1].model = self.model
+        self.mydict.newcls[-1].parser = self.parser
+
 
     def __exit__(self, *args):
+        pass
+
+    def __oldexit__(self, *args):
         def is_func(value_):
             return value_ is None or (
                 type(value_) in (int, float, types.FunctionType)) or (
@@ -456,7 +423,7 @@ class Pybngl(object):
         namespace = MyDict(m, p)
 
         namespace['reaction_rules'] = ReactionRules(
-            m, p, namespace.newcls)
+            m, p, namespace)
         namespace['molecule_inits'] = MoleculeInits(
             m, p, namespace)
         namespace['molecule_types'] = MoleculeTypes(

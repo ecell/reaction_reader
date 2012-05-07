@@ -4,6 +4,7 @@ with molecule_types:
 #    C(C)
 #    D(d, d1 = (0, 1), d2 = (0, 1), d3 = (0, 1))
 #    E(e)
+
     egf(r)
     egfr(l, d, Y = (U, P))
 
@@ -17,13 +18,29 @@ with molecule_inits:
 #    B(b = b) [620]
 #    B(b = 0) [630]
 #    B(b = 1) [640]
+
     egf(r) [160]
     egf(r[1]) [160]
-    egfr(l, d[1], Y = P) [140]
+    egfr(l, d[1], X = A, Y = P[1], XX=Axs[3], YY=True, a=a) [140]
+    eg(a=U).egfr(l, d[1], X = A, Y = P[1], XX=Axs[3], YY=True, a=a).eg(a) [140]
     egfr(l, d, Y = U) [120]
     egf(r[3]).egfr(l[1], d[2], Y = U).egf(r[2]).egf(r) [100]
 
 with reaction_rules:
-    egf(r) > egfr(l) | 0.1
-#    egf(r) + egfr(l) > egf(r[1]).egfr(l[1]) [egf(r)] | mm(k, k)
+    egfr(l, d[1], X = A, Y = P[1], XX=Axs[3], YY=True, a=a).eg(a) > A(a) | 0.1
+    A(a[1]) > G(g) | 0.1
+    A(a) > G(g[1]).B(b[1]) | 0.2
+    A(a).B(b) > G(g) | 0.3
+    A(a).B(b) > G(g).B(b) | 0.4
 
+
+    A(a) + B(b) > C(c) | 1.1
+    A(a) > B(b) + C(c) | 1.2
+
+    A(a).B(b) > D(d).E(e).F(f) + G(g) | 2.1
+    A(a) + B(b) + C(c) > D(d) + E(e).F(f) | 2.2
+
+    A(a[1]).B(b[1]) > D(d).E(e).F(f) + G(g) | 2.1
+    A(a) == A(a[1], Y=U[1]).B(b[1]) + A(a) + A(a).B(b) > D(d).E(e).F(f) + G(g) | 2.1
+
+#    egf(r) + egfr(l) > egf(r[1]).egfr(l[1]) [egf(r)] | mm(k, k)

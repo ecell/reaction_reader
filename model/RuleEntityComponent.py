@@ -34,3 +34,5 @@ class RuleEntityComponent(object):
     def attributes(self):
         return self.__attrs
 
+    def __str__(sef):
+        return self.key

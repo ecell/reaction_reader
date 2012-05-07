@@ -76,5 +76,9 @@ class RuleEntitySetList(object):
         return reaction_rule
 
     def str_simple(self):
-        ''''''
+        ''' '''
+        return self.__str__()
+
+    def __str__(self):
         return [i.str_simple() for i in self.__species]
+        
