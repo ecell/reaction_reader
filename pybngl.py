@@ -5,7 +5,6 @@ from model.parser import Parser
 from model.Error import Error
 from model.EntityType import EntityType
 from model.StateType import StateType
-from model.RuleEntityComponent import RuleEntityComponent
 from model.Binding import Binding
 import types
 
