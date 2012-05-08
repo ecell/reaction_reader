@@ -28,7 +28,7 @@ class RuleEntity(RuleFactoryProduct):
         self.args = args
         self.kwargs = kwargs
     
-class RuleFactory:
+class RuleFactory(object):
     def create_AnyCallable(self, *args, **kwargs):
         obj = AnyCallable(*args, **kwargs)
         obj.factory = self
@@ -55,5 +55,39 @@ class MoleculeTypesRuleFactory(RuleFactory):
 
     def create_AnyCallable(self, *args, **kwargs):
         obj = MoleculeTypesAnyCallable(*args, **kwargs)
+        obj.factory = self
+        return obj
+
+class MoleculeInitsAnycallable(AnyCallable):
+    def __call__(self, *args, **kwargs):
+        obj = AnyCallable.__call__(self, *args, **kwargs)
+
+        return obj
+
+class MoleculeInitsRuleFactory(RuleFactory):
+    def __init__(self, model):
+        RuleFactory.__init__(self)
+
+        self.model = model
+
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = MoleculeInitsAnyCallable(*args, **kwargs)
+        obj.factory = self
+        return obj
+
+class ReactionRulesAnycallable(AnyCallable):
+    def __call__(self, *args, **kwargs):
+        obj = AnyCallable.__call__(self, *args, **kwargs)
+
+        return obj
+
+class ReactionRulesRuleFactory(RuleFactory):
+    def __init__(self, model):
+        RuleFactory.__init__(self)
+
+        self.model = model
+
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = ReactionRulesAnyCallable(*args, **kwargs)
         obj.factory = self
         return obj
