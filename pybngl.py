@@ -33,8 +33,12 @@ class AnyCallable(object):
         for k, v in kwargs.items():
             if type(v) == RuleEntityComponent: # Y=U[1]
                 entity.join(RuleEntityComponent(k, bind = v.bind, state = v.key))
-            else:  # X=P
-                entity.join(RuleEntityComponent(k, state = v.key))
+            elif type(v) == tuple: # A=(U, P)
+#                entity.join(RuleEntityComponent(k, state = v))
+                st = tuple([str(i) for i in v])
+                entity.join(RuleEntityComponent(k, state = st))
+            else: # X=P or X=1 (v.key isn't used because int has no key)
+                entity.join(RuleEntityComponent(k, state = str(v)))
 
         self.en = entity
         
@@ -52,23 +56,22 @@ class MoleculeTypesAnycallable(AnyCallable):
         super(MoleculeTypesAnycallable, self).__init__(key, outer, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        entity = RuleEntity(self.key)
-
-        for i in args:
-            entity.join(RuleEntityComponent(i))
-        for k, v in kwargs.items():
-            entity.join(RuleEntityComponent(k, state = v))
-
-        print '[MoleculeTypes] ' + str(entity)
-
-        return entity
-
+        super(MoleculeTypesAnycallable, self).__call__(*args, **kwargs)
+        print '[MoleculeTypes] ' + str(self.en)
+#        entity = RuleEntity(self.key)
+#
+#        for i in args:
+#            entity.join(RuleEntityComponent(i))
+#        for k, v in kwargs.items():
+#            entity.join(RuleEntityComponent(k, state = v))
+#
+#        print '[MoleculeTypes] ' + str(entity)
+#
+#        return entity
 
 class MoleculeInitsAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
         super(MoleculeInitsAnycallable, self).__init__(key, outer, **kwargs)
-        # __init__() should return None.
-
 
 class ReactionRulesAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
