@@ -1,3 +1,9 @@
+'''
+  refactored pybngl.py
+
+  $Id: pybngl.py,v 1.7 2012/05/09 08:39:25 knishida Exp $
+'''
+
 from __future__ import with_statement
 from model.Model import *
 from model.Species import Species
@@ -13,36 +19,25 @@ import Simulator
 
 from RuleEntity import *
 
+class Factory(object):
+    def __init__(self):
+        pass
+
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = AnyCallable(*args, **kwargs)
+        return obj
+
+
 class AnyCallable(object):
     model = None
 
     def __init__(self, key, outer=None, **kwargs):
         self.key = key
         self.outer = outer
-        self.en = None
+        self.entity = None
 
     def __call__(self, *args, **kwargs):
-        entity = RuleEntity(self.key)
-
-        # A(l[1], d, X=P, Y=U[1])
-        for i in args:
-            if type(i) == RuleEntityComponent: # l[1]
-                entity.join(i)
-            else: # d
-                entity.join(RuleEntityComponent(i))
-        for k, v in kwargs.items():
-            if type(v) == RuleEntityComponent: # Y=U[1]
-                entity.join(RuleEntityComponent(k, bind = v.bind, state = v.key))
-            elif type(v) == tuple: # A=(U, P)
-#                entity.join(RuleEntityComponent(k, state = v))
-                st = tuple([str(i) for i in v])
-                entity.join(RuleEntityComponent(k, state = st))
-            else: # X=P or X=1 (v.key isn't used because int has no key)
-                entity.join(RuleEntityComponent(k, state = str(v)))
-
-        self.en = entity
-        
-        return entity
+        return PartialEntity(None, self.key).__call__(*args, **kwargs)
 
     def __getitem__(self, key):
         return RuleEntityComponent(self.key, bind = key)
@@ -56,26 +51,29 @@ class MoleculeTypesAnycallable(AnyCallable):
         super(MoleculeTypesAnycallable, self).__init__(key, outer, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        super(MoleculeTypesAnycallable, self).__call__(*args, **kwargs)
-        print '[MoleculeTypes] ' + str(self.en)
-#        entity = RuleEntity(self.key)
-#
-#        for i in args:
-#            entity.join(RuleEntityComponent(i))
-#        for k, v in kwargs.items():
-#            entity.join(RuleEntityComponent(k, state = v))
-#
-#        print '[MoleculeTypes] ' + str(entity)
-#
-#        return entity
+        obj = super(MoleculeTypesAnycallable, self).__call__(*args, **kwargs)
+        print '[MoleculeTypes] ' + str(obj)
+        return obj
+
 
 class MoleculeInitsAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
         super(MoleculeInitsAnycallable, self).__init__(key, outer, **kwargs)
 
+    def __call__(self, *args, **kwargs):
+        obj = super(MoleculeInitsAnycallable, self).__call__(*args, **kwargs)
+        print '[MoleculeInits_pb] ' + str(obj)
+        return obj
+
+
 class ReactionRulesAnycallable(AnyCallable):
     def __init__(self, key, outer=None, **kwargs):
         super(ReactionRulesAnycallable, self).__init__(key, outer, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        obj = super(ReactionRulesAnycallable, self).__call__(*args, **kwargs)
+        print '[ReactionRules_pb] ' + str(obj)
+        return obj
 
 
 class MyDict(dict):
@@ -83,11 +81,8 @@ class MyDict(dict):
         super(MyDict, self).__init__()
         self.newcls = [type('MyAnyCallable', (AnyCallable, ), 
                             dict(m=model, p=parser))]
-
-        # self.typecls = type('TypeAnyCallable', (AnyCallable, ), dict(m=model, section='molecule_types'))
-        # self.initcls = type('TypeAnyCallable', (AnyCallable, ), dict(m=model, section='molecule_inits'))
-        # self.rulecls = type('TypeAnyCallable', (AnyCallable, ), dict(m=model, section='reaction_rules'))
-
+        self.factory = Factory()
+        
     def __setitem__(self, key, val):
         super(MyDict, self).__setitem__(key, val)
 
@@ -96,6 +91,8 @@ class MyDict(dict):
         if retval is None:
             newcls= self.get_anycallable_cls()
             retval = newcls(key, section=type(retval).__name__)
+#            retval = self.factory.create_AnyCallable(
+#                key, section=type(retval).__name__)
         return retval
 
     def get_anycallable_cls(self):
@@ -108,7 +105,7 @@ class MoleculeTypes(object):
         self.section = 'MoleculeTypes'
 
     def __str__(self):
-        return 'MoleculeTypes'
+        return self.section
 
     def __enter__(self):
         self.mydict.newcls.append(type('MyAnyCallable',
@@ -126,7 +123,7 @@ class MoleculeInits(object):
         self.section = 'MoleculeInits'
 
     def __str__(self):
-        return 'MoleculeInits'
+        return self.section
 
     def __enter__(self):
         self.mydict.newcls.append(type('MyAnyCallable',
@@ -144,7 +141,7 @@ class ReactionRules(object):
         self.section = 'ReactionRules'
 
     def __str__(self):
-        return 'ReactionRules'
+        return self.section
 
     def __enter__(self):
         self.mydict.newcls.append(type('MyAnyCallable',
