@@ -1,7 +1,7 @@
 '''
   RuleProduct classes.
 
-  $Id$
+  $Id: RuleProduct.py,v 1.1 2012/05/11 08:39:42 knishida Exp $
 '''
 from model.Error import Error
 from RuleFactory import *
@@ -29,13 +29,14 @@ class AnyCallable(RuleFactoryProduct):
         return self.__key
 
     def toREC(self): # only use key (bind and state are not considered.)
-        return RuleEntityComponent(self.key)
+        return self.factory.create_RuleEntityComponent(self.key)
 
     def __call__(self, *args, **kwargs):
-        return PartialEntity(None, self.key).__call__(*args, **kwargs)
+        return self.factory.create_PartialEntity(None, 
+                                             self.key).__call__(*args, **kwargs)
 
     def __getitem__(self, key):
-        return RuleEntityComponent(self.key, bind = key)
+        return self.factory.create_RuleEntityComponent(self.key, bind = key)
 
     def __str__(self):
         return str(self.key)
@@ -134,7 +135,7 @@ class RuleEntity(object):
         return self
 
     def toRES(self):
-        return RuleEntitySet(self, k = self.k, effector = self.effector)
+        return self.factory.create_RuleEntitySet(self, k = self.k, effector = self.effector)
 
     def toRESL(self):
         return self.toRES().toRESL(k = self.k, effector = self.effector)
@@ -200,7 +201,7 @@ class RuleEntitySet(RuleFactoryProduct):
         return self
 
     def toRESL(self):
-        return RuleEntitySetList(self, k = self.k, effector = self.effector)
+        return self.factory.create_RuleEntitySetList(self, k = self.k, effector = self.effector)
 
     def __getitem__(self, key):
         if disp:
@@ -218,7 +219,7 @@ class RuleEntitySet(RuleFactoryProduct):
     def __getattr__(self, key):
         if disp:
             print 'RuleEntitySet.__getattr__()* self:', self, ', key:', key
-        return PartialEntity(self, key)
+        return self.factory.create_PartialEntity(self, key)
 
     def __add__(self, rhs):
         if disp:
@@ -301,7 +302,7 @@ class RuleEntitySetList(RuleFactoryProduct):
     def __gt__(self, rhs):
         if disp:
             print 'RuleEntitySetList.__gt__()* self:', self, ', rhs:', rhs
-        return Rule(self, rhs, '>')
+        return self.factory.create_Rule(self, rhs, '>')
 
     def __str__(self):
         spe = [str(i) + ' + ' for i in self.species]
@@ -311,10 +312,10 @@ class RuleEntitySetList(RuleFactoryProduct):
 class PartialEntity(RuleFactoryProduct):
     '''The class represents Complete RuleEntity(Set) and partial Entity.'''
     def __init__(self, sp, key):
-        if disp:
-            print 'PartialEntity.__init__():', sp, self.__sp, key, self.__key
         self.__sp = sp.toRES() if sp != None else None
         self.__key = key
+        if disp:
+            print 'PartialEntity.__init__():', sp, self.__sp, key, self.__key
 
     @property
     def key(self):
@@ -329,23 +330,23 @@ class PartialEntity(RuleFactoryProduct):
     def set_sp(self, sp):
         self.__sp = sp
     sp = property(get_sp, set_sp)
-        
+
     def __call__(self, *args, **kwargs):
         if disp:
             print 'PartialEntity.__call__()* self:', self, ', args', args
 
-        ent = RuleEntity(self.key)
+        ent = self.factory.create_RuleEntity(self.key)
 
         for i in args:
             ent.join(i.toREC())
         for k, v in kwargs.items():
             if isinstance(v, RuleEntityComponent): # Y=U[1]
-                ent.join(RuleEntityComponent(k, bind = v.bind, state = v.key))
+                ent.join(self.factory.create_RuleEntityComponent(k, bind = v.bind, state = v.key))
             elif isinstance(v, tuple): # Y=(U, 1)
                 st = tuple([str(i) for i in v])
-                ent.join(RuleEntityComponent(k, state = st))
+                ent.join(self.factory.create_RuleEntityComponent(k, state = st))
             else: # Y=U or Y=1 (v.key isn't used becasuse int has no key)
-                ent.join(RuleEntityComponent(k, state = str(v)))
+                ent.join(self.factory.create_RuleEntityComponent(k, state = str(v)))
 
         if self.sp == None:
             self.__sp = ent.toRES()
