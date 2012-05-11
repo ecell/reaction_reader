@@ -311,9 +311,10 @@ class RuleEntitySetList(RuleFactoryProduct):
 class PartialEntity(RuleFactoryProduct):
     '''The class represents Complete RuleEntity(Set) and partial Entity.'''
     def __init__(self, sp, key):
+        if disp:
+            print 'PartialEntity.__init__():', sp, self.__sp, key, self.__key
         self.__sp = sp.toRES() if sp != None else None
         self.__key = key
-        print 'PartialEntity.__init__():', sp, self.__sp, key, self.__key
 
     @property
     def key(self):

@@ -221,7 +221,7 @@ class MoleculeInitsRuleEntitySet(RuleEntitySet):
         if disp:
             print 'RuleEntitySet.__getitem__()* self:', self, ', key:', key
         if isinstance(key, (int, float)):
-            print '[MoleculeInits_RE] ' + str(self) + ' [' + str(key) + ']'
+            print '[MoleculeInits] ' + str(self) + ' [' + str(key) + ']'
             self.__effector = str(key)
             return self
         elif isinstance(key, tuple):
@@ -291,8 +291,8 @@ class MoleculeTypesPartialEntity(PartialEntity):
             else: # Y=U or Y=1 (v.key isn't used becasuse int has no key)
                 ent.join(MoleculeTypesRuleEntityComponent(k, state = str(v)))
 
-        print self.__dict__
-        print self.sp
+#        print self.__dict__
+#        print self.sp
 
         if self.sp == None:
             obj = ent.toRES()
@@ -324,11 +324,12 @@ class MoleculeInitsPartialEntity(PartialEntity):
                 ent.join(MoleculeInitsRuleEntityComponent(k, state = str(v)))
 
         if self.sp == None:
-            self.__sp = ent.toRES()
+#            self.__sp = ent.toRES()
+            obj = ent.toRES()
+            return obj
         else:
             self.sp.join(ent)
-
-        return self.sp
+            return self.sp
 
 
 class ReactionRulesPartialEntity(PartialEntity):
@@ -351,11 +352,12 @@ class ReactionRulesPartialEntity(PartialEntity):
                 ent.join(ReactionRulesRuleEntityComponent(k, state = str(v)))
 
         if self.sp == None:
-            self.__sp = ent.toRES()
+#            self.__sp = ent.toRES()
+            obj = ent.toRES()
+            return obj
         else:
             self.sp.join(ent)
-
-        return self.sp
+            return self.sp
 
 
 class MoleculeTypesRule(Rule):
@@ -369,7 +371,7 @@ class MoleculeInitsRule(Rule):
 class ReactionRulesRule(Rule):
     def __init__(self, reactants, products, direction = '>'):
         super(ReactionRulesRule, self).__init__(reactants, products, direction)
-        print '[ReactionRules_RE] ' + str(self)
+        print '[ReactionRules] ' + str(self)
 
 
 class MyDict(dict):
