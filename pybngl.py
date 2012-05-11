@@ -17,30 +17,385 @@ import types
 import World
 import Simulator
 
-from RuleFactory import *
+from RuleFactory import RuleFactory
 from RuleProduct import *
+
+disp = False
+
+class MoleculeTypesRuleFactory(RuleFactory):
+    def create_AnyCallable(self, key, outer = None, **kwargs):
+        obj = MoleculeTypesAnyCallable(key, outer, **kwargs)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntityComponent(self, key, bind = None, 
+                                   state = None, label = None):
+        obj = MoleculeTypesRuleEntityComponent(key, bind, state, label)
+        obj.factory = self
+        return obj
+
+    def create_RuleEntity(self, key, k = 0, effector = None):
+        obj = MoleculeTypesRuleEntity(key, k, effector)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntitySet(self, en, k = 0, effector = None):
+        obj = MoleculeTypesRuleEntitySet(en, k, effector)
+        obj.factory = self
+        return obj
+
+    def create_RuleEntitySetList(self, sp, k = 0, effector = None):
+        obj = MoleculeTypesRuleEntitySetList(sp, k, effector)
+        obj.factory = self
+        return obj
+
+    def create_PartialEntity(self, sp, key):
+        obj = MoleculeTypesPartialEntity(sp, key)
+        obj.factory = self
+        return obj
+
+    def create_Rule(self, reactants, products, direction = '>'):
+        obj = MoleculeTypesRule(reactants, products, direction)
+        obj.factory = self
+        return obj
+
+
+class MoleculeInitsRuleFactory(RuleFactory):
+    def create_AnyCallable(self, key, outer = None, **kwargs):
+        obj = MoleculeInitsAnyCallable(key, outer, **kwargs)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntityComponent(self, key, bind = None, 
+                                   state = None, label = None):
+        obj = MoleculeInitsRuleEntityComponent(key, bind, state, label)
+        obj.factory = self
+        return obj
+
+    def create_RuleEntity(self, key, k = 0, effector = None):
+        obj = MoleculeInitsRuleEntity(key, k, effector)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntitySet(self, en, k = 0, effector = None):
+        obj = MoleculeInitsRuleEntitySet(en, k, effector)
+        obj.factory = self
+        return obj
+
+    def create_RuleEntitySetList(self, sp, k = 0, effector = None):
+        obj = MoleculeInitsRuleEntitySetList(sp, k, effector)
+        obj.factory = self
+        return obj
+
+    def create_PartialEntity(self, sp, key):
+        obj = MoleculeInitsPartialEntity(sp, key)
+        obj.factory = self
+        return obj
+
+    def create_Rule(self, reactants, products, direction = '>'):
+        obj = MoleculeInitsRule(reactants, products, direction)
+        obj.factory = self
+        return obj
+
+
+class ReactionRulesRuleFactory(RuleFactory):
+    def create_AnyCallable(self, key, outer = None, **kwargs):
+        obj = ReactionRulesAnyCallable(key, outer, **kwargs)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntityComponent(self, key, bind = None, 
+                                   state = None, label = None):
+        obj = ReactionRulesRuleEntityComponent(key, bind, state, label)
+        obj.factory = self
+        return obj
+
+    def create_RuleEntity(self, key, k = 0, effector = None):
+        obj = ReactionRulesRuleEntity(key, k, effector)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntitySet(self, en, k = 0, effector = None):
+        obj = ReactionRulesRuleEntitySet(en, k, effector)
+        obj.factory = self
+        return obj
+
+    def create_RuleEntitySetList(self, sp, k = 0, effector = None):
+        obj = ReactionRulesRuleEntitySetList(sp, k, effector)
+        obj.factory = self
+        return obj
+
+    def create_PartialEntity(self, sp, key):
+        obj = ReactionRulesPartialEntity(sp, key)
+        obj.factory = self
+        return obj
+
+    def create_Rule(self, reactants, products, direction = '>'):
+        obj = ReactionRulesRule(reactants, products, direction)
+        obj.factory = self
+        return obj
+
+
+class MoleculeTypesAnyCallable(AnyCallable):
+    def toREC(self): # only use key (bind and state are not considered.)
+        return MoleculeTypesRuleEntityComponent(self.key)
+
+    def __call__(self, *args, **kwargs):
+        obj = MoleculeTypesPartialEntity(None, self.key).__call__(*args, **kwargs)
+        print '[MoleculeTypes] ' + str(obj)
+        return obj
+
+    def __getitem__(self, key):
+        return MoleculeTypesRuleEntityComponent(self.key, bind = key)
+
+
+class MoleculeInitsAnyCallable(AnyCallable):
+    def toREC(self): # only use key (bind and state are not considered.)
+        return MoleculeInitsRuleEntityComponent(self.key)
+
+    def __call__(self, *args, **kwargs):
+        return MoleculeInitsPartialEntity(None, self.key).__call__(*args, **kwargs)
+
+    def __getitem__(self, key):
+        return MoleculeInitsRuleEntityComponent(self.key, bind = key)
+
+
+class ReactionRulesAnyCallable(AnyCallable):
+    def toREC(self): # only use key (bind and state are not considered.)
+        return ReactionRulesRuleEntityComponent(self.key)
+
+    def __call__(self, *args, **kwargs):
+        return ReactionRulesPartialEntity(None, self.key).__call__(*args, **kwargs)
+
+    def __getitem__(self, key):
+        return ReactionRulesRuleEntityComponent(self.key, bind = key)
+
+
+class MoleculeTypesRuleEntityComponent(RuleEntityComponent):
+    pass
+
+
+class MoleculeInitsRuleEntityComponent(RuleEntityComponent):
+    pass
+
+
+class ReactionRulesRuleEntityComponent(RuleEntityComponent):
+    pass
+
+
+class MoleculeTypesRuleEntity(RuleEntity):
+    def toRES(self):
+        return MoleculeTypesRuleEntitySet(self, k = self.k,
+                                          effector = self.effector)
+
+
+class MoleculeInitsRuleEntity(RuleEntity):
+    def toRES(self):
+        return MoleculeInitsRuleEntitySet(self, k = self.k,
+                                          effector = self.effector)
+
+
+class ReactionRulesRuleEntity(RuleEntity):
+    def toRES(self):
+        return ReactionRulesRuleEntitySet(self, k = self.k,
+                                          effector = self.effector)
+
+
+class MoleculeTypesRuleEntitySet(RuleEntitySet):
+    def toRESL(self):
+        return MoleculeTypesRuleEntitySetList(self, k = self.k,
+                                              effector = self.effector)
+
+    def __getattr__(self, key):
+        if disp:
+            print 'RuleEntitySet.__getattr__()* self:', self, ', key:', key
+        return MoleculeTypesPartialEntity(self, key)
+
+
+class MoleculeInitsRuleEntitySet(RuleEntitySet):
+    def toRESL(self):
+        return MoleculeInitsRuleEntitySetList(self, k = self.k,
+                                              effector = self.effector)
+
+    def __getitem__(self, key):
+        if disp:
+            print 'RuleEntitySet.__getitem__()* self:', self, ', key:', key
+        if isinstance(key, (int, float)):
+            print '[MoleculeInits_RE] ' + str(self) + ' [' + str(key) + ']'
+            self.__effector = str(key)
+            return self
+        elif isinstance(key, tuple):
+            self.__effector = key
+        else:
+            self.__effector = (key,)
+        return self
+
+    def __getattr__(self, key):
+        if disp:
+            print 'RuleEntitySet.__getattr__()* self:', self, ', key:', key
+        return MoleculeInitsPartialEntity(self, key)
+
+
+class ReactionRulesRuleEntitySet(RuleEntitySet):
+    def toRESL(self):
+        return ReactionRulesRuleEntitySetList(self, k = self.k,
+                                              effector = self.effector)
+
+    def __getattr__(self, key):
+        if disp:
+            print 'RuleEntitySet.__getattr__()* self:', self, ', key:', key
+        return ReactionRulesPartialEntity(self, key)
+
+
+class MoleculeTypesRuleEntitySetList(RuleEntitySetList):
+    def __gt__(self, rhs):
+        if disp:
+            print 'RuleEntitySetList.__gt__()* self:', self, ', rhs:', rhs
+        return MoleculeTypesRule(self, rhs, '>')
+
+
+class MoleculeInitsRuleEntitySetList(RuleEntitySetList):
+    def __gt__(self, rhs):
+        if disp:
+            print 'RuleEntitySetList.__gt__()* self:', self, ', rhs:', rhs
+        return MoleculeInitsRule(self, rhs, '>')
+
+
+class ReactionRulesRuleEntitySetList(RuleEntitySetList):
+    def __gt__(self, rhs):
+        if disp:
+            print 'RuleEntitySetList.__gt__()* self:', self, ', rhs:', rhs
+        return ReactionRulesRule(self, rhs, '>')
+
+
+class MoleculeTypesPartialEntity(PartialEntity):
+    def __init__(self, sp, key):
+        super(MoleculeTypesPartialEntity, self).__init__(sp, key)
+        self.__sp = super(MoleculeTypesPartialEntity, self).sp
+
+    def __call__(self, *args, **kwargs):
+        if disp:
+            print 'PartialEntity.__call__()* self:', self, ', args', args
+
+        ent = MoleculeTypesRuleEntity(self.key)
+
+        for i in args:
+            ent.join(i.toREC())
+        for k, v in kwargs.items():
+            if issubclass(type(v), MoleculeTypesRuleEntityComponent): # Y=U[1]
+                ent.join(MoleculeTypesRuleEntityComponent(k, bind = v.bind,
+                                                          state = v.key))
+            elif isinstance(v, tuple): # Y=(U, 1)
+                st = tuple([str(i) for i in v])
+                ent.join(MoleculeTypesRuleEntityComponent(k, state = st))
+            else: # Y=U or Y=1 (v.key isn't used becasuse int has no key)
+                ent.join(MoleculeTypesRuleEntityComponent(k, state = str(v)))
+
+        print self.__dict__
+        print self.sp
+
+        if self.sp == None:
+            obj = ent.toRES()
+            return obj
+#            self.__sp = obj
+#            print self.__sp
+        else:
+            self.sp.join(ent)
+            return self.sp
+
+
+class MoleculeInitsPartialEntity(PartialEntity):
+    def __call__(self, *args, **kwargs):
+        if disp:
+            print 'PartialEntity.__call__()* self:', self, ', args', args
+
+        ent = MoleculeInitsRuleEntity(self.key)
+
+        for i in args:
+            ent.join(i.toREC())
+        for k, v in kwargs.items():
+            if issubclass(type(v), RuleEntityComponent): # Y=U[1]
+                ent.join(MoleculeInitsRuleEntityComponent(k, bind = v.bind,
+                                                          state = v.key))
+            elif isinstance(v, tuple): # Y=(U, 1)
+                st = tuple([str(i) for i in v])
+                ent.join(MoleculeInitsRuleEntityComponent(k, state = st))
+            else: # Y=U or Y=1 (v.key isn't used becasuse int has no key)
+                ent.join(MoleculeInitsRuleEntityComponent(k, state = str(v)))
+
+        if self.sp == None:
+            self.__sp = ent.toRES()
+        else:
+            self.sp.join(ent)
+
+        return self.sp
+
+
+class ReactionRulesPartialEntity(PartialEntity):
+    def __call__(self, *args, **kwargs):
+        if disp:
+            print 'PartialEntity.__call__()* self:', self, ', args', args
+
+        ent = ReactionRulesRuleEntity(self.key)
+
+        for i in args:
+            ent.join(i.toREC())
+        for k, v in kwargs.items():
+            if issubclass(type(v), RuleEntityComponent): # Y=U[1]
+                ent.join(ReactionRulesRuleEntityComponent(k, bind = v.bind,
+                                                          state = v.key))
+            elif isinstance(v, tuple): # Y=(U, 1)
+                st = tuple([str(i) for i in v])
+                ent.join(ReactionRulesRuleEntityComponent(k, state = st))
+            else: # Y=U or Y=1 (v.key isn't used becasuse int has no key)
+                ent.join(ReactionRulesRuleEntityComponent(k, state = str(v)))
+
+        if self.sp == None:
+            self.__sp = ent.toRES()
+        else:
+            self.sp.join(ent)
+
+        return self.sp
+
+
+class MoleculeTypesRule(Rule):
+    pass
+
+
+class MoleculeInitsRule(Rule):
+    pass
+
+
+class ReactionRulesRule(Rule):
+    def __init__(self, reactants, products, direction = '>'):
+        super(ReactionRulesRule, self).__init__(reactants, products, direction)
+        print '[ReactionRules_RE] ' + str(self)
+
 
 class MyDict(dict):
     def __init__(self, model, parser):
         super(MyDict, self).__init__()
         self.newcls = [type('MyAnyCallable', (AnyCallable, ), 
                             dict(m=model, p=parser))]
-        self.factory = RuleFactory()
-        
+        self.factory = []
+
     def __setitem__(self, key, val):
         super(MyDict, self).__setitem__(key, val)
 
     def __getitem__(self, key):
         retval = self.get(key)
         if retval is None:
-            newcls= self.get_anycallable_cls()
-            retval = newcls(key, section=type(retval).__name__)
-#            retval = self.factory.create_AnyCallable(
-#                key, section=type(retval).__name__)
+#            newcls= self.get_anycallable_cls()
+#            retval = newcls(key, section=type(retval).__name__)
+#            import pdb; pdb.set_trace()
+            retval = self.factory[-1].create_AnyCallable(key)
         return retval
 
     def get_anycallable_cls(self):
         return self.newcls[-1]
+
+    def get_section(self):
+        return self.section[-1]
 
 class MoleculeTypes(object):
     def __init__(self, m, p, mydict, loc=None):
@@ -53,12 +408,13 @@ class MoleculeTypes(object):
 
     def __enter__(self):
         self.mydict.newcls.append(type('MyAnyCallable',
-                                       (MoleculeTypesAnycallable, ), {}))
+                                       (MoleculeTypesAnyCallable, ), {}))
         self.mydict.newcls[-1].model = self.model
         self.mydict.newcls[-1].parser = self.parser
+        self.mydict.factory.append(MoleculeTypesRuleFactory(self.model, self.parser))
 
     def __exit__(self, *args):
-        pass
+        self.mydict.factory.pop()
 
 class MoleculeInits(object):
     def __init__(self, m, p, mydict):
@@ -71,13 +427,14 @@ class MoleculeInits(object):
 
     def __enter__(self):
         self.mydict.newcls.append(type('MyAnyCallable',
-                                       (MoleculeInitsAnycallable, ), {}))
+                                       (MoleculeInitsAnyCallable, ), {}))
         self.mydict.newcls[-1].model = self.model
         self.mydict.newcls[-1].parser = self.parser
         self.mydict.newcls[-1].seed_species = self.seed_species
+        self.mydict.factory.append(MoleculeInitsRuleFactory(self.model, self.parser))
 
     def __exit__(self, *args):
-        pass
+        self.mydict.factory.pop()
 
 class ReactionRules(object):
     def __init__(self, m, p, mydict):
@@ -89,13 +446,13 @@ class ReactionRules(object):
 
     def __enter__(self):
         self.mydict.newcls.append(type('MyAnyCallable',
-                                       (ReactionRulesAnycallable, ), {}))
+                                       (ReactionRulesAnyCallable, ), {}))
         self.mydict.newcls[-1].model = self.model
         self.mydict.newcls[-1].parser = self.parser
-
+        self.mydict.factory.append(ReactionRulesRuleFactory(self.model, self.parser))
 
     def __exit__(self, *args):
-        pass
+        self.mydict.factory.pop()
 
     def __oldexit__(self, *args):
         def is_func(value_):
