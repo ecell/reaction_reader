@@ -1,59 +1,48 @@
-class RuleFactoryProduct(object):
-    def __init__(self, key, *args, **kwargs):
-        self.key = key
-        self.__factory = None
+'''
+  RuleFactory classes.
 
-    def set_factory(self, factory):
-        self.__factory = factory
+  $Id$
+'''
 
-    def get_factory(self):
-        # if self.__factory is None:
-        #     raise Error, "No factory is assigned."
-        return self.__factory
+from RuleProduct import AnyCallable
 
-    factory = property(get_factory, set_factory)
+class RuleFactory(object):
+    def __init__(self, model = None, parser = None):
+        self.__model = model
+        self.__parser = parser
 
-class AnyCallable(RuleFactoryProduct):
-    def __init__(self, key, *args, **kwargs):
-        RuleFactoryProduct.__init__(key, *args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        obj = self.factory.create_RuleEntity(self.key, *args, **kwarg)
+    def create_AnyCallable(self, key, outer = None, **kwargs):
+        obj = AnyCallable(key, outer, **kwargs)
+        obj.facotry = self
         return obj
 
-class RuleEntity(RuleFactoryProduct):
-    def __init__(self, key, *args, **kwargs):
-        RuleFactoryProduct.__init__(key, *args, **kwargs)
-
-        self.args = args
-        self.kwargs = kwargs
-    
-class RuleFactory:
-    def create_AnyCallable(self, *args, **kwargs):
-        obj = AnyCallable(*args, **kwargs)
+    def create_RuleEntityComponent(self, key, bind = None, 
+                                   state = None, label = None):
+        obj = RuleEntityComponent(key, bind, state, label)
         obj.factory = self
         return obj
 
-    def create_RuleEntity(self, *args, **kwargs):
-        obj = RuleEntity(*args, **kwargs)
+    def create_RuleEntity(self, key, k = 0, effector = None):
+        obj = RuleEntity(key, k, effector)
+        obj.facotry = self
+        return obj
+
+    def create_RuleEntitySet(self, en, k = 0, effector = None):
+        obj = RuleEntitySet(en, k, effector)
         obj.factory = self
         return obj
 
-class MoleculeTypesAnycallable(AnyCallable):
-    def __call__(self, *args, **kwargs):
-        obj = AnyCallable.__call__(self, *args, **kwargs)
-
-        # self.factory.model.add_species(...)
-
+    def create_RuleEntitySetList(self, sp, k = 0, effector = None):
+        obj = RuleEntitySetList(sp, k, effector)
+        obj.factory = self
         return obj
 
-class MoleculeTypesRuleFactory(RuleFactory):
-    def __init__(self, model):
-        RuleFactory.__init__(self)
+    def create_PartialEntity(self, sp, key):
+        obj = PartialEntity(sp, key)
+        obj.factory = self
+        return obj
 
-        self.model = model
-
-    def create_AnyCallable(self, *args, **kwargs):
-        obj = MoleculeTypesAnyCallable(*args, **kwargs)
+    def create_Rule(self, reactants, products, direction = '>'):
+        obj = Rule(reactants, products, direction)
         obj.factory = self
         return obj
