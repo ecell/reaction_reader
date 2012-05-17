@@ -156,6 +156,9 @@ class MoleculeTypesAnyCallable(AnyCallable):
         obj = self.factory.create_PartialEntity(None,
                                          self.name).__call__(*args, **kwargs)
         print '[MoleculeTypes] ' + str(obj)
+
+        # tmpmole = self.factory.model.add_entity_type(str(obj.en[0].name))
+
         return obj
 
 
