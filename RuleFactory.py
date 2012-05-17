@@ -9,6 +9,14 @@ class RuleFactory(object):
         self.__model = model
         self.__parser = parser
 
+    @property
+    def model(self):
+        return self.__model
+
+    @property
+    def parser(self):
+        return self.__parser
+
     def create_AnyCallable(self, name, *args, **kwargs):
         obj = AnyCallable(name, *args, **kwargs)
         obj.facotry = self
