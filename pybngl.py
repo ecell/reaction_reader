@@ -14,8 +14,7 @@ import types
 import World
 import Simulator
 
-from RuleFactory import RuleFactory
-from RuleProduct import *
+from RuleFactory import *
 
 disp = False
 
@@ -507,7 +506,6 @@ class Pybngl(object):
 
         return reaction_results
 
-
 def create_world(m, seed_species):
     w = World.World()
     w.add_species(m.concrete_species.keys())
@@ -541,7 +539,7 @@ if __name__ == '__main__':
         return optparser
 
     def execute_simulation(
-        simulator, num_of_steps=0, duration=-1, fout=sys.stdout):
+        simulator, num_of_steps=0, duration=-1, fout=sys.stdout, dump=True):
         # run simulation
         if duration > 0:
             # duration is defined
@@ -552,50 +550,20 @@ if __name__ == '__main__':
 
         output_series = simulator.get_logged_data()
         
-        # print results
-        header = 'time\t%s' % ('\t'.join([
-            species.str_simple() for species in simulator.get_species()]))
-        fout.write('#%s\n' % header)
-        fout.write('#\n')
+        if dump:
+            # print results
+            header = 'time\t%s' % ('\t'.join([
+                species.str_simple() for species in simulator.get_species()]))
+            fout.write('#%s\n' % header)
+            fout.write('#\n')
 
-        for output in output_series:
-            t, values = output[0], output[1: ]
-            fout.write('%s\t%s\n' % (
-                t, '\t'.join(['%s' % value for value in values])))
-
-        # import os.path
-        # ##### ONLY FOR label.py #####
-        # if os.path.split(filename) == 'label.py':
-        #     m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
-        #     m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
-        #     output_series = simulator.get_logged_data()
-        #     variables = output_series[-1][1:].tolist()
-
-        #     # volume = 1
-        #     # functions = fmaker.make_functions(m, reaction_results, volume)
-        #     functions = fmaker.make_functions(m, reaction_results)
-        #     simulator.initialize(ODESolver(), functions, variables)
-        #     sim_sub()
-        #     sim_print()
-        # ##### ONLY FOR label.py #####
-
-
-        # ##### ONLY FOR toy.py #####
-        # if os.path.split(filename) == 'toy.py':
-        #     m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
-        #     m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
-        #     output_series = simulator.get_logged_data()
-        #     variables = output_series[-1][1:].tolist()
-
-        #     # volume = 1
-        #     # functions = fmaker.make_functions(m, reaction_results, volume)
-        #     functions = fmaker.make_functions(m, reaction_results)
-        #     simulator.initialize(ODESolver(), functions, variables)
-        #     sim_sub()
-        #     sim_print()
-        # ##### ONLY FOR toy.py #####
+            for output in output_series:
+                t, values = output[0], output[1: ]
+                fout.write('%s\t%s\n' % (
+                    t, '\t'.join(['%s' % value for value in values])))
 
         return output_series
+
 
     m, p = Model(), Parser()
 
@@ -627,4 +595,4 @@ if __name__ == '__main__':
 
     output_series = execute_simulation(
         simulator, num_of_steps=options.step_num,
-        duration=options.end_time)
+        duration=options.end_time, dump=False)
