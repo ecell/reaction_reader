@@ -29,11 +29,11 @@ class AnyCallable(RuleFactoryProduct):
         # only name information is used.
         return self.factory.create_RuleEntityComponent(self.name)
 
-    def to_PartialEntity(self):
-        return self.factory.create_PartialEntity(None, self.name)
+    def to_PartialRuleEntity(self):
+        return self.factory.create_PartialRuleEntity(None, self.name)
 
     def __call__(self, *args, **kwargs):
-        return self.to_PartialEntity().__call__(*args, **kwargs)
+        return self.to_PartialRuleEntity().__call__(*args, **kwargs)
 
     def __getitem__(self, key):
         return self.factory.create_RuleEntityComponent(self.name, bind=key)
@@ -200,7 +200,7 @@ class RuleEntitySet(RuleFactoryProduct):
     def __getattr__(self, key):
         if disp:
             print 'RuleEntitySet.__getattr__()* self:', self, ', key:', key
-        return self.factory.create_PartialEntity(self, key)
+        return self.factory.create_PartialRuleEntity(self, key)
 
     def __add__(self, rhs):
         if disp:
@@ -292,15 +292,15 @@ class RuleEntitySetList(RuleFactoryProduct):
         spe = [str(i) + ' + ' for i in self.species]
         return reduce(lambda a, b: a + b, spe)[:-3]
 
-class PartialEntity(RuleFactoryProduct):
+class PartialRuleEntity(RuleFactoryProduct):
     '''The class represents Complete RuleEntity(Set) and partial Entity.'''
 
     def __init__(self, sp, name):
         if disp:
-            print 'PartialEntity.__init__()* self:', self,
+            print 'PartialRuleEntity.__init__()* self:', self,
             print ', sp:', sp, ', name:', name
 
-        super(PartialEntity, self).__init__(sp, name)
+        super(PartialRuleEntity, self).__init__(sp, name)
 
         self.__sp = sp.to_RuleEntitySet() if sp is not None else None
         self.__name = name
@@ -319,7 +319,7 @@ class PartialEntity(RuleFactoryProduct):
 
     def __call__(self, *args, **kwargs):
         if disp:
-            print 'PartialEntity.__call__()* self:', self, ', args', args
+            print 'PartialRuleEntity.__call__()* self:', self, ', args', args
 
         ent = self.factory.create_RuleEntity(self.name)
 
@@ -429,8 +429,8 @@ class RuleFactory(object):
         obj.factory = self
         return obj
 
-    def create_PartialEntity(self, *args, **kwargs):
-        obj = PartialEntity(*args, **kwargs)
+    def create_PartialRuleEntity(self, *args, **kwargs):
+        obj = PartialRuleEntity(*args, **kwargs)
         obj.factory = self
         return obj
 
