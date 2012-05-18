@@ -1,8 +1,5 @@
-from model.Error import Error
-from RuleFactory import *
-
-
 disp = False
+
 
 class RuleFactoryProduct(object):
     def __init__(self, *args, **kwargs):
