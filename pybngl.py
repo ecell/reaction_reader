@@ -53,20 +53,20 @@ class MoleculeInitsRuleFactory(RuleFactory):
         obj.factory = self
         return obj
 
-class ReactionRulesRule(Rule):
-    def __init__(self, reactants, products, direction='>'):
-        super(ReactionRulesRule, self).__init__(reactants, products, direction)
-
+class ReactionRulesRuleEntitySetList(RuleEntitySetList):
+    def __gt__(self, rhs):
         if disp:
-            print 'ReactionRulesRule.__init__()*',
-            print ' self:', self, ', reactants:', reactants,
-            print ', products:', products, ', direction', direction
+            print 'ReactionRulesRuleEntitySetList.__gt__()*',
+            print ' self:', self, ', rhs:', rhs
 
-        print '[ReactionRules] ' + str(self)
+        obj = super(ReactionRulesRuleEntitySetList, self).__gt__(rhs)
+        print '[ReactionRules] ' + str(obj)
+
+        return obj
 
 class ReactionRulesRuleFactory(RuleFactory):
-    def create_Rule(self, *args, **kwargs):
-        obj = ReactionRulesRule(*args, **kwargs)
+    def create_RuleEntitySetList(self, *args, **kwargs):
+        obj = ReactionRulesRuleEntitySetList(*args, **kwargs)
         obj.factory = self
         return obj
 
@@ -84,7 +84,6 @@ class MyDict(dict):
             retval = self.factory[-1].create_AnyCallable(key)
         return retval
 
-
 class MoleculeTypes(object):
     def __init__(self, m, p, mydict, loc=None):
         self.model, self.parser, self.mydict = m, p, mydict
@@ -97,7 +96,6 @@ class MoleculeTypes(object):
     def __exit__(self, *args):
         self.mydict.factory.pop()
 
-
 class MoleculeInits(object):
     def __init__(self, m, p, mydict):
         self.model, self.parser, self.mydict = m, p, mydict
@@ -109,7 +107,6 @@ class MoleculeInits(object):
 
     def __exit__(self, *args):
         self.mydict.factory.pop()
-
 
 class ReactionRules(object):
     def __init__(self, m, p, mydict):
@@ -219,7 +216,6 @@ class ReactionRules(object):
                              lbl=self.newcls.with_label)
                 rule = self.model.add_reaction_rule(
                     products, reactants, condition, **attrs)
-
 
 class Pybngl(object):
     def __init__(self, verbose=False, loc=None, fout=sys.stdout):
