@@ -16,6 +16,7 @@ class RuleFactoryProduct(object):
 class AnyCallable(RuleFactoryProduct):
     def __init__(self, name, *args, **kwargs):
         super(AnyCallable, self).__init__(name, *args, **kwargs)
+
         self.__name = name
 
     @property
@@ -117,8 +118,7 @@ class RuleEntity(RuleFactoryProduct):
             self, rhs=self.rhs, key=self.key)
 
     def to_RuleEntitySetList(self):
-        return self.to_RuleEntitySet().to_RuleEntitySetList(
-            rhs=self.rhs, key=self.key)
+        return self.to_RuleEntitySet().to_RuleEntitySetList()
 
     def __getitem__(self, key):
         if disp:
@@ -224,9 +224,11 @@ class RuleEntitySetList(RuleFactoryProduct):
     def __init__(self, sp, rhs=None, key=None):
         super(RuleEntitySetList, self).__init__(sp, rhs, key)
 
-        self.__species = [sp.to_RuleEntitySet()]
+        self.__species = []
         self.__rhs = rhs
         self.__key = key
+
+        self.join(sp)
 
     @property
     def species(self):
@@ -249,6 +251,10 @@ class RuleEntitySetList(RuleFactoryProduct):
     key = property(get_key, set_key)
 
     def join(self, sp):
+        assert sp is not None 
+        assert (issubclass(sp.__class__, RuleEntity)
+                or issubclass(sp.__class__, RuleEntitySet))
+
         self.species.append(sp.to_RuleEntitySet())
         return
 
@@ -258,17 +264,24 @@ class RuleEntitySetList(RuleFactoryProduct):
     def __getitem__(self, key):
         if disp:
             print 'RuleEntitySetList.__getitem__()* self:', self, ', key:', key
+
         self.key = key
         return self
 
     def __getattr__(self, key):
         if disp:
             print 'RuleEntitySetList.__getattr__()* self:', self, ', key:', key
+
         pass
 
     def __add__(self, rhs):
         if disp:
             print 'RuleEntitySetList.__add__()* self:', self, ', rhs:', rhs
+
+        assert (issubclass(rhs.__class__, RuleEntity)
+                or issubclass(rhs.__class__, RuleEntitySet)
+                or issubclass(rhs.__class__, RuleEntitySetList))
+
         self.join(rhs)
         self.set_rhs(rhs.rhs)
         self.set_key(rhs.key)
@@ -277,12 +290,14 @@ class RuleEntitySetList(RuleFactoryProduct):
     def __or__(self, rhs):
         if disp:
             print 'RuleEntitySetList.__or__()* self:', self, ', rhs:', rhs
+
         self.rhs = rhs
         return self
 
     def __gt__(self, rhs):
         if disp:
             print 'RuleEntitySetList.__gt__()* self:', self, ', rhs:', rhs
+
         return self.factory.create_Rule(self, rhs, '>')
 
     def __str__(self):
@@ -299,7 +314,14 @@ class PartialRuleEntity(RuleFactoryProduct):
 
         super(PartialRuleEntity, self).__init__(sp, name)
 
-        self.__sp = sp.to_RuleEntitySet() if sp is not None else None
+        if sp is None:
+            self.__sp = None
+        else:
+            assert (issubclass(sp.__class__, RuleEntity)
+                    or issubclass(sp.__class__, RuleEntitySet))
+
+            self.__sp = sp.to_RuleEntitySet()
+
         self.__name = name
 
     @property
@@ -319,6 +341,10 @@ class PartialRuleEntity(RuleFactoryProduct):
             print 'PartialRuleEntity.__call__()* self:', self, ', args', args
 
         ent = self.factory.create_RuleEntity(self.name)
+
+        assert all([(issubclass(i.__class__, AnyCallable) 
+                     or issubclass(i.__class__, RuleEntityComponent)) 
+                    for i in args])
 
         for i in args:
             ent.join(i.to_RuleEntityComponent())
@@ -349,8 +375,11 @@ class Rule(RuleFactoryProduct):
     def __init__(self, reactants, products, direction='>'):
         super(Rule, self).__init__(reactants, products, direction)
 
-        self.__reactants = reactants.to_RuleEntitySetList()
-        self.__products = products.to_RuleEntitySetList()
+        assert issubclass(reactants.__class__, RuleEntitySetList)
+        assert issubclass(products.__class__, RuleEntitySetList)
+
+        self.__reactants = reactants
+        self.__products = products
         self.__direction = direction
         self.__rhs = products.rhs
         self.__key = products.key

@@ -119,103 +119,103 @@ class ReactionRules(object):
     def __exit__(self, *args):
         self.mydict.factory.pop()
 
-    def __oldexit__(self, *args):
-        def is_func(value_):
-            return value_ is None or (
-                type(value_) in (int, float, types.FunctionType)) or (
-                type(value_) in (list, tuple) and 
-                len(value_) > 0 and type(value_[0]) is str)
+    # def __exit__(self, *args):
+    #     def is_func(value_):
+    #         return value_ is None or (
+    #             type(value_) in (int, float, types.FunctionType)) or (
+    #             type(value_) in (list, tuple) and 
+    #             len(value_) > 0 and type(value_[0]) is str)
 
-        def get_func(value_=None):
-            func_name_, args_, kwargs_, func_def_ = (
-                'mass_action', (0, ), {}, None)
-            if value_ is None:
-                # return defaults
-                return func_name_, args_, kwargs_, func_def_
-            elif type(value_) is types.FunctionType:
-                return func_name_, args_, kwargs_, value_
-            elif type(value_) in (int, float):
-                # | 0.1
-                return func_name_, (value_, ), kwargs_, func_def_
-            else: # type(value_) in (list, tuple) and type(value_[0]) is str
-                # | MassAction(0.1)
-                if len(value_) == 1:
-                    return value_[0], args_, kwargs_, func_def_
-                elif len(value_) == 2:
-                    return value_[0], value_[1], kwargs_, func_def_
-                elif len(value_) > 2:
-                    return value_[0], value_[1], value_[2], func_def_
+    #     def get_func(value_=None):
+    #         func_name_, args_, kwargs_, func_def_ = (
+    #             'mass_action', (0, ), {}, None)
+    #         if value_ is None:
+    #             # return defaults
+    #             return func_name_, args_, kwargs_, func_def_
+    #         elif type(value_) is types.FunctionType:
+    #             return func_name_, args_, kwargs_, value_
+    #         elif type(value_) in (int, float):
+    #             # | 0.1
+    #             return func_name_, (value_, ), kwargs_, func_def_
+    #         else: # type(value_) in (list, tuple) and type(value_[0]) is str
+    #             # | MassAction(0.1)
+    #             if len(value_) == 1:
+    #                 return value_[0], args_, kwargs_, func_def_
+    #             elif len(value_) == 2:
+    #                 return value_[0], value_[1], kwargs_, func_def_
+    #             elif len(value_) > 2:
+    #                 return value_[0], value_[1], value_[2], func_def_
             
-        for idx, v in enumerate(self.newcls.global_list):
-            # create effector list
-            if v.get('value') is not None:
-                effectors = [self.model.register_species(
-                        read_species(self.parser, i)) for i in v['value']]
-            else:
-                effectors = []
+    #     for idx, v in enumerate(self.newcls.global_list):
+    #         # create effector list
+    #         if v.get('value') is not None:
+    #             effectors = [self.model.register_species(
+    #                     read_species(self.parser, i)) for i in v['value']]
+    #         else:
+    #             effectors = []
 
-            # create reactants/products
-            reactants, con_list = read_patterns(
-                self.model, self.parser, v['children'][0], 
-                self.newcls.with_label)
-            products, con_list = read_patterns(
-                self.model, self.parser, v['children'][1], 
-                self.newcls.with_label)
+    #         # create reactants/products
+    #         reactants, con_list = read_patterns(
+    #             self.model, self.parser, v['children'][0], 
+    #             self.newcls.with_label)
+    #         products, con_list = read_patterns(
+    #             self.model, self.parser, v['children'][1], 
+    #             self.newcls.with_label)
 
-            # for con_idx, con_func in enumerate(con_list):
-            #     if type(con_func) == float:   # [SPEED_FUNCTION]
-            #         speed = speed_r = con_func
-            #         con_list.pop(con_idx)
-            #     elif type(con_func) == tuple: # [MassAction2(.1, .2)]
-            #         speed = con_func[0]
-            #         speed_r = con_func[int(bool(con_func[1]))]
-            #         con_list.pop(con_idx)
+    #         # for con_idx, con_func in enumerate(con_list):
+    #         #     if type(con_func) == float:   # [SPEED_FUNCTION]
+    #         #         speed = speed_r = con_func
+    #         #         con_list.pop(con_idx)
+    #         #     elif type(con_func) == tuple: # [MassAction2(.1, .2)]
+    #         #         speed = con_func[0]
+    #         #         speed_r = con_func[int(bool(con_func[1]))]
+    #         #         con_list.pop(con_idx)
 
-            # if len(con_list) >= 2:            # [CONDITION_FUNCTION]
-            #     condition = AndCondition(con_list)
-            # elif con_list != []:
-            #     condition = con_list[0]
-            # else:
-            #     condition = None
-            # set speed function
+    #         # if len(con_list) >= 2:            # [CONDITION_FUNCTION]
+    #         #     condition = AndCondition(con_list)
+    #         # elif con_list != []:
+    #         #     condition = con_list[0]
+    #         # else:
+    #         #     condition = None
+    #         # set speed function
 
-            # condition is not supported now
-            condition = None
-            if len(con_list) > 0:
-                con_func = con_list[0]
-            else:
-                con_func = None
+    #         # condition is not supported now
+    #         condition = None
+    #         if len(con_list) > 0:
+    #             con_func = con_list[0]
+    #         else:
+    #             con_func = None
 
-            con_func_f, con_func_r = None, None
-            if is_func(con_func):
-                con_func_f = con_func
-            elif type(con_func) in (list, tuple) and len(con_func) == 2 and (
-                is_func(con_func[0]) and is_func(con_func[1])):
-                con_func_f, con_func_r = con_func
-            else:
-                # unsupported expression (error?)
-                pass
+    #         con_func_f, con_func_r = None, None
+    #         if is_func(con_func):
+    #             con_func_f = con_func
+    #         elif type(con_func) in (list, tuple) and len(con_func) == 2 and (
+    #             is_func(con_func[0]) and is_func(con_func[1])):
+    #             con_func_f, con_func_r = con_func
+    #         else:
+    #             # unsupported expression (error?)
+    #             pass
 
-            func_name_f, args_f, kwargs_f, func_def_f = get_func(con_func_f)
-            func_name_r, args_r, kwargs_r, func_def_r = get_func(con_func_r)
+    #         func_name_f, args_f, kwargs_f, func_def_f = get_func(con_func_f)
+    #         func_name_r, args_r, kwargs_r, func_def_r = get_func(con_func_r)
 
-            # Checks whether reactants/products have any labels.
-            # lbflag = True in [r.has_label() for r in reactants + products]
+    #         # Checks whether reactants/products have any labels.
+    #         # lbflag = True in [r.has_label() for r in reactants + products]
 
-            # Generates reaction rule.
-            # lbl is required by model.Model and model.ReactionRule
-            attrs = dict(k_name=func_name_f, args=args_f, kwargs=kwargs_f,
-                         effectors=effectors, func_def=func_def_f,
-                         lbl=self.newcls.with_label)
-            rule = self.model.add_reaction_rule(
-                reactants, products, condition, **attrs)
-            if v['type'] == 'neq':
-                # condition = swap_condition(con_list)
-                attrs = dict(k_name=func_name_r, args=args_r, kwargs=kwargs_r,
-                             effectors=effectors, func_def=func_def_r,
-                             lbl=self.newcls.with_label)
-                rule = self.model.add_reaction_rule(
-                    products, reactants, condition, **attrs)
+    #         # Generates reaction rule.
+    #         # lbl is required by model.Model and model.ReactionRule
+    #         attrs = dict(k_name=func_name_f, args=args_f, kwargs=kwargs_f,
+    #                      effectors=effectors, func_def=func_def_f,
+    #                      lbl=self.newcls.with_label)
+    #         rule = self.model.add_reaction_rule(
+    #             reactants, products, condition, **attrs)
+    #         if v['type'] == 'neq':
+    #             # condition = swap_condition(con_list)
+    #             attrs = dict(k_name=func_name_r, args=args_r, kwargs=kwargs_r,
+    #                          effectors=effectors, func_def=func_def_r,
+    #                          lbl=self.newcls.with_label)
+    #             rule = self.model.add_reaction_rule(
+    #                 products, reactants, condition, **attrs)
 
 class Pybngl(object):
     def __init__(self, verbose=False, loc=None, fout=sys.stdout):
