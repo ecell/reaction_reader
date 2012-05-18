@@ -16,8 +16,6 @@ import Simulator
 
 from RuleFactory import *
 
-disp = False
-
 
 class MoleculeTypesRuleFactory(RuleFactory):
     def create_AnyCallable(self, name, *args, **kwargs):
