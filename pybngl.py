@@ -14,12 +14,12 @@ import types
 import World
 import Simulator
 
-from RuleFactory import *
+import RuleFactory
 
 
 disp = False
 
-class MoleculeTypesAnyCallable(AnyCallable):
+class MoleculeTypesAnyCallable(RuleFactory.AnyCallable):
     def __call__(self, *args, **kwargs):
         if disp:
             print 'MoleculeTypesAnyCallable.__call__()*',
@@ -31,13 +31,13 @@ class MoleculeTypesAnyCallable(AnyCallable):
 
         return obj
 
-class MoleculeTypesRuleFactory(RuleFactory):
+class MoleculeTypesRuleFactory(RuleFactory.RuleFactory):
     def create_AnyCallable(self, *args, **kwargs):
         obj = MoleculeTypesAnyCallable(*args, **kwargs)
         obj.factory = self
         return obj
 
-class MoleculeInitsRuleEntitySet(RuleEntitySet):
+class MoleculeInitsRuleEntitySet(RuleFactory.RuleEntitySet):
     def __getitem__(self, key):
         if disp:
             print 'RuleEntitySet.__getitem__()* self:', self, ', key:', key
@@ -47,13 +47,13 @@ class MoleculeInitsRuleEntitySet(RuleEntitySet):
 
         return self
 
-class MoleculeInitsRuleFactory(RuleFactory):
+class MoleculeInitsRuleFactory(RuleFactory.RuleFactory):
     def create_RuleEntitySet(self, *args, **kwargs):
         obj = MoleculeInitsRuleEntitySet(*args, **kwargs)
         obj.factory = self
         return obj
 
-class ReactionRulesRuleEntitySetList(RuleEntitySetList):
+class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
     def __gt__(self, rhs):
         if disp:
             print 'ReactionRulesRuleEntitySetList.__gt__()*',
@@ -64,7 +64,7 @@ class ReactionRulesRuleEntitySetList(RuleEntitySetList):
 
         return obj
 
-class ReactionRulesRuleFactory(RuleFactory):
+class ReactionRulesRuleFactory(RuleFactory.RuleFactory):
     def create_RuleEntitySetList(self, *args, **kwargs):
         obj = ReactionRulesRuleEntitySetList(*args, **kwargs)
         obj.factory = self
