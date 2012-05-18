@@ -1,6 +1,7 @@
 from model.Error import Error
 from RuleFactory import *
 
+
 disp = False
 
 class RuleFactoryProduct(object):
@@ -44,6 +45,8 @@ class RuleEntityComponent(RuleFactoryProduct):
     '''The class corresponds to EntityComponent.'''
 
     def __init__(self, name, *args, **kwargs):
+        super(RuleEntityComponent, self).__init__(name, *args, **kwargs)
+
         self.__name = name
         self.__args = args
         self.__kwargs = kwargs
@@ -73,9 +76,11 @@ class RuleEntityComponent(RuleFactoryProduct):
 
         return str(self.name) + '{' + kw[:-1] + '}'
 
-class RuleEntity(object):
+class RuleEntity(RuleFactoryProduct):
     '''The class corresponds to Entity.'''
     def __init__(self, name, rhs=None, key=None):
+        super(RuleEntity, self).__init__(name, rhs, key)
+
         self.__name = name
         self.__components = []
         self.__rhs = rhs
@@ -151,6 +156,8 @@ class RuleEntitySet(RuleFactoryProduct):
     '''The set of RuleEntity.  This class corresponds to Species.'''
 
     def __init__(self, en, rhs=None, key=None):
+        super(RuleEntitySet, self).__init__(en, rhs, key)
+
         self.__entities = [en]
         self.__rhs = rhs # renamed from 'k'
         self.__key = key # renamed from 'effector'
@@ -218,6 +225,8 @@ class RuleEntitySetList(RuleFactoryProduct):
     '''The list of RuleEntitySets(aka Species.)'''
 
     def __init__(self, sp, rhs=None, key=None):
+        super(RuleEntitySetList, self).__init__(sp, rhs, key)
+
         self.__species = [sp.to_RuleEntitySet()]
         self.__rhs = rhs
         self.__key = key
@@ -290,7 +299,10 @@ class PartialEntity(RuleFactoryProduct):
         if disp:
             print 'PartialEntity.__init__()* self:', self,
             print ', sp:', sp, ', name:', name
-        self.__sp = sp.to_RuleEntitySet() if sp != None else None
+
+        super(PartialEntity, self).__init__(sp, name)
+
+        self.__sp = sp.to_RuleEntitySet() if sp is not None else None
         self.__name = name
 
     @property
@@ -338,6 +350,8 @@ class PartialEntity(RuleFactoryProduct):
 class Rule(RuleFactoryProduct):
     '''The class corresponds to ReactionRule.'''
     def __init__(self, reactants, products, direction='>'):
+        super(Rule, self).__init__(reactants, products, direction)
+
         self.__reactants = reactants.to_RuleEntitySetList()
         self.__products = products.to_RuleEntitySetList()
         self.__direction = direction
@@ -390,37 +404,37 @@ class RuleFactory(object):
     def parser(self):
         return self.__parser
 
-    def create_AnyCallable(self, name, *args, **kwargs):
-        obj = AnyCallable(name, *args, **kwargs)
-        obj.facotry = self
-        return obj
-
-    def create_RuleEntityComponent(self, name, *args, **kwargs):
-        obj = RuleEntityComponent(name, *args, **kwargs)
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = AnyCallable(*args, **kwargs)
         obj.factory = self
         return obj
 
-    def create_RuleEntity(self, name, rhs=None, key=None):
-        obj = RuleEntity(name, rhs, key)
-        obj.facotry = self
-        return obj
-
-    def create_RuleEntitySet(self, en, rhs=None, key=None):
-        obj = RuleEntitySet(en, rhs, key)
+    def create_RuleEntityComponent(self, *args, **kwargs):
+        obj = RuleEntityComponent(*args, **kwargs)
         obj.factory = self
         return obj
 
-    def create_RuleEntitySetList(self, sp, rhs=None, key=None):
-        obj = RuleEntitySetList(sp, rhs, key)
+    def create_RuleEntity(self, *args, **kwargs):
+        obj = RuleEntity(*args, **kwargs)
         obj.factory = self
         return obj
 
-    def create_PartialEntity(self, sp, name):
-        obj = PartialEntity(sp, name)
+    def create_RuleEntitySet(self, *args, **kwargs):
+        obj = RuleEntitySet(*args, **kwargs)
         obj.factory = self
         return obj
 
-    def create_Rule(self, reactants, products, direction='>'):
-        obj = Rule(reactants, products, direction)
+    def create_RuleEntitySetList(self, *args, **kwargs):
+        obj = RuleEntitySetList(*args, **kwargs)
+        obj.factory = self
+        return obj
+
+    def create_PartialEntity(self, *args, **kwargs):
+        obj = PartialEntity(*args, **kwargs)
+        obj.factory = self
+        return obj
+
+    def create_Rule(self, *args, **kwargs):
+        obj = Rule(*args, **kwargs)
         obj.factory = self
         return obj
