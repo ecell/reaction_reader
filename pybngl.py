@@ -14,253 +14,61 @@ import types
 import World
 import Simulator
 
-from RuleFactory import RuleFactory
-from RuleProduct import *
+import RuleFactory
+
 
 disp = False
 
-
-class MoleculeTypesRuleFactory(RuleFactory):
-    def create_AnyCallable(self, name, *args, **kwargs):
-        obj = MoleculeTypesAnyCallable(name, *args, **kwargs)
-        obj.factory = self
-        return obj
-
-#    def create_RuleEntityComponent(self, name, bind = None, 
-#                                   state = None, label = None):
-#        obj = MoleculeTypesRuleEntityComponent(name, bind, state, label)
-#        obj.factory = self
-#        return obj
-
-    def create_RuleEntityComponent(self, name, *args, **kwargs):
-        obj = MoleculeTypesRuleEntityComponent(name, *args, **kwargs)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntity(self, name, rhs = None, key = None):
-        obj = MoleculeTypesRuleEntity(name, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntitySet(self, en, rhs = None, key = None):
-        obj = MoleculeTypesRuleEntitySet(en, rhs, key)
-        obj.factory = self
-        return obj
-
-#    def create_RuleEntitySetList(self, sp, rhs = None, key = None):
-#        obj = MoleculeTypesRuleEntitySetList(sp, rhs, key)
-#        obj.factory = self
-#        return obj
-
-    def create_PartialEntity(self, sp, name):
-        obj = MoleculeTypesPartialEntity(sp, name)
-        obj.factory = self
-        return obj
-
-#    def create_Rule(self, reactants, products, direction = '>'):
-#        obj = MoleculeTypesRule(reactants, products, direction)
-#        obj.factory = self
-#        return obj
-
-
-class MoleculeInitsRuleFactory(RuleFactory):
-    def create_AnyCallable(self, name, *args, **kwargs):
-        obj = MoleculeInitsAnyCallable(name, *args, **kwargs)
-        obj.factory = self
-        return obj
-
-#    def create_RuleEntityComponent(self, name, bind = None, 
-#                                   state = None, label = None):
-#        obj = MoleculeInitsRuleEntityComponent(name, bind, state, label)
-#        obj.factory = self
-#        return obj
-    def create_RuleEntityComponent(self, name, *args, **kwargs):
-        obj = MoleculeInitsRuleEntityComponent(name, *args, **kwargs)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntity(self, name, rhs = None, key = None):
-        obj = MoleculeInitsRuleEntity(name, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntitySet(self, en, rhs = None, key = None):
-        obj = MoleculeInitsRuleEntitySet(en, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntitySetList(self, sp, rhs = None, key = None):
-        obj = MoleculeInitsRuleEntitySetList(sp, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_PartialEntity(self, sp, name):
-        obj = MoleculeInitsPartialEntity(sp, name)
-        obj.factory = self
-        return obj
-
-#    def create_Rule(self, reactants, products, direction = '>'):
-#        obj = MoleculeInitsRule(reactants, products, direction)
-#        obj.factory = self
-#        return obj
-
-
-class ReactionRulesRuleFactory(RuleFactory):
-    def create_AnyCallable(self, name, *args, **kwargs):
-        obj = ReactionRulesAnyCallable(name, *args, **kwargs)
-        obj.factory = self
-        return obj
-
-#    def create_RuleEntityComponent(self, name, bind = None, 
-#                                   state = None, label = None):
-#        obj = ReactionRulesRuleEntityComponent(name, bind, state, label)
-#        obj.factory = self
-#        return obj
-    def create_RuleEntityComponent(self, name, *args, **kwargs):
-        obj = ReactionRulesRuleEntityComponent(name, *args, **kwargs)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntity(self, name, rhs = None, key = None):
-        obj = ReactionRulesRuleEntity(name, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntitySet(self, en, rhs = None, key = None):
-        obj = ReactionRulesRuleEntitySet(en, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_RuleEntitySetList(self, sp, rhs = None, key = None):
-        obj = ReactionRulesRuleEntitySetList(sp, rhs, key)
-        obj.factory = self
-        return obj
-
-    def create_PartialEntity(self, sp, name):
-        obj = ReactionRulesPartialEntity(sp, name)
-        obj.factory = self
-        return obj
-
-    def create_Rule(self, reactants, products, direction = '>'):
-        obj = ReactionRulesRule(reactants, products, direction)
-        obj.factory = self
-        return obj
-
-
-class MoleculeTypesAnyCallable(AnyCallable):
+class MoleculeTypesAnyCallable(RuleFactory.AnyCallable):
     def __call__(self, *args, **kwargs):
         if disp:
             print 'MoleculeTypesAnyCallable.__call__()*',
             print ' self:', self, ', args:', args, ', kwargs:', kwargs
 
-        obj = self.factory.create_PartialEntity(None,
-                                         self.name).__call__(*args, **kwargs)
+        obj = super(MoleculeTypesAnyCallable, self).__call__(*args, **kwargs)
         print '[MoleculeTypes] ' + str(obj)
-
         # tmpmole = self.factory.model.add_entity_type(str(obj.en[0].name))
 
         return obj
 
+class MoleculeTypesRuleFactory(RuleFactory.RuleFactory):
+    def create_AnyCallable(self, *args, **kwargs):
+        obj = MoleculeTypesAnyCallable(*args, **kwargs)
+        obj.factory = self
+        return obj
 
-class MoleculeInitsAnyCallable(AnyCallable):
-    pass
-
-
-class ReactionRulesAnyCallable(AnyCallable):
-    pass
-
-
-class MoleculeTypesRuleEntityComponent(RuleEntityComponent):
-    pass
-
-
-class MoleculeInitsRuleEntityComponent(RuleEntityComponent):
-    pass
-
-
-class ReactionRulesRuleEntityComponent(RuleEntityComponent):
-    pass
-
-
-class MoleculeTypesRuleEntity(RuleEntity):
-    pass
-
-
-class MoleculeInitsRuleEntity(RuleEntity):
-    pass
-
-
-class ReactionRulesRuleEntity(RuleEntity):
-    pass
-
-
-class MoleculeTypesRuleEntitySet(RuleEntitySet):
-    pass
-
-
-class MoleculeInitsRuleEntitySet(RuleEntitySet):
+class MoleculeInitsRuleEntitySet(RuleFactory.RuleEntitySet):
     def __getitem__(self, key):
         if disp:
             print 'RuleEntitySet.__getitem__()* self:', self, ', key:', key
 
-        if isinstance(key, (int, float)):
-            print '[MoleculeInits] ' + str(self) + ' [' + str(key) + ']'
-            self.key = str(key)
-            return self
-        elif isinstance(key, tuple):
-            self.key = key
-        else:
-            self.key = (key,)
+        obj = super(MoleculeInitsRuleEntitySet, self).__getitem__(key)
+        print '[MoleculeInits] ' + str(obj) + ' [' + str(obj.key) + ']'
+
         return self
 
+class MoleculeInitsRuleFactory(RuleFactory.RuleFactory):
+    def create_RuleEntitySet(self, *args, **kwargs):
+        obj = MoleculeInitsRuleEntitySet(*args, **kwargs)
+        obj.factory = self
+        return obj
 
-class ReactionRulesRuleEntitySet(RuleEntitySet):
-    pass
-
-
-#class MoleculeTypesRuleEntitySetList(RuleEntitySetList):
-#    pass
-
-
-class MoleculeInitsRuleEntitySetList(RuleEntitySetList):
-    pass
-
-
-class ReactionRulesRuleEntitySetList(RuleEntitySetList):
-    pass
-
-
-class MoleculeTypesPartialEntity(PartialEntity):
-    pass
-
-
-class MoleculeInitsPartialEntity(PartialEntity):
-    pass
-
-
-class ReactionRulesPartialEntity(PartialEntity):
-    pass
-
-
-#class MoleculeTypesRule(Rule):
-#    pass
-
-
-#class MoleculeInitsRule(Rule):
-#    pass
-
-
-class ReactionRulesRule(Rule):
-    def __init__(self, reactants, products, direction = '>'):
-        super(ReactionRulesRule, self).__init__(reactants, products, direction)
-
+class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
+    def __gt__(self, rhs):
         if disp:
-            print 'ReactionRulesRule.__init__()*',
-            print ' self:', self, ', reactants:', reactants,
-            print ', products:', products, ', direction', direction
+            print 'ReactionRulesRuleEntitySetList.__gt__()*',
+            print ' self:', self, ', rhs:', rhs
 
-        print '[ReactionRules] ' + str(self)
+        obj = super(ReactionRulesRuleEntitySetList, self).__gt__(rhs)
+        print '[ReactionRules] ' + str(obj)
 
+        return obj
+
+class ReactionRulesRuleFactory(RuleFactory.RuleFactory):
+    def create_RuleEntitySetList(self, *args, **kwargs):
+        obj = ReactionRulesRuleEntitySetList(*args, **kwargs)
+        obj.factory = self
+        return obj
 
 class MyDict(dict):
     def __init__(self):
@@ -276,7 +84,6 @@ class MyDict(dict):
             retval = self.factory[-1].create_AnyCallable(key)
         return retval
 
-
 class MoleculeTypes(object):
     def __init__(self, m, p, mydict, loc=None):
         self.model, self.parser, self.mydict = m, p, mydict
@@ -288,7 +95,6 @@ class MoleculeTypes(object):
 
     def __exit__(self, *args):
         self.mydict.factory.pop()
-
 
 class MoleculeInits(object):
     def __init__(self, m, p, mydict):
@@ -302,7 +108,6 @@ class MoleculeInits(object):
     def __exit__(self, *args):
         self.mydict.factory.pop()
 
-
 class ReactionRules(object):
     def __init__(self, m, p, mydict):
         self.model, self.parser, self.mydict = m, p, mydict
@@ -314,104 +119,103 @@ class ReactionRules(object):
     def __exit__(self, *args):
         self.mydict.factory.pop()
 
-    def __oldexit__(self, *args):
-        def is_func(value_):
-            return value_ is None or (
-                type(value_) in (int, float, types.FunctionType)) or (
-                type(value_) in (list, tuple) and 
-                len(value_) > 0 and type(value_[0]) is str)
+    # def __exit__(self, *args):
+    #     def is_func(value_):
+    #         return value_ is None or (
+    #             type(value_) in (int, float, types.FunctionType)) or (
+    #             type(value_) in (list, tuple) and 
+    #             len(value_) > 0 and type(value_[0]) is str)
 
-        def get_func(value_=None):
-            func_name_, args_, kwargs_, func_def_ = (
-                'mass_action', (0, ), {}, None)
-            if value_ is None:
-                # return defaults
-                return func_name_, args_, kwargs_, func_def_
-            elif type(value_) is types.FunctionType:
-                return func_name_, args_, kwargs_, value_
-            elif type(value_) in (int, float):
-                # | 0.1
-                return func_name_, (value_, ), kwargs_, func_def_
-            else: # type(value_) in (list, tuple) and type(value_[0]) is str
-                # | MassAction(0.1)
-                if len(value_) == 1:
-                    return value_[0], args_, kwargs_, func_def_
-                elif len(value_) == 2:
-                    return value_[0], value_[1], kwargs_, func_def_
-                elif len(value_) > 2:
-                    return value_[0], value_[1], value_[2], func_def_
+    #     def get_func(value_=None):
+    #         func_name_, args_, kwargs_, func_def_ = (
+    #             'mass_action', (0, ), {}, None)
+    #         if value_ is None:
+    #             # return defaults
+    #             return func_name_, args_, kwargs_, func_def_
+    #         elif type(value_) is types.FunctionType:
+    #             return func_name_, args_, kwargs_, value_
+    #         elif type(value_) in (int, float):
+    #             # | 0.1
+    #             return func_name_, (value_, ), kwargs_, func_def_
+    #         else: # type(value_) in (list, tuple) and type(value_[0]) is str
+    #             # | MassAction(0.1)
+    #             if len(value_) == 1:
+    #                 return value_[0], args_, kwargs_, func_def_
+    #             elif len(value_) == 2:
+    #                 return value_[0], value_[1], kwargs_, func_def_
+    #             elif len(value_) > 2:
+    #                 return value_[0], value_[1], value_[2], func_def_
             
-        for idx, v in enumerate(self.newcls.global_list):
-            # create effector list
-            if v.get('value') is not None:
-                effectors = [self.model.register_species(
-                        read_species(self.parser, i)) for i in v['value']]
-            else:
-                effectors = []
+    #     for idx, v in enumerate(self.newcls.global_list):
+    #         # create effector list
+    #         if v.get('value') is not None:
+    #             effectors = [self.model.register_species(
+    #                     read_species(self.parser, i)) for i in v['value']]
+    #         else:
+    #             effectors = []
 
-            # create reactants/products
-            reactants, con_list = read_patterns(
-                self.model, self.parser, v['children'][0], 
-                self.newcls.with_label)
-            products, con_list = read_patterns(
-                self.model, self.parser, v['children'][1], 
-                self.newcls.with_label)
+    #         # create reactants/products
+    #         reactants, con_list = read_patterns(
+    #             self.model, self.parser, v['children'][0], 
+    #             self.newcls.with_label)
+    #         products, con_list = read_patterns(
+    #             self.model, self.parser, v['children'][1], 
+    #             self.newcls.with_label)
 
-            # for con_idx, con_func in enumerate(con_list):
-            #     if type(con_func) == float:   # [SPEED_FUNCTION]
-            #         speed = speed_r = con_func
-            #         con_list.pop(con_idx)
-            #     elif type(con_func) == tuple: # [MassAction2(.1, .2)]
-            #         speed = con_func[0]
-            #         speed_r = con_func[int(bool(con_func[1]))]
-            #         con_list.pop(con_idx)
+    #         # for con_idx, con_func in enumerate(con_list):
+    #         #     if type(con_func) == float:   # [SPEED_FUNCTION]
+    #         #         speed = speed_r = con_func
+    #         #         con_list.pop(con_idx)
+    #         #     elif type(con_func) == tuple: # [MassAction2(.1, .2)]
+    #         #         speed = con_func[0]
+    #         #         speed_r = con_func[int(bool(con_func[1]))]
+    #         #         con_list.pop(con_idx)
 
-            # if len(con_list) >= 2:            # [CONDITION_FUNCTION]
-            #     condition = AndCondition(con_list)
-            # elif con_list != []:
-            #     condition = con_list[0]
-            # else:
-            #     condition = None
-            # set speed function
+    #         # if len(con_list) >= 2:            # [CONDITION_FUNCTION]
+    #         #     condition = AndCondition(con_list)
+    #         # elif con_list != []:
+    #         #     condition = con_list[0]
+    #         # else:
+    #         #     condition = None
+    #         # set speed function
 
-            # condition is not supported now
-            condition = None
-            if len(con_list) > 0:
-                con_func = con_list[0]
-            else:
-                con_func = None
+    #         # condition is not supported now
+    #         condition = None
+    #         if len(con_list) > 0:
+    #             con_func = con_list[0]
+    #         else:
+    #             con_func = None
 
-            con_func_f, con_func_r = None, None
-            if is_func(con_func):
-                con_func_f = con_func
-            elif type(con_func) in (list, tuple) and len(con_func) == 2 and (
-                is_func(con_func[0]) and is_func(con_func[1])):
-                con_func_f, con_func_r = con_func
-            else:
-                # unsupported expression (error?)
-                pass
+    #         con_func_f, con_func_r = None, None
+    #         if is_func(con_func):
+    #             con_func_f = con_func
+    #         elif type(con_func) in (list, tuple) and len(con_func) == 2 and (
+    #             is_func(con_func[0]) and is_func(con_func[1])):
+    #             con_func_f, con_func_r = con_func
+    #         else:
+    #             # unsupported expression (error?)
+    #             pass
 
-            func_name_f, args_f, kwargs_f, func_def_f = get_func(con_func_f)
-            func_name_r, args_r, kwargs_r, func_def_r = get_func(con_func_r)
+    #         func_name_f, args_f, kwargs_f, func_def_f = get_func(con_func_f)
+    #         func_name_r, args_r, kwargs_r, func_def_r = get_func(con_func_r)
 
-            # Checks whether reactants/products have any labels.
-            # lbflag = True in [r.has_label() for r in reactants + products]
+    #         # Checks whether reactants/products have any labels.
+    #         # lbflag = True in [r.has_label() for r in reactants + products]
 
-            # Generates reaction rule.
-            # lbl is required by model.Model and model.ReactionRule
-            attrs = dict(k_name=func_name_f, args=args_f, kwargs=kwargs_f,
-                         effectors=effectors, func_def=func_def_f,
-                         lbl=self.newcls.with_label)
-            rule = self.model.add_reaction_rule(
-                reactants, products, condition, **attrs)
-            if v['type'] == 'neq':
-                # condition = swap_condition(con_list)
-                attrs = dict(k_name=func_name_r, args=args_r, kwargs=kwargs_r,
-                             effectors=effectors, func_def=func_def_r,
-                             lbl=self.newcls.with_label)
-                rule = self.model.add_reaction_rule(
-                    products, reactants, condition, **attrs)
-
+    #         # Generates reaction rule.
+    #         # lbl is required by model.Model and model.ReactionRule
+    #         attrs = dict(k_name=func_name_f, args=args_f, kwargs=kwargs_f,
+    #                      effectors=effectors, func_def=func_def_f,
+    #                      lbl=self.newcls.with_label)
+    #         rule = self.model.add_reaction_rule(
+    #             reactants, products, condition, **attrs)
+    #         if v['type'] == 'neq':
+    #             # condition = swap_condition(con_list)
+    #             attrs = dict(k_name=func_name_r, args=args_r, kwargs=kwargs_r,
+    #                          effectors=effectors, func_def=func_def_r,
+    #                          lbl=self.newcls.with_label)
+    #             rule = self.model.add_reaction_rule(
+    #                 products, reactants, condition, **attrs)
 
 class Pybngl(object):
     def __init__(self, verbose=False, loc=None, fout=sys.stdout):
@@ -507,7 +311,6 @@ class Pybngl(object):
 
         return reaction_results
 
-
 def create_world(m, seed_species):
     w = World.World()
     w.add_species(m.concrete_species.keys())
@@ -541,7 +344,7 @@ if __name__ == '__main__':
         return optparser
 
     def execute_simulation(
-        simulator, num_of_steps=0, duration=-1, fout=sys.stdout):
+        simulator, num_of_steps=0, duration=-1, fout=sys.stdout, dump=True):
         # run simulation
         if duration > 0:
             # duration is defined
@@ -552,50 +355,20 @@ if __name__ == '__main__':
 
         output_series = simulator.get_logged_data()
         
-        # print results
-        header = 'time\t%s' % ('\t'.join([
-            species.str_simple() for species in simulator.get_species()]))
-        fout.write('#%s\n' % header)
-        fout.write('#\n')
+        if dump:
+            # print results
+            header = 'time\t%s' % ('\t'.join([
+                species.str_simple() for species in simulator.get_species()]))
+            fout.write('#%s\n' % header)
+            fout.write('#\n')
 
-        for output in output_series:
-            t, values = output[0], output[1: ]
-            fout.write('%s\t%s\n' % (
-                t, '\t'.join(['%s' % value for value in values])))
-
-        # import os.path
-        # ##### ONLY FOR label.py #####
-        # if os.path.split(filename) == 'label.py':
-        #     m.reaction_rules[45]._ReactionRule__attrs['k'] = 0.9
-        #     m.reaction_rules[46]._ReactionRule__attrs['k'] = 0.1
-        #     output_series = simulator.get_logged_data()
-        #     variables = output_series[-1][1:].tolist()
-
-        #     # volume = 1
-        #     # functions = fmaker.make_functions(m, reaction_results, volume)
-        #     functions = fmaker.make_functions(m, reaction_results)
-        #     simulator.initialize(ODESolver(), functions, variables)
-        #     sim_sub()
-        #     sim_print()
-        # ##### ONLY FOR label.py #####
-
-
-        # ##### ONLY FOR toy.py #####
-        # if os.path.split(filename) == 'toy.py':
-        #     m.reaction_rules[5]._ReactionRule__attrs['k'] = 0.0
-        #     m.reaction_rules[6]._ReactionRule__attrs['k'] = 1.0
-        #     output_series = simulator.get_logged_data()
-        #     variables = output_series[-1][1:].tolist()
-
-        #     # volume = 1
-        #     # functions = fmaker.make_functions(m, reaction_results, volume)
-        #     functions = fmaker.make_functions(m, reaction_results)
-        #     simulator.initialize(ODESolver(), functions, variables)
-        #     sim_sub()
-        #     sim_print()
-        # ##### ONLY FOR toy.py #####
+            for output in output_series:
+                t, values = output[0], output[1: ]
+                fout.write('%s\t%s\n' % (
+                    t, '\t'.join(['%s' % value for value in values])))
 
         return output_series
+
 
     m, p = Model(), Parser()
 
@@ -627,4 +400,4 @@ if __name__ == '__main__':
 
     output_series = execute_simulation(
         simulator, num_of_steps=options.step_num,
-        duration=options.end_time)
+        duration=options.end_time, dump=False)
