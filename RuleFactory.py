@@ -418,17 +418,13 @@ class Rule(RuleFactoryProduct):
         return rule
 
 class RuleFactory(object):
-    def __init__(self, model=None, parser=None):
+    def __init__(self, model=None, **kwargs):
         self.__model = model
-        self.__parser = parser
+        self.kwargs = kwargs
 
     @property
     def model(self):
         return self.__model
-
-    @property
-    def parser(self):
-        return self.__parser
 
     def create_AnyCallable(self, *args, **kwargs):
         obj = AnyCallable(*args, **kwargs)

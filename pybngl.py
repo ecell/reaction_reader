@@ -3,12 +3,9 @@
 '''
 from __future__ import with_statement
 from model.Model import *
-from model.Species import Species
-from model.parser import Parser
-from model.Error import Error
-from model.EntityType import EntityType
-from model.StateType import StateType
-from model.Binding import Binding
+# from model.Species import Species
+# from model.Error import Error
+# from model.general_func import *
 import types
 
 import World
@@ -26,10 +23,27 @@ class MoleculeTypesAnyCallable(RuleFactory.AnyCallable):
             print ' self:', self, ', args:', args, ', kwargs:', kwargs
 
         obj = super(MoleculeTypesAnyCallable, self).__call__(*args, **kwargs)
-        print '[MoleculeTypes] ' + str(obj)
-        # tmpmole = self.factory.model.add_entity_type(str(obj.en[0].name))
+
+        for entity in obj.entities:
+            entity_name = str(entity.name)
+            entity_type = self.factory.model.add_entity_type(entity_name)
+
+            for component in entity.components:
+                component_name = str(component.name)
+                if component.kwargs.get('state') != None:
+                    state_name = 'state_' + entity_name + '_' + component_name
+                    state_type = [str(i) for i in component.kwargs['state']]
+                    state = self.factory.model.add_state_type(state_name,
+                                                              state_type)
+                    entity_type.add_component(component_name,
+                                              {component_name: state})
+                else:
+                    entity_type.add_component(component_name)
+
+            print '[MoleculeTypes] ' + str(obj)
 
         return obj
+        # return entity_type
 
 class MoleculeTypesRuleFactory(RuleFactory.RuleFactory):
     def create_AnyCallable(self, *args, **kwargs):
@@ -43,11 +57,23 @@ class MoleculeInitsRuleEntitySet(RuleFactory.RuleEntitySet):
             print 'RuleEntitySet.__getitem__()* self:', self, ', key:', key
 
         obj = super(MoleculeInitsRuleEntitySet, self).__getitem__(key)
-        print '[MoleculeInits] ' + str(obj) + ' [' + str(obj.key) + ']'
+
+        converter = RuleEntityConverter()
+        species = converter.RuleEntitySet_to_Species(obj)
+
+        obj.factory.model.register_species(species)
+        obj.factory.kwargs['seed_species'][species] = key
+
+        # print '[MoleculeInits] ' + str(obj) + ' [' + str(obj.key) + ']'
+        print '[MoleculeInits] ' + species.str_simple() + ' [' + str(obj.key) + ']'
 
         return self
+        # return species
 
 class MoleculeInitsRuleFactory(RuleFactory.RuleFactory):
+    def __init__(self, *args, **kwargs):
+        super(MoleculeInitsRuleFactory, self).__init__(*args, **kwargs)
+
     def create_RuleEntitySet(self, *args, **kwargs):
         obj = MoleculeInitsRuleEntitySet(*args, **kwargs)
         obj.factory = self
@@ -60,15 +86,78 @@ class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
             print ' self:', self, ', rhs:', rhs
 
         obj = super(ReactionRulesRuleEntitySetList, self).__gt__(rhs)
-        print '[ReactionRules] ' + str(obj)
+
+        c = RuleEntityConverter()
+
+        reactants = [c.RuleEntitySet_to_Species(i) for i in obj.reactants.species]
+        products = [c.RuleEntitySet_to_Species(i) for i in obj.products.species]
+
+        if isinstance(obj.key, tuple):
+            effector_list = list(obj.key)
+        elif obj.key != None:
+            effector_list = [obj.key]
+        else:
+            effector_list = []
+        effectors = [c.RuleEntitySet_to_Species(i) for i in effector_list]
+
+        for i in reactants + products + effectors:
+            obj.factory.model.register_species(i)
+
+        rule = obj.factory.model.add_reaction_rule(reactants, products, 
+                                                   k = obj.rhs)
+
+        # print '[ReactionRules] ' + str(obj)
+        print '[ReactionRules] ' + rule.str_simple()
 
         return obj
+        # return rule
 
 class ReactionRulesRuleFactory(RuleFactory.RuleFactory):
     def create_RuleEntitySetList(self, *args, **kwargs):
         obj = ReactionRulesRuleEntitySetList(*args, **kwargs)
         obj.factory = self
         return obj
+
+class RuleEntityConverter(object):
+    def AnyCallable_to_EntityType(self, AC):
+        pass
+
+    def RuleEntitySet_to_Species(self, RES):
+        species = Species()
+        bind_pair = {}
+
+        for entity in RES.entities:
+            entity_name = str(entity.name)
+            entity_type = RES.factory.model.entity_types[entity_name]
+            en = species.add_entity(entity_type)
+
+            for component in entity.components:
+                component_name = str(component.name)
+                comp = en.find_components(component_name)[0]
+                comp.binding_state = BINDING_NONE
+                state = None
+                bind = None
+
+                if hasattr(component.kwargs.get('state'), 'kwargs'): # Y=U[1]
+                    state = component.kwargs['state'].name
+                    bind = component.kwargs['state'].kwargs['bind']
+                elif component.kwargs.get('state') != None: # Y=U
+                    state = component.kwargs['state'].name
+                elif component.kwargs.get('bind') != None: # Y[1]
+                    bind = component.kwargs['bind']
+
+                if state != None:
+                    comp.set_state(comp.states.keys()[0], str(state))
+
+                if bind != None:
+                    comp.binding_state = BINDING_SPECIFIED
+                    if bind_pair.get(bind) == None:
+                        bind_pair[bind] = comp
+                    else:
+                        species.add_binding(bind_pair[bind], comp)
+
+        species.concrete = True
+        return species
 
 class MyDict(dict):
     def __init__(self):
@@ -85,36 +174,34 @@ class MyDict(dict):
         return retval
 
 class MoleculeTypes(object):
-    def __init__(self, m, p, mydict, loc=None):
-        self.model, self.parser, self.mydict = m, p, mydict
+    def __init__(self, m, mydict, loc=None):
+        self.model, self.mydict = m, mydict
         self.loc = loc
 
     def __enter__(self):
-        self.mydict.factory.append(MoleculeTypesRuleFactory(
-                self.model, self.parser))
+        self.mydict.factory.append(MoleculeTypesRuleFactory(self.model))
 
     def __exit__(self, *args):
         self.mydict.factory.pop()
 
 class MoleculeInits(object):
-    def __init__(self, m, p, mydict):
-        self.model, self.parser, self.mydict = m, p, mydict
+    def __init__(self, m, mydict):
+        self.model, self.mydict = m, mydict
         self.seed_species = {}
 
     def __enter__(self):
         self.mydict.factory.append(MoleculeInitsRuleFactory(
-                self.model, self.parser))
+                self.model, seed_species = self.seed_species))
 
     def __exit__(self, *args):
         self.mydict.factory.pop()
 
 class ReactionRules(object):
-    def __init__(self, m, p, mydict):
-        self.model, self.parser, self.mydict = m, p, mydict
+    def __init__(self, m, mydict):
+        self.model, self.mydict = m, mydict
 
     def __enter__(self):
-        self.mydict.factory.append(ReactionRulesRuleFactory(
-                self.model, self.parser))
+        self.mydict.factory.append(ReactionRulesRuleFactory(self.model))
 
     def __exit__(self, *args):
         self.mydict.factory.pop()
@@ -226,15 +313,14 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, m=None, p=None):
+    def parse_model(self, filename, m=None):
         if m is None: m = Model()
-        if p is None: p = Parser()
 
         namespace = MyDict()
 
-        namespace['reaction_rules'] = ReactionRules(m, p, namespace)
-        namespace['molecule_inits'] = MoleculeInits(m, p, namespace)
-        namespace['molecule_types'] = MoleculeTypes(m, p, namespace,
+        namespace['reaction_rules'] = ReactionRules(m, namespace)
+        namespace['molecule_inits'] = MoleculeInits(m, namespace)
+        namespace['molecule_types'] = MoleculeTypes(m, namespace,
                                                     loc=self.loc)
 
         exec file(filename) in namespace
@@ -370,7 +456,7 @@ if __name__ == '__main__':
         return output_series
 
 
-    m, p = Model(), Parser()
+    m = Model()
 
     optparser = create_option_parser()
     (options, args) = optparser.parse_args()
@@ -390,7 +476,7 @@ if __name__ == '__main__':
 
     filename = args[0]
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
-    m, seed_species, _ = pybngl.parse_model(filename, m, p)
+    m, seed_species, _ = pybngl.parse_model(filename, m)
     reaction_results = pybngl.generate_reaction_network(
         m, seed_species, maxiter=options.itr_num, 
         rulefilename=options.rulefile)
