@@ -215,14 +215,15 @@ class EntityComponent(object):
         retval = self.name
         if len(self.states):
 #            retval += '~'
-            retval += '('
+#            retval += '('
+            retval += '='
         if len(self.states) == 1:
             item = self.states.items()[0]
             state_name = item[0]
             index = item[1]
             retval += self.__state_repr(state_name, index)
-        if len(self.states):
-            retval += ')'
+#        if len(self.states):
+#            retval += ')'
         elif len(self.states) > 1:
             retval += '['
             for i, (state_name, index) in enumerate(self.states.iteritems()):
