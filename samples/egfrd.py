@@ -3,15 +3,15 @@
 with molecule_types:
     egf(r)
     Grb2(SH2,SH3)
-    Shc(PTB, Y317(Y, pY))
+    Shc(PTB, Y317 = (Y, pY))
     Sos(dom)
-    egfr(l,r,Y1068(Y, pY),Y1148(Y, pY))
+    egfr(l,r,Y1068 = (Y, pY), Y1148 = (Y, pY))
 
 with molecule_inits:
     egf(r) [1.2e6]
-    egfr(l,r,Y1068(Y),Y1148(Y)) [1.8e5]
+    egfr(l,r,Y1068 = (Y), Y1148 = (Y)) [1.8e5]
     Grb2(SH2,SH3) [1.0e5]
-    Shc(PTB, Y317(Y)) [2.7e5]
+    Shc(PTB, Y317 = (Y)) [2.7e5]
     Sos(dom) [1.3e4]
     Grb2(SH2,SH3[1]).Sos(dom[1]) [4.9e4]
 
