@@ -8,7 +8,7 @@ BINDING_SPECIFIED = 1
 BINDING_NONE = 0
 BINDING_UNSPECIFIED_STRING = '?'
 BINDING_ANY = 2
-BINDING_ANY_STRING = '+'
+BINDING_ANY_STRING = '_'
 
 # Constants for the condition of reaction rule.
 REACTANTS = 1
