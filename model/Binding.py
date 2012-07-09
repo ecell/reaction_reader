@@ -3,7 +3,7 @@ class Binding(object):
 
     
     """
-    def __init__(self, id, species, component_1, component_2, temporary, \
+    def __init__(self, id, species, component_1, component_2, specified, temporary, \
         **attrs):
         '''
         Initializes the binding.
@@ -12,6 +12,7 @@ class Binding(object):
         species: The graph that this binding belongs to.
         component_1: The first component.
         component_2: The second component.
+        specified: The specified flag.
         temporary: The temporary flag.
         attrs: Map of attributes.
         '''
@@ -19,6 +20,7 @@ class Binding(object):
         self.__species = species
         self.__component_1 = component_1
         self.__component_2 = component_2
+        self.__specified = specified
         self.__temporary = temporary
         self.__deleted = False
         self.__attrs = {}
@@ -63,6 +65,20 @@ class Binding(object):
     def entity_2(self):
         '''Returns the second entity.'''
         return self.component_2.entity
+
+    def getspecified(self):
+        '''Returns the specified flag.'''
+        return self.__specified
+
+    def setspecified(self, b):
+        '''
+        Sets the specified flag.
+
+        b: The temporary flag to set.
+        '''
+        self.__specified = b
+
+    specified = property(getspecified, setspecified)
 
     def gettemporary(self):
         '''Returns the temporary flag.'''
@@ -181,6 +197,7 @@ class Binding(object):
         '''Returns the string representation of this object.'''
         retval = 'Binding('
         retval += 'id=\'%d\', ' % self.__id
+        retval += 'specified=%s, ' % self.__specified
         retval += 'temporary=%s, ' % self.__temporary
         retval += 'deleted=%s, ' % self.__deleted
         retval += '%s(%d).%s' % (self.entity_1.name, self.entity_1.id, \
