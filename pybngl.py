@@ -10,7 +10,6 @@ import types
 
 import World
 import Simulator
-
 import RuleFactory
 
 
@@ -150,12 +149,16 @@ class RuleEntityConverter(object):
                     comp.set_state(comp.states.keys()[0], str(state))
 
                 if bind != None:
-                    comp.binding_state = BINDING_SPECIFIED
-                    if bind_pair.get(bind) == None:
-                        bind_pair[bind] = comp
+                    if str(bind) != BINDING_ANY_STRING:
+                        comp.binding_state = BINDING_SPECIFIED
+                        if bind_pair.get(bind) == None:
+                            bind_pair[bind] = comp
+                        else:
+                            species.add_binding(bind_pair[bind], comp)
                     else:
-                        species.add_binding(bind_pair[bind], comp)
-
+                        comp.binding_state = BINDING_ANY
+                        species.add_binding(comp, None, False)
+                        
         species.concrete = True
         return species
 
