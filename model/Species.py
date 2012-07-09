@@ -115,7 +115,7 @@ class Species(object):
         self.__entities[self.__serial_entity] = entity
         return entity
 
-    def add_binding(self, component_1, component_2, temporary=False):
+    def add_binding(self, component_1, component_2, specified=True, temporary=False):
         '''
         Adds a binding between two components.
 
@@ -127,11 +127,14 @@ class Species(object):
         b_id = self.__serial_binding
 
         # creates a binding object
-        b = Binding(b_id, self, component_1, component_2, temporary)
+        b = Binding(b_id, self, component_1, component_2, specified, temporary)
         self.__bindings[b_id] = b
 
+        # Sets the unspecified binding to a entity.
+        if not specified:
+            component_1.binding = b
         # Sets the binding to entities if it is not temporary one.
-        if not temporary:
+        elif not temporary:
             component_1.binding = b
             component_2.binding = b
 
@@ -392,10 +395,13 @@ class Species(object):
             e.dummy = entity.dummy
         for binding in self.bindings.itervalues():
             e_1 = s.entities[binding.entity_1.id]
-            e_2 = s.entities[binding.entity_2.id]
             c_1 = e_1.components[binding.component_1.id]
-            c_2 = e_2.components[binding.component_2.id]
-            s.add_binding(c_1, c_2)
+            if c_1.binding_state != BINDING_ANY:
+                e_2 = s.entities[binding.entity_2.id]
+                c_2 = e_2.components[binding.component_2.id]
+                s.add_binding(c_1, c_2)
+            elif c_1.binding_state == BINDING_ANY:
+                s.add_binding(c_1, None, False)
         for (pattern_id, info) in self.pattern_matching_info.iteritems():
             cp_info = PatternMatchingInfo(s, info.pattern)
             for c in info.correspondences:
@@ -430,27 +436,29 @@ class Species(object):
 
         # Checks the bindings.
         for b in self.bindings.itervalues():
-            # Checks the binding state of the components of each binding.
-            if b.component_1.binding_state == BINDING_NONE:
-                return False
-            if b.component_2.binding_state == BINDING_NONE:
-                return False
+            # Checks the binding is specified?
+            if b.component_1.binding_state != BINDING_ANY:
+                # Checks the binding state of the components of each binding.
+                if b.component_1.binding_state == BINDING_NONE:
+                    return False
+                if b.component_2.binding_state == BINDING_NONE:
+                    return False
 
-            # Checks whether both components of each binding exists in the
-            # list of entities of this species.
-            found_1 = False
-            found_2 = False
-            for en in self.entities.itervalues():
-                if not found_1:
-                    if b.component_1 in en.components.itervalues():
-                        found_1 = True
-                if not found_2:
-                    if b.component_2 in en.components.itervalues():
-                        found_2 = True
-                if found_1 and found_2:
-                    break
-            if not found_1 or not found_2:
-                return False
+                # Checks whether both components of each binding exists in the
+                # list of entities of this species.
+                found_1 = False
+                found_2 = False
+                for en in self.entities.itervalues():
+                    if not found_1:
+                        if b.component_1 in en.components.itervalues():
+                            found_1 = True
+                    if not found_2:
+                        if b.component_2 in en.components.itervalues():
+                            found_2 = True
+                    if found_1 and found_2:
+                        break
+                if not found_1 or not found_2:
+                    return False
 
         return True
 
