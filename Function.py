@@ -1,7 +1,3 @@
-'''
-$Header: /home/takeuchi/0613/process/process.py,v 1.10 2012/02/10 01:18:12 takeuchi Exp $
-'''
-
 from ratelaw import mass_action, michaelis_menten, michaelis_uni_uni
 
 
@@ -65,23 +61,28 @@ class FunctionMaker(object):
 
                 # r['effectors'] -> reaction['effectors']?
                 effectors = []
-                for effector in r['effectors']:
-                    # for sid in sid_list:
-                    #     species = m.concrete_species[sid]
-                    #     if effector.matches(species):
-                    #         effectors.append(
-                    #             {'id': idx_map[sid], 'coef': 0})
-                    # coef has no mean for effectors
-                    effectors.append(
-                        dict(id=idx_map[effector.id], coef=0, vid=widx))
+                if r['effectors'] != None:
+                    for effector in r['effectors']:
+                        # for sid in sid_list:
+                        #     species = m.concrete_species[sid]
+                        #     if effector.matches(species):
+                        #         effectors.append(
+                        #             {'id': idx_map[sid], 'coef': 0})
+                        # coef has no mean for effectors
+                        effectors.append(
+                            dict(id=idx_map[effector.id], coef=0, vid=widx))
 
                 if r['func_def'] is None:
-                    process_name, args, kwargs = (
-                        r['k_name'], r['args'], r['kwargs'])
+                    if r['k'] is None:
+                        process_name, args, kwargs = (
+                            r['k_name'], r['args'], r['kwargs'])
+                        if process_name in __ratelaws.keys():
+                            process = __ratelaws[process_name](
+                                reactants, products, effectors, *args, **kwargs)
+                    elif r['k'] is not None:
+                        args = (r['k'], )
+                        process = mass_action(reactants, products, effectors, *args)
 
-                    if process_name in __ratelaws.keys():
-                        process = __ratelaws[process_name](
-                            reactants, products, effectors, *args, **kwargs)
                     else:
                         raise Exception('Unsupported process: %s' % (
                                 process_name))
