@@ -13,6 +13,8 @@
 
 #include <string>
 
+#define DebugOutput(a)	printf a
+
 #define PROTOTYPING(x) x	// __ ## x
 
 //============================================================
@@ -56,11 +58,14 @@ int permutation(int n, int k) {
 }
 
 int combination(int n, int k) {
+	//printf("%d C %d\n", n, k);
 	int kk = k < (n - k) ? k : n-k;
 	return permutation(n, kk) / factorial(kk);
 }
 
 typedef std::map<int,int> Specie_Id_Number;
+#define chem_id	first
+#define chem_v	second
 //============================================================
 //	Reaction Rules (Temporary Use)
 //============================================================
@@ -73,14 +78,15 @@ struct ReactionRule {
 
 	// XXX id2 とかp_id2に0を入れとけば１分子の反応になる
 	ReactionRule(int n1, int id1, int n2, int id2, 
-			int p_n1, int p_id1, int p_n2, int p_id2, double k) {
-		substitute.insert(Specie_Id_Number::value_type(n1,id1));
+			int p_n1, int p_id1, int p_n2, int p_id2, double arg_k) {
+		k = arg_k;
+		substitute.insert(Specie_Id_Number::value_type(id1,n1));
 		if (0 < id2) {
-			substitute.insert(Specie_Id_Number::value_type(n2,id2));
+			substitute.insert(Specie_Id_Number::value_type(id2,n2));
 		}
-		product.insert(Specie_Id_Number::value_type(p_n1,p_id1));
+		product.insert(Specie_Id_Number::value_type(p_id1,p_n1));
 		if (0 < p_id2) {
-			product.insert(Specie_Id_Number::value_type(p_n2,p_id2));
+			product.insert(Specie_Id_Number::value_type(p_id2,p_n2));
 		}
 	}
 };
@@ -159,41 +165,53 @@ double GillespieSolver::random_number(bool binit = false)
 // this function returns dt.
 double GillespieSolver::step(void)
 {
-	
 	// アクセスのための添字はmodelsと揃えている
 	std::vector<double>	a(this->models.size());
 	// models[idx] はReactionRule１つ分
 	for(int idx(0); idx < this->models.size(); idx++) {
 		a[idx] = this->models[idx].k;
-		// 反応の化学種１つ分が回ってくる
+
 		for(Specie_Id_Number::iterator it(models[idx].substitute.begin());
 				it != models[idx].substitute.end();
 				it++) {
-			a[idx] *= combination(this->current_state[it->first], it->second);
+			a[idx] *= combination(this->current_state[it->chem_id], it->chem_v);
 		}
 	}
+
 	double a_total( std::accumulate(a.begin(), a.end(), double(0.0) ) );
+	/*
+	double a_total = 0.0;
+	for(std::vector<double>::iterator it = a.begin();
+			it != a.end();
+			it++) {
+		std::cout << *it << std::endl;
+		a_total += *it;
+	}*/
+
 	double rnd_num(gsl_rng_uniform(this->random_handle));
-	double dt( gsl_sf_log(1 / rnd_num) / double(a_total) );
+	double dt( gsl_sf_log(1.0 / rnd_num) / double(a_total) );
+
+	std::cout << "dt = " << dt << std::endl;
 
 	rnd_num = gsl_rng_uniform(this->random_handle) * a_total;
 
 	int u(0);
-	for(double acc(0.0) ; acc < rnd_num && a.size(); u++) {
+	for(double acc(0.0) ; acc < rnd_num && u < a.size(); u++) {
 		acc += a[u];
 	}
 
 	this->current_t += dt;
-	//	Ru occurs.
+	//	Ru(models[u]) occurs.
+	std::cout << u <<  std::endl;
 	for(Specie_Id_Number::iterator it(models[u].substitute.begin());
 			it != models[u].substitute.end();
 			it++) {
-		this->current_state[it->first] -= it->second;
+		this->current_state[it->chem_id] -= it->chem_v;
 	}
 	for(Specie_Id_Number::iterator it(models[u].product.begin());
 			it != models[u].product.end();
 			it++) {
-		this->current_state[it->first] += it->second;
+		this->current_state[it->chem_id] += it->chem_v;
 	}
 
 	return dt;
@@ -217,14 +235,14 @@ int main(void)
 	gs.models.push_back(ReactionRule(1, ID('Z'), 0, ID(0), 2, ID('X'), 0, ID(0), 0.2));
 	gs.models.push_back(ReactionRule(1, ID('X'), 1, ID('W'), 2, ID('X'), 0, ID(0), 0.3));
 	gs.models.push_back(ReactionRule(2, ID('X'), 0, ID(0), 1, ID('X'), 1, ID('W'), 0.5));
-	FILE *fp = fopen("Testtest.csv", "w");
 	double prev_t = 0.0;
+	FILE *fp = fopen("Testtest.csv", "w");
 	while (gs.current_t < 10) {
 		gs.step();
 		if (gs.current_t - prev_t > 1.0) {
-			fprintf(stderr, "%f\n", gs.current_t);
+			fprintf(fp, gs.toCsvFormat().c_str()) ;
+			prev_t = gs.current_t;
 		}
-		fprintf(fp, gs.toCsvFormat().c_str());
 	}
 	fclose(fp);
 	return 0;
