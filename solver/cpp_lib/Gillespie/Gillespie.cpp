@@ -165,9 +165,8 @@ double GillespieSolver::random_number(bool binit = false)
 // this function returns dt.
 double GillespieSolver::step(void)
 {
-	// アクセスのための添字はmodelsと揃えている
 	std::vector<double>	a(this->models.size());
-	// models[idx] はReactionRule１つ分
+
 	for(int idx(0); idx < this->models.size(); idx++) {
 		a[idx] = this->models[idx].k;
 
@@ -179,26 +178,19 @@ double GillespieSolver::step(void)
 	}
 
 	double a_total( std::accumulate(a.begin(), a.end(), double(0.0) ) );
-	/*
-	double a_total = 0.0;
-	for(std::vector<double>::iterator it = a.begin();
-			it != a.end();
-			it++) {
-		std::cout << *it << std::endl;
-		a_total += *it;
-	}*/
-
 	double rnd_num(gsl_rng_uniform(this->random_handle));
-	double dt( gsl_sf_log(1.0 / rnd_num) / double(a_total) );
+	double dt = gsl_sf_log(1.0 / rnd_num) / double(a_total);
 
 	std::cout << "dt = " << dt << std::endl;
 
 	rnd_num = gsl_rng_uniform(this->random_handle) * a_total;
 
-	int u(0);
-	for(double acc(0.0) ; acc < rnd_num && u < a.size(); u++) {
+	int u(-1);
+	double acc(0.0);
+	do {
+		u++;
 		acc += a[u];
-	}
+	} while ( acc < rnd_num && u <= a.size() - 1 );
 
 	this->current_t += dt;
 	//	Ru(models[u]) occurs.
