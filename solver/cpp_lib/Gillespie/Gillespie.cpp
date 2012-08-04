@@ -13,9 +13,9 @@
 
 #include <string>
 
-#define DebugOutput(a)	printf a
-
 #define PROTOTYPING(x) x	// __ ## x
+#include "Gillespie.hpp"
+
 
 //============================================================
 //	Debugging Utility
@@ -63,84 +63,22 @@ int combination(int n, int k) {
 	return permutation(n, kk) / factorial(kk);
 }
 
-typedef std::map<int,int> Specie_Id_Number;
-#define chem_id	first
-#define chem_v	second
 //============================================================
 //	Reaction Rules (Temporary Use)
 //============================================================
-#define ID(x) x
-struct ReactionRule {
-	Specie_Id_Number substitute;
-	Specie_Id_Number product;
-	double k;
-	ReactionRule(void) {;}
-
-	// XXX id2 とかp_id2に0を入れとけば１分子の反応になる
-	ReactionRule(int n1, int id1, int n2, int id2, 
+ReactionRule::ReactionRule(void) {;}
+ReactionRule::ReactionRule(int n1, int id1, int n2, int id2, 
 			int p_n1, int p_id1, int p_n2, int p_id2, double arg_k) {
-		k = arg_k;
-		substitute.insert(Specie_Id_Number::value_type(id1,n1));
-		if (0 < id2) {
-			substitute.insert(Specie_Id_Number::value_type(id2,n2));
-		}
-		product.insert(Specie_Id_Number::value_type(p_id1,p_n1));
-		if (0 < p_id2) {
-			product.insert(Specie_Id_Number::value_type(p_id2,p_n2));
-		}
+	k = arg_k;
+	substitute.insert(Specie_Id_Number::value_type(id1,n1));
+	if (0 < id2) {
+		substitute.insert(Specie_Id_Number::value_type(id2,n2));
 	}
-};
-
-void DbgPrintRR(ReactionRule &r){ 
-	std::cout << "Substitute" << std::endl;
-	char buf[128];
-	for(Specie_Id_Number::iterator it(r.substitute.begin() );
-			it != r.substitute.end();
-			it++) {
-		sprintf(buf, "id: %c  n: %d\n",
-				it->first, it->second);
-	}
-
-	std::cout << "Product" << std::endl;
-	for(Specie_Id_Number::iterator it(r.product.begin() );
-			it != r.product.end();
-			it++) {
-		sprintf(buf, "id: %c  n: %d\n",
-				it->first, it->second);
+	product.insert(Specie_Id_Number::value_type(p_id1,p_n1));
+	if (0 < p_id2) {
+		product.insert(Specie_Id_Number::value_type(p_id2,p_n2));
 	}
 }
-
-//============================================================
-//	Gillespie Solver Prototype Declaration.
-//============================================================
-class GillespieSolver {
-private:
-	// for random number 
-	gsl_rng *random_handle;
-	const gsl_rng_type *T;
-
-public:
-	GillespieSolver();
-	~GillespieSolver();
-	double step(void);
-	void duration(float t);
-
-	double random_number(bool);
-
-	float current_t;
-
-	// XXX Prototyping!!!
-	Specie_Id_Number		PROTOTYPING(current_state);
-	std::vector<ReactionRule> 	PROTOTYPING(models);
-
-	std::string toCsvFormat(void) {
-		std::string retbuf;
-		retbuf += current_t;
-		char str[256];
-		sprintf(str, "%f, %d, %d, %d, %d\r\n", current_t, current_state['X'], current_state['Y'], current_state['Z'], current_state['W']);
-		return std::string(str);
-	}
-};
 
 GillespieSolver::GillespieSolver(void)
 	:current_t(0.0), 
@@ -158,11 +96,10 @@ GillespieSolver::~GillespieSolver(void)
 	gsl_rng_free(this->random_handle);
 }
 
-
 double GillespieSolver::random_number(bool binit = false)
 {	return gsl_rng_uniform(this->random_handle);	}
 
-// this function returns dt.
+// GillespieSolver::step() function returns dt.
 double GillespieSolver::step(void)
 {
 	std::vector<double>	a(this->models.size());
@@ -181,8 +118,6 @@ double GillespieSolver::step(void)
 	double rnd_num(gsl_rng_uniform(this->random_handle));
 	double dt = gsl_sf_log(1.0 / rnd_num) / double(a_total);
 
-	std::cout << "dt = " << dt << std::endl;
-
 	rnd_num = gsl_rng_uniform(this->random_handle) * a_total;
 
 	int u(-1);
@@ -194,7 +129,6 @@ double GillespieSolver::step(void)
 
 	this->current_t += dt;
 	//	Ru(models[u]) occurs.
-	std::cout << u <<  std::endl;
 	for(Specie_Id_Number::iterator it(models[u].substitute.begin());
 			it != models[u].substitute.end();
 			it++) {
@@ -209,10 +143,8 @@ double GillespieSolver::step(void)
 	return dt;
 }
 
-
 #define UNITTEST
 #ifdef UNITTEST
-
 
 int main(void)
 {
@@ -232,7 +164,6 @@ int main(void)
 	while (gs.current_t < 10) {
 		gs.step();
 		if (gs.current_t - prev_t > 1.0) {
-			fprintf(fp, gs.toCsvFormat().c_str()) ;
 			prev_t = gs.current_t;
 		}
 	}
