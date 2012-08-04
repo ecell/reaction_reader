@@ -1,9 +1,12 @@
 CPP  = g++
-CPPFLAGS = -g -lgsl
+CPPFLAGS = -g -lgsl -DUNITTEST
 OBJS = Gillespie.cpp
 
-build:
+build: Gillespie.hpp
 	$(CPP) $(OBJS) $(CPPFLAGS)
 
 run:
 	./a.out
+
+clean:
+	rm a.out

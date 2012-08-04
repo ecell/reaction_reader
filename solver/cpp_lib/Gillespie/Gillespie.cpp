@@ -102,6 +102,13 @@ double GillespieSolver::random_number(bool binit = false)
 // GillespieSolver::step() function returns dt.
 double GillespieSolver::step(void)
 {
+	// XXX 
+	// refactoring 
+	if (models.size() == 0, current_state.size() == 0) {
+		// reactions or world status not initialized.
+		return 0.0;
+	}
+
 	std::vector<double>	a(this->models.size());
 
 	for(int idx(0); idx < this->models.size(); idx++) {
@@ -143,7 +150,6 @@ double GillespieSolver::step(void)
 	return dt;
 }
 
-#define UNITTEST
 #ifdef UNITTEST
 
 int main(void)
@@ -160,14 +166,19 @@ int main(void)
 	gs.models.push_back(ReactionRule(1, ID('X'), 1, ID('W'), 2, ID('X'), 0, ID(0), 0.3));
 	gs.models.push_back(ReactionRule(2, ID('X'), 0, ID(0), 1, ID('X'), 1, ID('W'), 0.5));
 	double prev_t = 0.0;
-	FILE *fp = fopen("Testtest.csv", "w");
+	fprintf(stderr, "Unit Test\n      t\t\tX\tY\tZ\tW\n");
 	while (gs.current_t < 10) {
 		gs.step();
 		if (gs.current_t - prev_t > 1.0) {
+			fprintf(stderr, "%f\t%d\t%d\t%d\t%d\n",
+					gs.current_t, 
+					gs.current_state['X'], 
+					gs.current_state['Y'],
+					gs.current_state['Z'], 
+					gs.current_state['W'] );
 			prev_t = gs.current_t;
 		}
 	}
-	fclose(fp);
 	return 0;
 }
 

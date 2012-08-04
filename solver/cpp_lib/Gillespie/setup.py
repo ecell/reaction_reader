@@ -11,7 +11,7 @@ setup(
                 'GillespieSolver',
                 sourceforGillespieSolver,
                 language='c++',
-                libraries = ['libgsl.dylib'],
+                libraries = ['gsl', 'gslcblas'],
 
             )
         ]
