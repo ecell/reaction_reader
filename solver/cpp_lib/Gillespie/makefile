@@ -1,5 +1,5 @@
 CPP  = g++
-CPPFLAGS = -g -lgsl -Wall -DUNITTEST
+CPPFLAGS = -g -lgsl -Wall #-c #-DUNITTEST
 OBJS = Gillespie.cpp
 
 build: Gillespie.hpp

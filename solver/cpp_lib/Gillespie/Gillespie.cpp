@@ -13,7 +13,6 @@
 
 #include <string>
 
-#define PROTOTYPING(x) x	// __ ## x
 #include "Gillespie.hpp"
 
 
@@ -62,24 +61,6 @@ int combination(int n, int k) {
 	return permutation(n, kk) / factorial(kk);
 }
 
-//============================================================
-//	Reaction Rules (Temporary Use)
-//============================================================
-ReactionRule::ReactionRule(void) {;}
-ReactionRule::ReactionRule(int n1, int id1, int n2, int id2, 
-			int p_n1, int p_id1, int p_n2, int p_id2, double arg_k) {
-	k = arg_k;
-	substance.insert(Specie_Id_Number::value_type(id1,n1));
-	if (0 < id2) {
-		substance.insert(Specie_Id_Number::value_type(id2,n2));
-	}
-	product.insert(Specie_Id_Number::value_type(p_id1,p_n1));
-	if (0 < p_id2) {
-		product.insert(Specie_Id_Number::value_type(p_id2,p_n2));
-	}
-}
-
-
 
 //============================================================
 //	GillespieSolver 	*Definitions
@@ -87,12 +68,11 @@ ReactionRule::ReactionRule(int n1, int id1, int n2, int id2,
 GillespieSolver::GillespieSolver(void)
 {
 	current_t = 0.0;
-	T = gsl_rng_default;
 
 	// initialize random number generator
+	T = gsl_rng_default;
 	this->random_handle = gsl_rng_alloc(T);
 	gsl_rng_set(this->random_handle, time(NULL));
-
 }
 
 GillespieSolver::~GillespieSolver(void)
@@ -113,8 +93,6 @@ double GillespieSolver::get_current_time(void)
 // GillespieSolver::step() function returns dt.
 double GillespieSolver::step(void)
 {
-	// XXX 
-	// refactoring 
 	if (models.size() == 0 || current_state.size() == 0) {
 		// reactions or world status not initialized.
 		return 0.0;
@@ -124,16 +102,18 @@ double GillespieSolver::step(void)
 
 	for(int idx(0); idx < this->models.size(); idx++) {
 		a[idx] = this->models[idx].k;
-
-		for(Specie_Id_Number::iterator it(models[idx].substance.begin());
-				it != models[idx].substance.end();
+		for(Species_Vector::iterator it(models[idx].substances.begin());
+				it != models[idx].substances.end();
 				it++) {
-			a[idx] *= combination(this->current_state[it->chem_id], it->chem_v);
+			a[idx] *= combination(
+					this->current_state[it->specie_index],
+					it->specie_stoichiometry
+				);
 		}
 	}
 
-	double a_total( std::accumulate(a.begin(), a.end(), double(0.0) ) );
-	double rnd_num(gsl_rng_uniform(this->random_handle));
+	double a_total = std::accumulate(a.begin(), a.end(), double(0.0) );
+	double rnd_num = gsl_rng_uniform(this->random_handle);
 	double dt = gsl_sf_log(1.0 / rnd_num) / double(a_total);
 
 	rnd_num = gsl_rng_uniform(this->random_handle) * a_total;
@@ -147,59 +127,97 @@ double GillespieSolver::step(void)
 	} while ( acc < rnd_num && u <= len - 1 );
 
 	this->current_t += dt;
+
 	//	Ru(models[u]) occurs.
-	for(Specie_Id_Number::iterator it(models[u].substance.begin());
-			it != models[u].substance.end();
+	for(Species_Vector::iterator it(models[u].substances.begin());
+			it != models[u].substances.end();
 			it++) {
-		this->current_state[it->chem_id] -= it->chem_v;
+		this->current_state[it->specie_index] -= it->specie_stoichiometry;
 	}
-	for(Specie_Id_Number::iterator it(models[u].product.begin());
-			it != models[u].product.end();
+	for(Species_Vector::iterator it(models[u].products.begin());
+			it != models[u].products.end();
 			it++) {
-		this->current_state[it->chem_id] += it->chem_v;
+		this->current_state[it->specie_index] += it->specie_stoichiometry;
 	}
 
 	return dt;
 }
 
 double GillespieSolver::duration(double t) {
-	double d_t(0.0);
-	while(d_t) {
-		d_t += this->step();
-	}
-	return d_t;
+	double t_advanced(0.0);
+	double dt(0.0);
+	do {
+		dt += this->step();
+		t_advanced += dt;
+	} while (dt < t);
+	return dt;
 }
 
-#ifdef UNITTEST
-
+#define TEMP_ID(x)	x-'X'
 int main(void)
 {
 	GillespieSolver gs;
-	gs.current_state.insert(Specie_Id_Number::value_type('X', 1000));
-	gs.current_state.insert(Specie_Id_Number::value_type('Y', 1000));
-	gs.current_state.insert(Specie_Id_Number::value_type('Z', 1000));
-	gs.current_state.insert(Specie_Id_Number::value_type('W', 1000));
-	gs.models.push_back(ReactionRule(1, ID('X'), 0, ID(0), 1, ID('Y'), 0, ID(0), 0.5));
-	gs.models.push_back(ReactionRule(1, ID('Y'), 0, ID(0), 1, ID('X'), 0, ID(0), 0.2));
-	gs.models.push_back(ReactionRule(2, ID('X'), 0, ID(0), 1, ID('Z'), 0, ID(0), 0.4));
-	gs.models.push_back(ReactionRule(1, ID('Z'), 0, ID(0), 2, ID('X'), 0, ID(0), 0.2));
-	gs.models.push_back(ReactionRule(1, ID('X'), 1, ID('W'), 2, ID('X'), 0, ID(0), 0.3));
-	gs.models.push_back(ReactionRule(2, ID('X'), 0, ID(0), 1, ID('X'), 1, ID('W'), 0.5));
-	double prev_t = 0.0;
-	fprintf(stderr, "Unit Test\n      t\t\tX\tY\tZ\tW\n");
-	while (gs.get_current_time() < 10) {
+	int world[] = {1000, 1000, 1000, 1000};
+	for(int i(0); i < sizeof(world) / sizeof(int); i++) {
+		gs.current_state.push_back(world[i]);
+	}
+	Reaction r1;
+	r1.substances.push_back( Specie_index_number (TEMP_ID('X'), 1) );
+	r1.products.push_back( Specie_index_number( TEMP_ID('Y'), 1) );
+	r1.k = 0.5;
+
+	Reaction r2;
+	r2.substances.push_back( Specie_index_number (TEMP_ID('Y'), 1) );
+	r2.products.push_back( Specie_index_number (TEMP_ID('X'), 1) );
+	r2.k = 0.2;
+
+	Reaction r3;
+	r3.substances.push_back( Specie_index_number (TEMP_ID('X'), 2) );
+	r3.products.push_back( Specie_index_number (TEMP_ID('Z'), 1) );
+	r3.k = 0.4;
+
+	Reaction r4;
+	r4.substances.push_back( Specie_index_number (TEMP_ID('Z'), 1) );
+	r4.products.push_back( Specie_index_number (TEMP_ID('X'), 2) );
+	r4.k = 0.2;
+
+	Reaction r5;
+	r5.substances.push_back( Specie_index_number (TEMP_ID('X'), 1) );
+	r5.substances.push_back( Specie_index_number (TEMP_ID('W'), 1) );
+	r5.products.push_back( Specie_index_number (TEMP_ID('X'), 2) );
+	r5.k = 0.3;
+
+	Reaction r6;
+	r6.substances.push_back( Specie_index_number (TEMP_ID('X'), 2) );
+	r6.products.push_back( Specie_index_number (TEMP_ID('X'), 1) );
+	r6.products.push_back( Specie_index_number (TEMP_ID('W'), 1) );
+	r6.k = 0.5;
+
+	gs.models.push_back(r1);
+	gs.models.push_back(r2);
+	gs.models.push_back(r3);
+	gs.models.push_back(r4);
+	gs.models.push_back(r5);
+	gs.models.push_back(r6);
+
+	double prev_t(0.0);
+	while (gs.get_current_time() < 10.0) {
 		gs.step();
 		if (gs.get_current_time() - prev_t > 1.0) {
-			fprintf(stderr, "%f\t%d\t%d\t%d\t%d\n",
-					gs.get_current_time(), 
-					gs.current_state['X'], 
-					gs.current_state['Y'],
-					gs.current_state['Z'], 
-					gs.current_state['W'] );
 			prev_t = gs.get_current_time();
+			fprintf(stderr,
+					"%f, %d, %d, %d, %d\n",
+					gs.get_current_time(),
+					gs.current_state[0],
+					gs.current_state[1],
+					gs.current_state[2],
+					gs.current_state[3]
+			       );
 		}
 	}
 	return 0;
 }
+
+#ifdef UNITTEST
 
 #endif

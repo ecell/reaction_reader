@@ -10,14 +10,16 @@
 #define chem_v	second
 typedef std::map<int,int> Specie_Id_Number;
 
-#define ID(x) x
-struct ReactionRule {
-	Specie_Id_Number substance;
-	Specie_Id_Number product;
+#define specie_index first
+#define specie_stoichiometry second
+typedef std::pair<int, int> Specie_index_number;
+
+typedef std::vector<Specie_index_number> Species_Vector;
+
+struct Reaction {
+	Species_Vector	substances;
+	Species_Vector	products;
 	double k;
-	ReactionRule(void);
-	ReactionRule(int n1, int id1, int n2, int id2, 
-			int p_n1, int p_id1, int p_n2, int p_id2, double arg_k);
 };
 
 //============================================================
@@ -43,8 +45,6 @@ public:
 	double get_current_time(void);
 	void set_current_time(double t);
 
-	// XXX Prototyping!!!
-	Specie_Id_Number		PROTOTYPING(current_state);
-	std::vector<ReactionRule> 	PROTOTYPING(models);
-
+	std::vector<int>		current_state;
+	std::vector<Reaction>		models;
 };
