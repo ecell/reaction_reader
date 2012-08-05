@@ -12,7 +12,7 @@ typedef std::map<int,int> Specie_Id_Number;
 
 #define ID(x) x
 struct ReactionRule {
-	Specie_Id_Number substitute;
+	Specie_Id_Number substance;
 	Specie_Id_Number product;
 	double k;
 	ReactionRule(void);
@@ -21,7 +21,7 @@ struct ReactionRule {
 };
 
 //============================================================
-//	Gillespie Solver Prototype Declaration.
+//	Gillespie Solver 	*Prototype Declaration.
 //============================================================
 class GillespieSolver {
 private:
@@ -29,14 +29,19 @@ private:
 	gsl_rng *random_handle;
 	const gsl_rng_type *T;
 
+	double current_t;
+
 public:
 	GillespieSolver();
 	~GillespieSolver();
-	double step(void);
-	void duration(float t);
-	double random_number(bool);
 
-	float current_t;
+	// Functions about reactions.
+	double step(void);
+	double duration(double t);
+
+	// Accesser
+	double get_current_time(void);
+	void set_current_time(double t);
 
 	// XXX Prototyping!!!
 	Specie_Id_Number		PROTOTYPING(current_state);

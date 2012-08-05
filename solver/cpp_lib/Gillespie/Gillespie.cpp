@@ -58,7 +58,6 @@ int permutation(int n, int k) {
 }
 
 int combination(int n, int k) {
-	//printf("%d C %d\n", n, k);
 	int kk = k < (n - k) ? k : n-k;
 	return permutation(n, kk) / factorial(kk);
 }
@@ -70,9 +69,9 @@ ReactionRule::ReactionRule(void) {;}
 ReactionRule::ReactionRule(int n1, int id1, int n2, int id2, 
 			int p_n1, int p_id1, int p_n2, int p_id2, double arg_k) {
 	k = arg_k;
-	substitute.insert(Specie_Id_Number::value_type(id1,n1));
+	substance.insert(Specie_Id_Number::value_type(id1,n1));
 	if (0 < id2) {
-		substitute.insert(Specie_Id_Number::value_type(id2,n2));
+		substance.insert(Specie_Id_Number::value_type(id2,n2));
 	}
 	product.insert(Specie_Id_Number::value_type(p_id1,p_n1));
 	if (0 < p_id2) {
@@ -80,10 +79,16 @@ ReactionRule::ReactionRule(int n1, int id1, int n2, int id2,
 	}
 }
 
+
+
+//============================================================
+//	GillespieSolver 	*Definitions
+//============================================================
 GillespieSolver::GillespieSolver(void)
-	:current_t(0.0), 
-	T(gsl_rng_default)
 {
+	current_t = 0.0;
+	T = gsl_rng_default;
+
 	// initialize random number generator
 	this->random_handle = gsl_rng_alloc(T);
 	gsl_rng_set(this->random_handle, time(NULL));
@@ -96,26 +101,32 @@ GillespieSolver::~GillespieSolver(void)
 	gsl_rng_free(this->random_handle);
 }
 
-double GillespieSolver::random_number(bool binit = false)
-{	return gsl_rng_uniform(this->random_handle);	}
+// GillespieSolver
+//  	*Properties.
+void GillespieSolver::set_current_time(double new_t) 
+{	this->current_t = new_t;	}
+
+double GillespieSolver::get_current_time(void) 
+{	return this->current_t;		}
+
 
 // GillespieSolver::step() function returns dt.
 double GillespieSolver::step(void)
 {
 	// XXX 
 	// refactoring 
-	if (models.size() == 0, current_state.size() == 0) {
+	if (models.size() == 0 || current_state.size() == 0) {
 		// reactions or world status not initialized.
 		return 0.0;
 	}
 
-	std::vector<double>	a(this->models.size());
+	std::vector<double>	a(this->models.size() );
 
 	for(int idx(0); idx < this->models.size(); idx++) {
 		a[idx] = this->models[idx].k;
 
-		for(Specie_Id_Number::iterator it(models[idx].substitute.begin());
-				it != models[idx].substitute.end();
+		for(Specie_Id_Number::iterator it(models[idx].substance.begin());
+				it != models[idx].substance.end();
 				it++) {
 			a[idx] *= combination(this->current_state[it->chem_id], it->chem_v);
 		}
@@ -129,15 +140,16 @@ double GillespieSolver::step(void)
 
 	int u(-1);
 	double acc(0.0);
+	int len = a.size();
 	do {
 		u++;
 		acc += a[u];
-	} while ( acc < rnd_num && u <= a.size() - 1 );
+	} while ( acc < rnd_num && u <= len - 1 );
 
 	this->current_t += dt;
 	//	Ru(models[u]) occurs.
-	for(Specie_Id_Number::iterator it(models[u].substitute.begin());
-			it != models[u].substitute.end();
+	for(Specie_Id_Number::iterator it(models[u].substance.begin());
+			it != models[u].substance.end();
 			it++) {
 		this->current_state[it->chem_id] -= it->chem_v;
 	}
@@ -148,6 +160,14 @@ double GillespieSolver::step(void)
 	}
 
 	return dt;
+}
+
+double GillespieSolver::duration(double t) {
+	double d_t(0.0);
+	while(d_t) {
+		d_t += this->step();
+	}
+	return d_t;
 }
 
 #ifdef UNITTEST
@@ -167,16 +187,16 @@ int main(void)
 	gs.models.push_back(ReactionRule(2, ID('X'), 0, ID(0), 1, ID('X'), 1, ID('W'), 0.5));
 	double prev_t = 0.0;
 	fprintf(stderr, "Unit Test\n      t\t\tX\tY\tZ\tW\n");
-	while (gs.current_t < 10) {
+	while (gs.get_current_time() < 10) {
 		gs.step();
-		if (gs.current_t - prev_t > 1.0) {
+		if (gs.get_current_time() - prev_t > 1.0) {
 			fprintf(stderr, "%f\t%d\t%d\t%d\t%d\n",
-					gs.current_t, 
+					gs.get_current_time(), 
 					gs.current_state['X'], 
 					gs.current_state['Y'],
 					gs.current_state['Z'], 
 					gs.current_state['W'] );
-			prev_t = gs.current_t;
+			prev_t = gs.get_current_time();
 		}
 	}
 	return 0;
