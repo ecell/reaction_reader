@@ -22,6 +22,7 @@ struct Reaction {
 	double k;
 	bool validp;
 	void check(void);
+	Reaction();
 };
 
 //============================================================
@@ -59,7 +60,7 @@ public:
 			int reaction_num,
 			int specie_id,
 			double stoichiometry );
-	void reaction_set_kinetic_constant(int reaction_num, double k);
+	void reaction_set_kinetic_parameter(int reaction_num, double k);
 
 	std::vector<int>		current_state;
 	std::vector<Reaction>		models;

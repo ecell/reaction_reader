@@ -54,8 +54,12 @@ void display_vector_int(std::vector<int> &v)
 //============================================================
 //	 Reaction Class Support Routines
 //============================================================
+Reaction::Reaction(void)
+	: validp(false)
+{;}
+
 void Reaction::check(void) {
-	if (0 < substances.size() && 0 << products.size() && k != -1) {
+	if (0 < substances.size() && 0 < products.size() && k != -1) {
 		this->validp = true;
 	} else {
 		this->validp = false;
@@ -143,7 +147,7 @@ void GillespieSolver::reaction_add_product(
 	r->check();
 }
 
-void GillespieSolver::reaction_set_kinetic_constant(int reaction_num, double k)
+void GillespieSolver::reaction_set_kinetic_parameter(int reaction_num, double k)
 {
 	Reaction *r = &(this->models[reaction_num]);
 	if (r == NULL) 
@@ -237,6 +241,9 @@ double GillespieSolver::duration(double t) {
 	double dt(0.0);
 	do {
 		dt += this->step();
+		if (dt == 0.0000) {
+			break;
+		}
 		t_advanced += dt;
 	} while (dt < t);
 	return dt;
@@ -286,34 +293,34 @@ int main(void)
 	int ri1 = gs.reaction_add();
 	gs.reaction_add_substance(ri1, TEMP_ID('X'), 1);
 	gs.reaction_add_product(ri1, TEMP_ID('Y'), 1);
-	gs.reaction_set_kinetic_constant(ri1, 0.5);
+	gs.reaction_set_kinetic_parameter(ri1, 0.5);
 
 	int ri2 = gs.reaction_add();
 	gs.reaction_add_substance(ri2, TEMP_ID('Y'), 1);
 	gs.reaction_add_product(ri2, TEMP_ID('X'), 1);
-	gs.reaction_set_kinetic_constant(ri2, 0.2);
+	gs.reaction_set_kinetic_parameter(ri2, 0.2);
 
 	int ri3 = gs.reaction_add();
 	gs.reaction_add_substance(ri3, TEMP_ID('X'), 2);
 	gs.reaction_add_product(ri3, TEMP_ID('Z'), 1);
-	gs.reaction_set_kinetic_constant(ri3, 0.4);
+	gs.reaction_set_kinetic_parameter(ri3, 0.4);
 
 	int ri4 = gs.reaction_add();
 	gs.reaction_add_substance(ri4, TEMP_ID('Z'), 1);
 	gs.reaction_add_product(ri4, TEMP_ID('X'), 2);
-	gs.reaction_set_kinetic_constant(ri4, 0.2);
+	gs.reaction_set_kinetic_parameter(ri4, 0.2);
 
 	int ri5 = gs.reaction_add();
 	gs.reaction_add_substance(ri5, TEMP_ID('X'), 1);
 	gs.reaction_add_substance(ri5, TEMP_ID('W'), 1);
 	gs.reaction_add_product(ri5, TEMP_ID('X'), 2);
-	gs.reaction_set_kinetic_constant(ri5, 0.3);
+	gs.reaction_set_kinetic_parameter(ri5, 0.3);
 
 	int ri6 = gs.reaction_add();
 	gs.reaction_add_substance(ri6, TEMP_ID('X'), 2);
 	gs.reaction_add_product(ri6, TEMP_ID('X'), 1);
 	gs.reaction_add_product(ri6, TEMP_ID('W'), 1);
-	gs.reaction_set_kinetic_constant(ri6, 0.5);
+	gs.reaction_set_kinetic_parameter(ri6, 0.5);
 
 	double prev_t(0.0);
 	while (gs.get_current_time() < 10.0) {
