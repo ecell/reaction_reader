@@ -19,10 +19,25 @@
 //============================================================
 //	Debugging Utility
 //============================================================
-void display_vector(std::vector<double> &v)
+void display_vector_double(std::vector<double> &v)
 {
 	bool first = true;
 	for(std::vector<double>::iterator it = v.begin(); it != v.end(); it++) {
+		if (first == true) {	
+			first = false;
+			std::cout << "{ ";
+		} else {
+			std::cout << ", ";	
+		}
+		std::cout << *it;
+	}
+	std::cout << " }";
+	std::cout << std::endl;
+}
+void display_vector_int(std::vector<int> &v)
+{
+	bool first = true;
+	for(std::vector<int>::iterator it = v.begin(); it != v.end(); it++) {
 		if (first == true) {	
 			first = false;
 			std::cout << "{ ";
@@ -113,10 +128,9 @@ double GillespieSolver::step(void)
 	}
 
 	double a_total = std::accumulate(a.begin(), a.end(), double(0.0) );
-	double rnd_num = gsl_rng_uniform(this->random_handle);
-	double dt = gsl_sf_log(1.0 / rnd_num) / double(a_total);
-
-	rnd_num = gsl_rng_uniform(this->random_handle) * a_total;
+	double rnd_num1 = gsl_rng_uniform(this->random_handle);
+	double dt = gsl_sf_log(1.0 / rnd_num1) / double(a_total);
+	double rnd_num2 = gsl_rng_uniform(this->random_handle) * a_total;
 
 	int u(-1);
 	double acc(0.0);
@@ -124,10 +138,9 @@ double GillespieSolver::step(void)
 	do {
 		u++;
 		acc += a[u];
-	} while ( acc < rnd_num && u <= len - 1 );
+	} while ( acc < rnd_num2 && u < len - 1);
 
 	this->current_t += dt;
-
 	//	Ru(models[u]) occurs.
 	for(Species_Vector::iterator it(models[u].substances.begin());
 			it != models[u].substances.end();
@@ -138,8 +151,7 @@ double GillespieSolver::step(void)
 			it != models[u].products.end();
 			it++) {
 		this->current_state[it->specie_index] += it->specie_stoichiometry;
-	}
-
+		}
 	return dt;
 }
 
@@ -153,7 +165,8 @@ double GillespieSolver::duration(double t) {
 	return dt;
 }
 
-#define TEMP_ID(x)	x-'X'
+#ifdef UNITTEST
+#define TEMP_ID(x)	x-'W'
 int main(void)
 {
 	GillespieSolver gs;
@@ -217,7 +230,4 @@ int main(void)
 	}
 	return 0;
 }
-
-#ifdef UNITTEST
-
 #endif

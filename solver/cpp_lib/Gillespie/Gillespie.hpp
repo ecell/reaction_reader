@@ -44,6 +44,9 @@ public:
 	// Accesser
 	double get_current_time(void);
 	void set_current_time(double t);
+	double generate_random(void) {
+		return gsl_rng_uniform(this->random_handle);
+	}
 
 	std::vector<int>		current_state;
 	std::vector<Reaction>		models;
