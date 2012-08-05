@@ -20,6 +20,8 @@ struct Reaction {
 	Species_Vector	substances;
 	Species_Vector	products;
 	double k;
+	bool validp;
+	void check(void);
 };
 
 //============================================================
@@ -42,11 +44,22 @@ public:
 	double duration(double t);
 
 	// Accesser
+	int  get_current_state(int *array, int len);
+	void set_current_state(int *array, int len);
 	double get_current_time(void);
 	void set_current_time(double t);
-	double generate_random(void) {
-		return gsl_rng_uniform(this->random_handle);
-	}
+
+	int  reaction_add(void);
+	void reaction_add_substance(
+			int reaction_num,
+			int specie_id,
+			int stoichiometry );
+
+	void reaction_add_product(
+			int reaction_num,
+			int specie_id,
+			double stoichiometry );
+	void reaction_set_kinetic_constant(int reaction_num, double k);
 
 	std::vector<int>		current_state;
 	std::vector<Reaction>		models;
