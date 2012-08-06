@@ -14,8 +14,6 @@ setup(
                 sourceforGillespieSolver,
                 language='c++',
                 libraries = ['gsl', 'gslcblas'],
-                include_dirs = [numpy.get_numpy_include()]
-
             )
         ]
     )

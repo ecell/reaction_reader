@@ -50,12 +50,10 @@ cdef class GillespieSolver:
 
     def set_current_state(self, np.ndarray py_array):
         cdef int *int_array = <int *>py_array.data
-        #cdef int length = py_array.dimensions[0]
         cdef int length = len(py_array)
         self.thisptr.set_current_state(int_array, length)
 
     def get_current_state(self, np.ndarray py_array):
         cdef int *int_array = <int *>py_array.data 
-        #cdef int length = py_array.dimentions[0]
         cdef int length = len(py_array)
         self.thisptr.get_current_state(int_array, length)

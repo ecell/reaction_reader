@@ -209,6 +209,12 @@ double GillespieSolver::step(void)
 	}
 
 	double a_total = std::accumulate(a.begin(), a.end(), double(0.0) );
+
+	if (a_total == 0.0) {
+		// There are no reactions to heppen.
+		return 0.0;
+	}
+
 	double rnd_num1 = gsl_rng_uniform(this->random_handle);
 	double dt = gsl_sf_log(1.0 / rnd_num1) / double(a_total);
 	double rnd_num2 = gsl_rng_uniform(this->random_handle) * a_total;
