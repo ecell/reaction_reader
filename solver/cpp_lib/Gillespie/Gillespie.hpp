@@ -42,7 +42,7 @@ public:
 
 	// Functions about reactions.
 	double step(void);
-	double duration(double t);
+	double run(double duration);
 
 	// Accesser
 	int  get_current_state(int *array, int len);
