@@ -62,7 +62,7 @@ gs.reaction_add_product(r6, chem_dict['W'], 1);
 gs.reaction_set_kinetic_parameter(r6, 0.5);
 
 gs.set_current_state(world)
-gs.duration(9.0)
+gs.run(9.0)
 
 world_after_10_seconds = np.empty( len(world), np.int32 )
 gs.get_current_state(world_after_10_seconds)

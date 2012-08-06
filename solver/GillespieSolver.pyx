@@ -4,7 +4,7 @@ cimport numpy as np
 cdef extern from "Gillespie.hpp":
     ctypedef struct c_Solver "GillespieSolver":
         double step()
-        double duration(double)
+        double run(double)
         void set_current_time(double)
         double get_current_time()
         int  get_current_state(int*,int)
@@ -27,8 +27,8 @@ cdef class GillespieSolver:
     def step(self):
         return self.thisptr.step()
 
-    def duration(self,dt):
-        return self.thisptr.duration(dt)
+    def run(self,duration):
+        return self.thisptr.run(duration)
 
     def get_current_time(self):
         return self.thisptr.get_current_time()

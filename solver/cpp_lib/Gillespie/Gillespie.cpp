@@ -242,7 +242,7 @@ double GillespieSolver::step(void)
 	return dt;
 }
 
-double GillespieSolver::duration(double t) {
+double GillespieSolver::run(double duration) {
 	double t_advanced(0.0);
 	double dt(0.0);
 	do {
@@ -251,7 +251,7 @@ double GillespieSolver::duration(double t) {
 			break;
 		}
 		t_advanced += dt;
-	} while (dt < t);
+	} while (dt < duration);
 	return dt;
 }
 
