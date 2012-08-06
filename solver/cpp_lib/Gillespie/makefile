@@ -1,9 +1,12 @@
 CPP  = g++
-CPPFLAGS = -g -lgsl -Wall -DUNITTEST
+OPTIONS = -g -lgsl -Wall -DUNITTEST
 OBJS = Gillespie.cpp
 
-build: Gillespie.hpp
-	$(CPP) $(OBJS) $(CPPFLAGS)
+compile: Gillespie.hpp
+	$(CPP) $(OBJS) $(OPTIONS)
+
+build: setup.py
+	python setup.py build_ext --inplace
 
 run:
 	./a.out

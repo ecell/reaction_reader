@@ -232,7 +232,7 @@ double GillespieSolver::step(void)
 			it != models[u].products.end();
 			it++) {
 		this->current_state[it->specie_index] += it->specie_stoichiometry;
-		}
+	}
 	return dt;
 }
 
@@ -330,10 +330,10 @@ int main(void)
 			fprintf(stderr,
 					"%f, %d, %d, %d, %d\n",
 					gs.get_current_time(),
-					gs.current_state[0],
 					gs.current_state[1],
 					gs.current_state[2],
-					gs.current_state[3]
+					gs.current_state[3],
+					gs.current_state[0]
 			       );
 		}
 	}

@@ -10,8 +10,17 @@
 import numpy as np
 import GillespieSolver
 
+'''
+import sys
+print "Wating for debug. Press Ctrl + D"
+for line in sys.stdin:
+    print line
+'''
+
+
 chem_dict = dict([('X', 0), ('Y', 1), ('Z', 2), ('W', 3)])
-world = np.array([1000, 1000, 1000, 1000])  # X, Y, Z, W
+world = np.array([1000, 1000, 1000, 1000], np.int32)  # X, Y, Z, W
+
 
 gs = GillespieSolver.GillespieSolver()
 # Reaction 1
@@ -52,6 +61,10 @@ gs.reaction_add_product(r6, chem_dict['X'], 1);
 gs.reaction_add_product(r6, chem_dict['W'], 1);
 gs.reaction_set_kinetic_parameter(r6, 0.5);
 
-print gs.step()
-
+gs.set_current_state(world)
 gs.duration(10.0)
+
+world_after_10_seconds = np.empty( len(world), np.int32 )
+gs.get_current_state(world_after_10_seconds)
+
+print world_after_10_seconds

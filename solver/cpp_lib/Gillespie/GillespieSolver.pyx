@@ -1,3 +1,5 @@
+import numpy as np
+cimport numpy as np 
 
 cdef extern from "Gillespie.hpp":
     ctypedef struct c_Solver "GillespieSolver":
@@ -46,8 +48,14 @@ cdef class GillespieSolver:
     def reaction_set_kinetic_parameter(self,react_id,k):
         self.thisptr.reaction_set_kinetic_parameter(react_id,k)
 
-    def set_current_state(self, array):
-        pass
+    def set_current_state(self, np.ndarray py_array):
+        cdef int *int_array = <int *>py_array.data
+        #cdef int length = py_array.dimensions[0]
+        cdef int length = len(py_array)
+        self.thisptr.set_current_state(int_array, length)
 
-    def def_current_state(self, array):
-        pass
+    def get_current_state(self, np.ndarray py_array):
+        cdef int *int_array = <int *>py_array.data 
+        #cdef int length = py_array.dimentions[0]
+        cdef int length = len(py_array)
+        self.thisptr.get_current_state(int_array, length)
