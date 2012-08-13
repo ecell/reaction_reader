@@ -1,6 +1,3 @@
-#include <cstdlib>
-#include <cstdio>
-#include <math.h>
 
 #include <iostream>
 #include <gsl/gsl_rng.h>
@@ -11,13 +8,12 @@
 #include <numeric>
 #include <map>
 
-#include <string>
-
 #include "Gillespie.hpp"
 
+// UNITTEST:	g++ Gillespie.cpp -lgsl -lgslcbas -DUNITTEST
 
 //============================================================
-//	Debugging Utility
+//	Debugging Utility( For Debugger call )
 //============================================================
 void display_vector_double(std::vector<double> &v)
 {
@@ -54,12 +50,13 @@ void display_vector_int(std::vector<int> &v)
 //============================================================
 //	 Reaction Class Support Routines
 //============================================================
-Reaction::Reaction(void)
-	: validp(false)
-{;}
+Reaction::Reaction(void) {
+	validp = false;
+	k = 0.0;
+}
 
 void Reaction::check(void) {
-	if (0 < substances.size() && 0 < products.size() && k != -1) {
+	if (0 < substances.size() && 0 < products.size() && k != 0.0) {
 		this->validp = true;
 	} else {
 		this->validp = false;
@@ -116,9 +113,9 @@ GillespieSolver::~GillespieSolver(void)
 //  	*about reactions
 int GillespieSolver::reaction_add(void)
 {
+	// return index of reactions
 	int retval = this->models.size();
 	Reaction new_react;
-	new_react.validp = false;
 	this->models.push_back(new_react);
 	return retval;
 }
@@ -196,7 +193,7 @@ double GillespieSolver::step(void)
 
 	std::vector<double>	a(this->models.size() );
 
-	for(int idx(0); idx < this->models.size(); idx++) {
+	for(size_t idx(0); idx < this->models.size(); idx++) {
 		a[idx] = this->models[idx].k;
 		for(Species_Vector::iterator it(models[idx].substances.begin());
 				it != models[idx].substances.end();
@@ -251,51 +248,18 @@ double GillespieSolver::run(double duration) {
 			break;
 		}
 		t_advanced += dt;
-	} while (dt < duration);
-	return dt;
+	} while (t_advanced < duration);
+	return t_advanced;
 }
 
 #ifdef UNITTEST
-#define TEMP_ID(x)	x-'W'
 int main(void)
 {
 	GillespieSolver gs;
 	int world[] = {1000, 1000, 1000, 1000};
 	gs.set_current_state(world, sizeof(world)/sizeof(int));
-	/*
-	Reaction r1;
-	r1.substances.push_back( Specie_index_number (TEMP_ID('X'), 1) );
-	r1.products.push_back( Specie_index_number( TEMP_ID('Y'), 1) );
-	r1.k = 0.5;
-	Reaction r2;
-	r2.substances.push_back( Specie_index_number (TEMP_ID('Y'), 1) );
-	r2.products.push_back( Specie_index_number (TEMP_ID('X'), 1) );
-	r2.k = 0.2;
-	Reaction r3;
-	r3.substances.push_back( Specie_index_number (TEMP_ID('X'), 2) );
-	r3.products.push_back( Specie_index_number (TEMP_ID('Z'), 1) );
-	r3.k = 0.4;
-	Reaction r4;
-	r4.substances.push_back( Specie_index_number (TEMP_ID('Z'), 1) );
-	r4.products.push_back( Specie_index_number (TEMP_ID('X'), 2) );
-	r4.k = 0.2;
-	Reaction r5;
-	r5.substances.push_back( Specie_index_number (TEMP_ID('X'), 1) );
-	r5.substances.push_back( Specie_index_number (TEMP_ID('W'), 1) );
-	r5.products.push_back( Specie_index_number (TEMP_ID('X'), 2) );
-	r5.k = 0.3;
-	Reaction r6;
-	r6.substances.push_back( Specie_index_number (TEMP_ID('X'), 2) );
-	r6.products.push_back( Specie_index_number (TEMP_ID('X'), 1) );
-	r6.products.push_back( Specie_index_number (TEMP_ID('W'), 1) );
-	r6.k = 0.5;
-	gs.models.push_back(r1);
-	gs.models.push_back(r2);
-	gs.models.push_back(r3);
-	gs.models.push_back(r4);
-	gs.models.push_back(r5);
-	gs.models.push_back(r6);
-	*/
+
+#define TEMP_ID(x)	x-'W'
 	int ri1 = gs.reaction_add();
 	gs.reaction_add_substance(ri1, TEMP_ID('X'), 1);
 	gs.reaction_add_product(ri1, TEMP_ID('Y'), 1);
@@ -329,8 +293,10 @@ int main(void)
 	gs.reaction_set_kinetic_parameter(ri6, 0.5);
 
 	double prev_t(0.0);
+	int i(0);
 	while (gs.get_current_time() < 10.0) {
 		gs.step();
+		i++;
 		if (gs.get_current_time() - prev_t > 1.0) {
 			prev_t = gs.get_current_time();
 			fprintf(stderr,
@@ -343,6 +309,7 @@ int main(void)
 			       );
 		}
 	}
+	fprintf(stderr, "%d steps done.\n", i);
 	return 0;
 }
 #endif
