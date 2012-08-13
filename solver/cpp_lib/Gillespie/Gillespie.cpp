@@ -241,13 +241,13 @@ double GillespieSolver::step(void)
 
 double GillespieSolver::run(double duration) {
 	double t_advanced(0.0);
-	double dt(0.0);
+	double step_dt(0.0);
 	do {
-		dt += this->step();
-		if (dt == 0.0000) {
+		step_dt = this->step();
+		if (step_dt == 0.00) {
 			break;
 		}
-		t_advanced += dt;
+		t_advanced += step_dt;
 	} while (t_advanced < duration);
 	return t_advanced;
 }
@@ -292,6 +292,7 @@ int main(void)
 	gs.reaction_add_product(ri6, TEMP_ID('W'), 1);
 	gs.reaction_set_kinetic_parameter(ri6, 0.5);
 
+	/*
 	double prev_t(0.0);
 	int i(0);
 	while (gs.get_current_time() < 10.0) {
@@ -310,6 +311,15 @@ int main(void)
 		}
 	}
 	fprintf(stderr, "%d steps done.\n", i);
+	*/
+	gs.run(9.0);
+	fprintf(stderr,
+			"%f, %d, %d, %d, %d\n",
+			gs.get_current_time(),
+			gs.current_state[1],
+			gs.current_state[2],
+			gs.current_state[3],
+			gs.current_state[0]	);
 	return 0;
 }
 #endif
