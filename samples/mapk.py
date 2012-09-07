@@ -1,4 +1,4 @@
-from numpy import pi, inf
+<from numpy import pi, inf
 from ratelaw import ratelaw, conc, volume, N_A
 
 @ratelaw
@@ -49,22 +49,22 @@ with molecule_inits:
     pp(bs(on)) [60 - Nkk]
 
 with reaction_rules:
-    mapk(phos(YT)) + kk(bs(on)) <_> mapk(phos(YT)[1]).kk(bs(on)[1]) \
+    mapk(phos(YT)) + kk(bs(on)) == mapk(phos(YT)[1]).kk(bs(on)[1]) \
         | (kon1, koff1)
     mapk(phos(YT)[1]).kk(bs(on)[1]) \
         > mapk(phos(pYT)) + kk(bs(off if krel < inf else on)) | kf1
 
-    mapk(phos(pYT)) + kk(bs(on)) <_> mapk(phos(pYT)[1]).kk(bs(on)[1]) \
+    mapk(phos(pYT)) + kk(bs(on)) == mapk(phos(pYT)[1]).kk(bs(on)[1]) \
         | (kon2, koff2)
     mapk(phos(pYT)[1]).kk(bs(on)[1]) \
         > mapk(phos(pYpT)) + kk(bs(off if krel < inf else on)) | kf2
 
-    mapk(phos(pYpT)) + pp(bs(on)) <_> mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
+    mapk(phos(pYpT)) + pp(bs(on)) == mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
         | (kon1, koff1)
     mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
         > mapk(phos(pYT)) + pp(bs(off if krel < inf else on)) | kf1
 
-    mapk(phos(pYT)) + pp(bs(on)) <_> mapk(phos(pYT)[1]).pp(bs(on)[1]) \
+    mapk(phos(pYT)) + pp(bs(on)) == mapk(phos(pYT)[1]).pp(bs(on)[1]) \
         | (kon2, koff2)
     mapk(phos(pYT)[1]).pp(bs(on)[1]) \
         > mapk(phos(YT)) + pp(bs(off if krel < inf else on)) | kf2
