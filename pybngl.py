@@ -12,7 +12,6 @@ import World
 import Simulator
 import RuleFactory
 
-
 disp = False
 
 class MoleculeTypesAnyCallable(RuleFactory.AnyCallable):
@@ -107,6 +106,41 @@ class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
 
         # print '[ReactionRules] ' + str(obj)
         print '[ReactionRules] ' + rule.str_simple()
+
+        return obj
+        # return rule
+
+    def __eq__(self, rhs):
+        if disp:
+            print 'ReactionRulesRuleEntitySetList.__eq__()*',
+            print ' self:', self, ', rhs:', rhs
+
+        obj = super(ReactionRulesRuleEntitySetList, self).__eq__(rhs)
+
+        c = RuleEntityConverter()
+
+        reactants = [c.RuleEntitySet_to_Species(i) for i in obj.reactants.species]
+        products = [c.RuleEntitySet_to_Species(i) for i in obj.products.species]
+
+        if isinstance(obj.key, tuple):
+            effector_list = list(obj.key)
+        elif obj.key != None:
+            effector_list = [obj.key]
+        else:
+            effector_list = []
+        effectors = [c.RuleEntitySet_to_Species(i) for i in effector_list]
+
+        for i in reactants + products + effectors:
+            obj.factory.model.register_species(i)
+
+        rule0 = obj.factory.model.add_reaction_rule(reactants, products, 
+                                                   k = obj.rhs[0])
+        rule1 = obj.factory.model.add_reaction_rule(products, reactants, 
+                                                   k = obj.rhs[1])
+
+        # print '[ReactionRules] ' + str(obj)
+        print '[ReactionRules] ' + rule0.str_simple()
+        print '[ReactionRules] ' + rule1.str_simple()
 
         return obj
         # return rule
