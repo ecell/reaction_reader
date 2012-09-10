@@ -300,6 +300,12 @@ class RuleEntitySetList(RuleFactoryProduct):
 
         return self.factory.create_Rule(self, rhs, '>')
 
+    def __eq__(self, rhs):
+        if disp:
+            print 'RuleEntitySetList.__eq__()* self:', self, ', rhs:', rhs
+
+        return self.factory.create_Rule(self, rhs, '==')
+
     def __str__(self):
         spe = [str(i) + ' + ' for i in self.species]
         return reduce(lambda a, b: a + b, spe)[:-3]
