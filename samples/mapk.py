@@ -1,4 +1,4 @@
-<from numpy import pi, inf
+from numpy import pi, inf
 from ratelaw import ratelaw, conc, volume, N_A
 
 @ratelaw
@@ -23,6 +23,7 @@ k6 = 15.0
 
 # sigma, D = 5e-9, 2e-12
 sigma = 5e-9
+D = 2e-12
 kD = 4 * pi * sigma * D
 
 if kD < inf:
@@ -36,39 +37,39 @@ tau_rel = 1e-3
 krel = 0.69314718055994529 / tau_rel
 # krel = inf
 
-# Nkk, Npp = 30, 30
+Nkk, Npp = 30, 30
 
 with molecule_types:
-    mapk(phos(YT, pYT, pYpT))
-    kk(bs(on, off))
-    pp(bs(on, off))
+    mapk(phos = (YT, pYT, pYpT))
+    kk(bs = (on, off))
+    pp(bs = (on, off))
 
 with molecule_inits:
-    mapk(phos(YT)) [120]
-    kk(bs(on)) [Nkk]
-    pp(bs(on)) [60 - Nkk]
+    mapk(phos = (YT)) [120]
+    kk(bs = (on)) [Nkk]
+    pp(bs = (on)) [60 - Nkk]
 
 with reaction_rules:
-    mapk(phos(YT)) + kk(bs(on)) == mapk(phos(YT)[1]).kk(bs(on)[1]) \
+    mapk(phos = (YT)) + kk(bs = (on)) == mapk(phos = (YT)[1]).kk(bs = (on)[1]) \
         | (kon1, koff1)
-    mapk(phos(YT)[1]).kk(bs(on)[1]) \
-        > mapk(phos(pYT)) + kk(bs(off if krel < inf else on)) | kf1
+    mapk(phos = (YT)[1]).kk(bs = (on)[1]) \
+        > mapk(phos = (pYT)) + kk(bs = ((off) if krel < inf else (on))) | kf1
 
-    mapk(phos(pYT)) + kk(bs(on)) == mapk(phos(pYT)[1]).kk(bs(on)[1]) \
+    mapk(phos = (pYT)) + kk(bs = (on)) == mapk(phos = (pYT)[1]).kk(bs = (on)[1]) \
         | (kon2, koff2)
-    mapk(phos(pYT)[1]).kk(bs(on)[1]) \
-        > mapk(phos(pYpT)) + kk(bs(off if krel < inf else on)) | kf2
+    mapk(phos = (pYT)[1]).kk(bs = (on)[1]) \
+        > mapk(phos = (pYpT)) + kk(bs = ((off) if krel < inf else (on))) | kf2
 
-    mapk(phos(pYpT)) + pp(bs(on)) == mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
+    mapk(phos = (pYpT)) + pp(bs = (on)) == mapk(phos = (pYpT)[1]).pp(bs = (on)[1]) \
         | (kon1, koff1)
-    mapk(phos(pYpT)[1]).pp(bs(on)[1]) \
-        > mapk(phos(pYT)) + pp(bs(off if krel < inf else on)) | kf1
+    mapk(phos = (pYpT)[1]).pp(bs = (on)[1]) \
+        > mapk(phos = (pYT)) + pp(bs = ((off) if krel < inf else (on))) | kf1
 
-    mapk(phos(pYT)) + pp(bs(on)) == mapk(phos(pYT)[1]).pp(bs(on)[1]) \
+    mapk(phos = (pYT)) + pp(bs = (on)) == mapk(phos = (pYT)[1]).pp(bs = (on)[1]) \
         | (kon2, koff2)
-    mapk(phos(pYT)[1]).pp(bs(on)[1]) \
-        > mapk(phos(YT)) + pp(bs(off if krel < inf else on)) | kf2
+    mapk(phos = (pYT)[1]).pp(bs = (on)[1]) \
+        > mapk(phos = (YT)) + pp(bs = ((off) if krel < inf else (on))) | kf2
 
     if krel < inf:
-        kk(bs(off)) > kk(bs(on)) | krel
-        pp(bs(off)) > pp(bs(on)) | krel
+        kk(bs = (off)) > kk(bs = (on)) | krel
+        pp(bs = (off)) > pp(bs = (on)) | krel
