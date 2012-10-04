@@ -20,8 +20,9 @@ k4 = 0.056e+9 / (N_A * 1000)
 k5 = 1.73
 k6 = 15.0
 
-sigma = 5e-9
-D = 2e-12
+sigma, D, Nkk = 5e-9, 2e-12, 30
+# sigma = 5e-9
+
 kD = 4 * pi * sigma * D
 
 if kD < inf:
@@ -34,8 +35,6 @@ else:
 tau_rel = 1e-3
 krel = 0.69314718055994529 / tau_rel
 # krel = inf
-
-Nkk = 30
 
 with molecule_types:
     mapk(phos=(YT, pYT, pYpT))

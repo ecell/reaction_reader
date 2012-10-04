@@ -18,7 +18,7 @@ class CompartmentSpace(object):
             num_of_new_species = len(self.__species_list) - num_of_species
 
             self.__data = numpy.concatenate((
-                    self.__data[: offset], 
+                    self.__data[: offset],
                     numpy.zeros(num_of_new_species, dtype=self.__data.dtype),
                     self.__data[offset: ]))
         else:
@@ -87,7 +87,7 @@ class World(object):
 
         # this will be deprecated
         self.model = None
-    
+
     def get_volume(self):
         return self.__space.volume
 

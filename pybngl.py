@@ -103,7 +103,7 @@ class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
         for i in reactants + products + effectors:
             obj.factory.model.register_species(i)
 
-        rule = obj.factory.model.add_reaction_rule(reactants, products, 
+        rule = obj.factory.model.add_reaction_rule(reactants, products,
                                                    k = obj.rhs)
 
         if disp:
@@ -136,10 +136,10 @@ class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
         for i in reactants + products + effectors:
             obj.factory.model.register_species(i)
 
-        rule0 = obj.factory.model.add_reaction_rule(reactants, products, 
-                                                   k = obj.rhs[0])
-        rule1 = obj.factory.model.add_reaction_rule(products, reactants, 
-                                                   k = obj.rhs[1])
+        rule0 = obj.factory.model.add_reaction_rule(reactants, products,
+                                                    k = obj.rhs[0])
+        rule1 = obj.factory.model.add_reaction_rule(products, reactants,
+                                                    k = obj.rhs[1])
 
         if disp:
             # print '[ReactionRules] ' + str(obj)
@@ -196,7 +196,7 @@ class RuleEntityConverter(object):
                     else:
                         comp.binding_state = BINDING_ANY
                         species.add_binding(comp, None, False)
-                        
+
         species.concrete = True
         return species
 
@@ -251,7 +251,7 @@ class ReactionRules(object):
     #     def is_func(value_):
     #         return value_ is None or (
     #             type(value_) in (int, float, types.FunctionType)) or (
-    #             type(value_) in (list, tuple) and 
+    #             type(value_) in (list, tuple) and
     #             len(value_) > 0 and type(value_[0]) is str)
 
     #     def get_func(value_=None):
@@ -273,7 +273,7 @@ class ReactionRules(object):
     #                 return value_[0], value_[1], kwargs_, func_def_
     #             elif len(value_) > 2:
     #                 return value_[0], value_[1], value_[2], func_def_
-            
+
     #     for idx, v in enumerate(self.newcls.global_list):
     #         # create effector list
     #         if v.get('value') is not None:
@@ -284,10 +284,10 @@ class ReactionRules(object):
 
     #         # create reactants/products
     #         reactants, con_list = read_patterns(
-    #             self.model, self.parser, v['children'][0], 
+    #             self.model, self.parser, v['children'][0],
     #             self.newcls.with_label)
     #         products, con_list = read_patterns(
-    #             self.model, self.parser, v['children'][1], 
+    #             self.model, self.parser, v['children'][1],
     #             self.newcls.with_label)
 
     #         # for con_idx, con_func in enumerate(con_list):
@@ -375,8 +375,6 @@ class Pybngl(object):
 
         # Outputs information to stdout
         if self.is_verbose():
-            print_tree(namespace.newcls.global_list, fout=self.fout)
-
             self.fout.write('# << reaction rules >>\n')
             cnt = 1
             for rule_id in sorted(m.reaction_rules.iterkeys()):
@@ -434,7 +432,7 @@ class Pybngl(object):
                 for r in result.reactions:
                     fout.write('%d %s\n' % (cnt, r.str_simple()))
                     cnt += 1
-            fout.close()        
+            fout.close()
 
         return reaction_results
 
@@ -454,24 +452,24 @@ if __name__ == '__main__':
     def create_option_parser():
         usage = "python pybngl.py [options] SIMULATION_FILE"
         optparser = optparse.OptionParser(usage=usage)
-        optparser.add_option('-r', dest='rulefile', metavar='RULE_FILE', 
+        optparser.add_option('-r', dest='rulefile', metavar='RULE_FILE',
                             help='write rules to RULE_FILE')
-        optparser.add_option('-s', dest='step_num', type=int, default=120, 
+        optparser.add_option('-s', dest='step_num', type=int, default=120,
                             help='set step num')
-        optparser.add_option('-i', dest='itr_num', type=int, default=10, 
+        optparser.add_option('-i', dest='itr_num', type=int, default=10,
                             help='set rule iteration num')
-        optparser.add_option('-d', dest='disap_flag', action='store_false', 
+        optparser.add_option('-d', dest='disap_flag', action='store_false',
                             default=True, help='allow implicit disappearance')
-        optparser.add_option('-t', dest='end_time', type=float, default=-1, 
+        optparser.add_option('-t', dest='end_time', type=float, default=-1,
                             help='set step num')
-        optparser.add_option('-v', dest='show_mes', action='store_true', 
+        optparser.add_option('-v', dest='show_mes', action='store_true',
                             default=False, help='show verbose messages')
-        optparser.add_option('-l', dest='loc_flag', action='store_true', 
+        optparser.add_option('-l', dest='loc_flag', action='store_true',
                             default=False, help='use location description')
         return optparser
 
     def execute_simulation(
-        simulator, num_of_steps=0, duration=-1, fout=sys.stdout, dump=True):
+        simulator, num_of_steps=0, duration=-1, fout=sys.stdout, verbose=True):
         # run simulation
         if duration > 0:
             # duration is defined
@@ -481,8 +479,8 @@ if __name__ == '__main__':
             simulator.step(num_of_steps)
 
         output_series = simulator.get_logged_data()
-        
-        if dump:
+
+        if verbose:
             # print results
             header = 'time\t%s' % ('\t'.join([
                 species.str_simple() for species in simulator.get_species()]))
@@ -511,7 +509,7 @@ if __name__ == '__main__':
     if options.loc_flag:
         # state_list = ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM']
         # state_list = ['all', 'cyto', 'mem']
-        state_list =  ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM', 
+        state_list =  ['EC', 'EN', 'EM', 'PM', 'CP', 'NU', 'NM',
                        'all', 'cyto', 'mem']
         comp_state = m.add_state_type('compartment', state_list)
 
@@ -519,7 +517,7 @@ if __name__ == '__main__':
     pybngl = Pybngl(verbose=options.show_mes, loc=comp_state)
     m, seed_species, _ = pybngl.parse_model(filename, m)
     reaction_results = pybngl.generate_reaction_network(
-        m, seed_species, maxiter=options.itr_num, 
+        m, seed_species, maxiter=options.itr_num,
         rulefilename=options.rulefile)
 
     w = create_world(m, seed_species)
@@ -527,4 +525,4 @@ if __name__ == '__main__':
 
     output_series = execute_simulation(
         simulator, num_of_steps=options.step_num,
-        duration=options.end_time, dump=False)
+        duration=options.end_time, verbose=options.show_mes)

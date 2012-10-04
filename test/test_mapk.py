@@ -9,13 +9,11 @@ import ratelaw
 
 
 def get_indices(species_list, expr):
-    return [i for i in range(len(species_list)) 
+    return [i for i in range(len(species_list))
             if re.compile(expr).search(species_list[i].str_simple())]
 
 def singlerun(filename, params):
     parser = pybngl.Pybngl()
-    parser.namespace.newcls.tmp_list = []
-    parser.namespace.newcls.global_list = []
 
     m, seed_species, namespace = parser.parse_model(filename, params=params)
     reaction_results = parser.generate_reaction_network(m, seed_species)
@@ -42,7 +40,7 @@ def run(filename, params):
         y = []
         for expr in expr_list:
             indices = get_indices(species_list, expr)
-            y.append(sum([data[idx + 1][-1] for idx in indices])) 
+            y.append(sum([data[idx + 1][-1] for idx in indices]))
         return_val.append(y)
 
     return numpy.array(Nkk_list), numpy.array(return_val).T
@@ -67,8 +65,10 @@ if __name__ == '__main__':
         y = y / 120.0
 
         c = colors[i]
-        label = r'$D=%g\mathrm{\mu m^2/s}$' % (D * 1e+12) if D < numpy.inf else r'$D\rightarrow\infty$'
-        plt.semilogx(x, y[2], '-', color=c, markeredgecolor=c, markerfacecolor=c, label=label)
+        label = r'$D=%g\mathrm{\mu m^2/s}$' % (D * 1e+12) \
+            if D < numpy.inf else r'$D\rightarrow\infty$'
+        plt.semilogx(x, y[2], '-', color=c, markeredgecolor=c,
+                     markerfacecolor=c, label=label)
 
     plt.xlabel('[KK]/[P]')
     plt.legend(loc='best', shadow=True)
