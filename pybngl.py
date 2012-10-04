@@ -440,7 +440,11 @@ def create_world(m, seed_species):
     w = World.World()
     w.add_species(m.concrete_species.keys())
     for species, value in seed_species.items():
-        w.set_value(species.id, value)
+        # replace here with a smarter way
+        for sid, conc_species in m.concrete_species.iteritems():
+            if conc_species.equals(species):
+                w.set_value(sid, value)
+                break
     w.model = m
     return w
 
