@@ -38,7 +38,8 @@ class MoleculeTypesAnyCallable(RuleFactory.AnyCallable):
                 else:
                     entity_type.add_component(component_name)
 
-            print '[MoleculeTypes] ' + str(obj)
+            if disp:
+                print '[MoleculeTypes] ' + str(obj)
 
         return obj
         # return entity_type
@@ -62,8 +63,9 @@ class MoleculeInitsRuleEntitySet(RuleFactory.RuleEntitySet):
         obj.factory.model.register_species(species)
         obj.factory.kwargs['seed_species'][species] = key
 
-        # print '[MoleculeInits] ' + str(obj) + ' [' + str(obj.key) + ']'
-        print '[MoleculeInits] ' + species.str_simple() + ' [' + str(obj.key) + ']'
+        if disp:
+            # print '[MoleculeInits] ' + str(obj) + ' [' + str(obj.key) + ']'
+            print '[MoleculeInits] ' + species.str_simple() + ' [' + str(obj.key) + ']'
 
         return self
         # return species
@@ -104,8 +106,9 @@ class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
         rule = obj.factory.model.add_reaction_rule(reactants, products, 
                                                    k = obj.rhs)
 
-        # print '[ReactionRules] ' + str(obj)
-        print '[ReactionRules] ' + rule.str_simple()
+        if disp:
+            # print '[ReactionRules] ' + str(obj)
+            print '[ReactionRules] ' + rule.str_simple()
 
         return obj
         # return rule
@@ -138,9 +141,10 @@ class ReactionRulesRuleEntitySetList(RuleFactory.RuleEntitySetList):
         rule1 = obj.factory.model.add_reaction_rule(products, reactants, 
                                                    k = obj.rhs[1])
 
-        # print '[ReactionRules] ' + str(obj)
-        print '[ReactionRules] ' + rule0.str_simple()
-        print '[ReactionRules] ' + rule1.str_simple()
+        if disp:
+            # print '[ReactionRules] ' + str(obj)
+            print '[ReactionRules] ' + rule0.str_simple()
+            print '[ReactionRules] ' + rule1.str_simple()
 
         return obj
         # return rule
