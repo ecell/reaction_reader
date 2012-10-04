@@ -152,7 +152,7 @@ class ODESimulator(Simulator):
         #     self.model, reaction_network, self.world.volume)
         self.functions = fmaker.make_functions(
             self.world, self.reaction_network, ratelaws=ratelaws)
-        self.initialize(solver.ODESolver.ODESolver(), 
+        self.initialize(solver.ODESolver.ODESolver(),
                         self.functions, self.world.data)
 
     def get_species(self):

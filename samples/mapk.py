@@ -20,8 +20,8 @@ k4 = 0.056e+9 / (N_A * 1000)
 k5 = 1.73
 k6 = 15.0
 
-sigma, D, Nkk = 5e-9, 2e-12, 30
-# sigma = 5e-9
+# sigma, D, Nkk = 5e-9, 2e-12, 30
+sigma = 5e-9
 
 kD = 4 * pi * sigma * D
 

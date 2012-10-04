@@ -7,7 +7,6 @@ import Simulator
 import pybngl
 import ratelaw
 
-
 def get_indices(species_list, expr):
     return [i for i in range(len(species_list))
             if re.compile(expr).search(species_list[i].str_simple())]
@@ -30,13 +29,14 @@ def singlerun(filename, params):
     return data, simulator.get_species()
 
 def run(filename, params):
-    expr_list = ['phos\(YT\)', 'phos\(pYT\)', 'phos\(pYpT\)']
+    expr_list = ['phos=YT', 'phos=pYT', 'phos=pYpT']
 
     Nkk_list = range(1, 60) # numpy.arange(1, 60, dtype=int)
     return_val = []
     for Nkk in Nkk_list:
         params.update(dict(Nkk=Nkk))
         data, species_list = singlerun(filename, params)
+
         y = []
         for expr in expr_list:
             indices = get_indices(species_list, expr)
