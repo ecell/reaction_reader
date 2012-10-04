@@ -350,11 +350,11 @@ class Pybngl(object):
     def is_verbose(self):
         return self.verbose
 
-    def parse_model(self, filename, m=None):
+    def parse_model(self, filename, m=None, params={}):
         if m is None: m = Model()
 
         namespace = MyDict()
-
+        namespace.update(params)
         namespace['reaction_rules'] = ReactionRules(m, namespace)
         namespace['molecule_inits'] = MoleculeInits(m, namespace)
         namespace['molecule_types'] = MoleculeTypes(m, namespace,
