@@ -145,6 +145,11 @@ class RuleEntity(RuleFactoryProduct):
             print 'RuleEntity.__gt__()* self:', self, ', rhs:', rhs
         return self.to_RuleEntitySet().__gt__(rhs)
 
+    def __eq__(self, rhs):
+        if disp:
+            print 'RuleEntity.__eq__()* self:', self, ', rhs:', rhs
+        return self.to_RuleEntitySet().__eq__(rhs)
+
     def __str__(self):
         comp = [str(i) + ',' for i in self.components]
         return reduce(lambda a, b: a + b, [self.name + '('] + comp)[:-1] + ')'
@@ -214,6 +219,11 @@ class RuleEntitySet(RuleFactoryProduct):
             print 'RuleEntitySet.__gt__()* self:', self, ', rhs:', rhs
         return self.to_RuleEntitySetList().__gt__(rhs)
         
+    def __eq__(self, rhs):
+        if disp:
+            print 'RuleEntitySet.__eq__()* self:', self, ', rhs:', rhs
+        return self.to_RuleEntitySetList().__eq__(rhs)
+
     def __str__(self):
         ent = [str(i) + '.' for i in self.entities]
         return reduce(lambda a, b: a + b, ent)[:-1]
